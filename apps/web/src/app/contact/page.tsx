@@ -6,6 +6,7 @@ import {
   buildBreadcrumbJsonLd,
   buildPageMetadata,
   buildWebPageJsonLd,
+  getSiteUrl,
 } from "@/lib/seo";
 
 // ---------------------------------------------------------------------------
@@ -17,8 +18,14 @@ export function generateMetadata(): Metadata {
     pathname: "/contact",
     title: "Contact",
     description:
-      "Get in touch with Mehdi Zare. Questions about AI consulting, collaboration opportunities, or just want to connect.",
+      "Get in touch with Mehdi Zare about AI consulting, production delivery, partnerships, and speaking.",
     type: "website",
+    keywords: [
+      "AI consulting contact",
+      "production AI engineer",
+      "AI strategy call",
+      "LLM systems consulting",
+    ],
   });
 }
 
@@ -66,6 +73,18 @@ const socialLinks = [
 ];
 
 export default function ContactPage() {
+  const siteUrl = getSiteUrl();
+  const contactPointJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ContactPoint",
+    "@id": `${siteUrl}/contact#contactpoint`,
+    url: `${siteUrl}/contact`,
+    email: "mehdi@mehdizare.com",
+    contactType: "consulting inquiries",
+    availableLanguage: ["English"],
+    areaServed: "US",
+  };
+
   return (
     <div className="bg-paper">
       <JsonLd
@@ -74,7 +93,7 @@ export default function ContactPage() {
           pathname: "/contact",
           title: "Get in Touch",
           description:
-            "Contact Mehdi Zare about AI consulting, partnerships, and speaking opportunities.",
+            "Contact Mehdi Zare to discuss moving AI from pilot to production in high-stakes environments.",
           type: "ContactPage",
         })}
       />
@@ -85,6 +104,7 @@ export default function ContactPage() {
           { name: "Contact", path: "/contact" },
         ])}
       />
+      <JsonLd id="contact-point-jsonld" data={contactPointJsonLd} />
       {/* Header Section */}
       <section className="pb-16 pt-10">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -94,7 +114,7 @@ export default function ContactPage() {
               Get in Touch
             </h1>
             <p className="mt-4 text-xl text-mid-gray">
-              Have a question or want to work together?
+              Working on an AI initiative that needs to ship?
             </p>
           </AnimatedSection>
         </div>

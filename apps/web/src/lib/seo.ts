@@ -216,7 +216,16 @@ export function buildPageMetadata({
   const canonical = resolveCanonicalUrl(pathname, seo?.canonicalURL);
   const robots = normalizeRobotsValue(seo?.metaRobots);
   const resolvedImage = seo?.metaImage ?? image;
-  const images = toMetadataImages(resolvedImage, resolvedTitle);
+  const images =
+    toMetadataImages(resolvedImage, resolvedTitle) ??
+    [
+      {
+        url: toAbsoluteUrl("/opengraph-image", getSiteUrl()),
+        width: 1200,
+        height: 630,
+        alt: resolvedTitle,
+      },
+    ];
 
   const metadata: Metadata = {
     title: resolvedTitle,
@@ -236,7 +245,7 @@ export function buildPageMetadata({
       ...(type === "article" && modifiedTime ? { modifiedTime } : {}),
     },
     twitter: {
-      card: images ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title: resolvedTitle,
       description: resolvedDescription,
       images,

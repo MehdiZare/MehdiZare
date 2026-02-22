@@ -13,7 +13,7 @@ import { CategoryFilter } from "@/components/blog/CategoryFilter";
 import { PostCard } from "@/components/blog/PostCard";
 
 const blogMetadataDescription =
-  "Insights on AI, finance, and technology. Read articles about artificial intelligence engineering, quantitative strategies, and the future of fintech.";
+  "Field notes on shipping AI systems in production: architecture, reliability, and domain-aware engineering decisions.";
 
 interface BlogSearchParams {
   page?: string;
@@ -50,16 +50,23 @@ export async function generateMetadata({ searchParams }: BlogPageProps): Promise
   const currentPage = normalizePageParam(params.page);
   const categorySlug = normalizeSlugParam(params.category);
   const tagSlug = normalizeSlugParam(params.tag);
-  const canonicalPath = buildBlogPath(currentPage, categorySlug, tagSlug);
+  const isVariantPage = currentPage > 1 || Boolean(categorySlug) || Boolean(tagSlug);
 
   const metadata = buildPageMetadata({
-    pathname: canonicalPath,
+    pathname: "/blog",
     title: "Blog",
     description: blogMetadataDescription,
     type: "website",
+    keywords: [
+      "production AI engineering",
+      "LLM systems",
+      "AI architecture",
+      "reliable AI systems",
+      "domain-aware AI",
+    ],
   });
 
-  if (categorySlug || tagSlug) {
+  if (isVariantPage) {
     metadata.robots = {
       index: false,
       follow: true,
@@ -74,7 +81,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
   const currentPage = normalizePageParam(params.page);
   const categorySlug = normalizeSlugParam(params.category);
   const tagSlug = normalizeSlugParam(params.tag);
-  const canonicalPath = buildBlogPath(currentPage, categorySlug, tagSlug);
+  const canonicalPath = "/blog";
 
   // Build filters based on search params
   const filters: Record<string, unknown> = {};
@@ -121,7 +128,8 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
   }
 
   const pageTitle = "Blog";
-  const pageDescription = "Insights on AI, finance, and technology";
+  const pageDescription =
+    "Practical writing on shipping AI systems that work in production.";
   const blogJsonLd = buildBlogJsonLd({
     pathname: canonicalPath,
     title: pageTitle,
@@ -185,8 +193,14 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
             <div className="py-20 text-center">
               <p className="text-lg text-mid-gray">No posts yet.</p>
               <p className="mt-2 text-sm text-mid-gray/60">
-                Check back soon for new content.
+                Check back soon, or subscribe for new posts.
               </p>
+              <Link
+                href="/newsletter"
+                className="mt-5 inline-block rounded-sm border border-ink/20 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
+              >
+                Join the newsletter
+              </Link>
             </div>
           )}
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { FAQ } from "@/components/consulting/FAQ";
 import { CalendlyEmbed } from "@/components/consulting/CalendlyEmbed";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
@@ -10,6 +11,7 @@ import {
   buildFAQJsonLd,
   buildPageMetadata,
   buildWebPageJsonLd,
+  getSiteUrl,
 } from "@/lib/seo";
 import { getConsultingPage } from "@/lib/strapi";
 import type { ConsultingAudience, FAQ as FAQType } from "@/types/strapi";
@@ -17,19 +19,19 @@ import type { ConsultingAudience, FAQ as FAQType } from "@/types/strapi";
 const fallbackAudiences: ConsultingAudience[] = [
   {
     id: 1,
-    title: "Asset Managers / Hedge Funds",
+    title: "Financial Services Teams",
     description:
-      "Production-ready AI systems for alpha generation with CFA-level rigor and risk framing.",
+      "Production-ready AI systems for research, risk, operations, and decision support in regulated financial environments.",
   },
   {
     id: 2,
-    title: "Fintech Startups",
-    description: "Build AI products with governance and compliance built in from day one.",
+    title: "Healthcare and Life Sciences",
+    description: "Deploy AI workflows where reliability, explainability, and operational safety are requirements, not nice-to-haves.",
   },
   {
     id: 3,
     title: "Enterprise AI Teams",
-    description: "Move financial AI from pilot experiments to robust production systems.",
+    description: "Move AI initiatives from pilot experiments to robust production systems with clear ownership and observability.",
   },
   {
     id: 4,
@@ -61,7 +63,7 @@ const fallbackFaqs: FAQType[] = [
     id: 1,
     question: "What types of organizations do you work with?",
     answer:
-      "Most engagements are with financial institutions, fintech companies, or regulated teams that need AI outcomes they can defend to stakeholders.",
+      "Most engagements are with regulated or high-stakes teams in finance, healthcare, government, and enterprise settings that need AI outcomes they can defend to stakeholders.",
   },
   {
     id: 2,
@@ -79,9 +81,19 @@ const fallbackFaqs: FAQType[] = [
 
 const consultingMetadataTitle = "Consulting";
 const consultingMetadataDescription =
-  "AI consulting for financial institutions from strategy through production delivery.";
+  "AI consulting for high-stakes teams, from strategy through production delivery.";
+const calendlySectionId = "calendly";
+const calendlyAnchorHref = `#${calendlySectionId}`;
 
 export async function generateMetadata(): Promise<Metadata> {
+  const consultingKeywords = [
+    "AI consulting",
+    "production AI systems",
+    "LLM engineering",
+    "AI architecture",
+    "fractional AI leadership",
+  ];
+
   try {
     const response = await getConsultingPage();
     const cmsData = response.data;
@@ -92,6 +104,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description: cmsData?.subtitle || consultingMetadataDescription,
       seo: cmsData?.seo,
       type: "website",
+      keywords: consultingKeywords,
     });
   } catch {
     return buildPageMetadata({
@@ -99,22 +112,24 @@ export async function generateMetadata(): Promise<Metadata> {
       title: consultingMetadataTitle,
       description: consultingMetadataDescription,
       type: "website",
+      keywords: consultingKeywords,
     });
   }
 }
 
 export default async function ConsultingPage() {
+  const siteUrl = getSiteUrl();
   const fallbackData = {
-    title: "AI Consulting for Financial Institutions",
+    title: "AI Consulting for High-Stakes Teams",
     subtitle:
-      "From strategy to production with someone who speaks both code and capital markets.",
+      "From strategy to production with an engineer who learns your domain before writing code.",
     audiences: fallbackAudiences,
     services: fallbackServices,
     calendlyUrl: "https://calendly.com/placeholder",
     faq: fallbackFaqs,
-    leadMagnetTitle: "AI Readiness Scorecard for Financial Institutions",
+    leadMagnetTitle: "AI Readiness Scorecard for High-Stakes Teams",
     leadMagnetDescription:
-      "Download the checklist used to evaluate whether a financial AI initiative is ready for production.",
+      "Download the checklist used to evaluate whether an AI initiative is ready for production.",
   };
 
   let data = fallbackData;
@@ -153,6 +168,26 @@ export default async function ConsultingPage() {
         answer: faq.answer,
       }))
   );
+  const consultingServiceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    "@id": `${siteUrl}/consulting#service`,
+    name: "Mehdi Zare AI Consulting",
+    url: `${siteUrl}/consulting`,
+    description: data.subtitle,
+    provider: {
+      "@id": `${siteUrl}/#person`,
+    },
+    serviceType: data.services.map((service) => service.name),
+    audience: data.audiences.map((audience) => ({
+      "@type": "Audience",
+      audienceType: audience.title,
+    })),
+    areaServed: {
+      "@type": "Country",
+      name: "United States",
+    },
+  };
 
   return (
     <div className="bg-paper pb-24">
@@ -176,6 +211,7 @@ export default async function ConsultingPage() {
           { name: "Consulting", path: "/consulting" },
         ])}
       />
+      <JsonLd id="consulting-service-jsonld" data={consultingServiceJsonLd} />
       {faqJsonLd ? <JsonLd id="consulting-faq-jsonld" data={faqJsonLd} /> : null}
       <section className="pb-16 pt-10">
         <div className="mx-auto max-w-7xl px-6">
@@ -190,7 +226,7 @@ export default async function ConsultingPage() {
       <section className="py-16">
         <div className="mx-auto max-w-7xl px-6">
           <AnimatedSection>
-            <SectionHeading title="Who I Help" subtitle="Teams where finance context and AI delivery both matter" />
+            <SectionHeading title="Who I Help" subtitle="Teams where domain context and AI delivery both matter" />
           </AnimatedSection>
           <div className="mt-10 grid gap-6 md:grid-cols-2">
             {data.audiences.map((audience, index) => (
@@ -222,11 +258,21 @@ export default async function ConsultingPage() {
           </div>
           <AnimatedSection delay={0.3} className="mt-10 text-center">
             <a
-              href="#calendly"
+              href={calendlyAnchorHref}
               className="inline-flex bg-ink px-8 py-3 text-sm font-medium text-paper transition hover:bg-ink/85"
             >
               Book a Free Discovery Call
             </a>
+            <p className="mt-3 text-sm text-mid-gray">
+              Prefer email?{" "}
+              <Link
+                href="/contact"
+                className="text-ink underline underline-offset-4 transition-colors hover:text-mid-gray"
+              >
+                Start a conversation
+              </Link>
+              .
+            </p>
           </AnimatedSection>
         </div>
       </section>
@@ -253,7 +299,7 @@ export default async function ConsultingPage() {
         </div>
       </section>
 
-      <section id="calendly" className="py-16">
+      <section id={calendlySectionId} className="py-16">
         <div className="mx-auto max-w-4xl px-6">
           <AnimatedSection>
             <SectionHeading title="Book a Discovery Call" subtitle="Schedule a free 30-minute session" />

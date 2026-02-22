@@ -41,6 +41,13 @@ export const metadata: Metadata = {
     template: "%s | Mehdi Zare",
   },
   description: DEFAULT_SITE_DESCRIPTION,
+  keywords: [
+    "AI engineering",
+    "production AI systems",
+    "LLM systems",
+    "AI consulting",
+    "domain-driven AI",
+  ],
   alternates: {
     canonical: "/",
   },
@@ -58,12 +65,21 @@ export const metadata: Metadata = {
     url: siteUrl,
     siteName: SITE_NAME,
     type: "website",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Mehdi Zare - Principal AI Engineer",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: `${SITE_NAME} | Principal AI Engineer`,
     description:
       "Principal AI Engineer shipping production AI systems across finance, defense, healthcare, and enterprise. CFA Charterholder.",
+    images: ["/twitter-image"],
   },
 };
 

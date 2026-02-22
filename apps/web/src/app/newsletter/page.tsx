@@ -18,8 +18,8 @@ function normalizeBenefits(input: unknown, fallback: string[]): string[] {
 }
 
 const fallbackBenefits = [
-  "1 Bina Print insight",
-  "1 AI + finance take",
+  "1 production AI teardown",
+  "1 domain lesson from a high-stakes team",
   "1 actionable framework",
 ];
 
@@ -29,9 +29,17 @@ const fallbackArchiveLinks: NavItem[] = [
 
 const newsletterMetadataTitle = "Newsletter";
 const newsletterMetadataDescription =
-  "Subscribe to the weekly AI + Finance briefing from Mehdi Zare for practical insights and frameworks.";
+  "Subscribe to the weekly briefing on shipping AI systems in the real world, from strategy through production.";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const newsletterKeywords = [
+    "AI newsletter",
+    "production AI insights",
+    "LLM engineering",
+    "AI strategy",
+    "AI systems in production",
+  ];
+
   try {
     const response = await getNewsletterPage();
     const cmsData = response.data;
@@ -42,6 +50,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description: cmsData?.subheadline || newsletterMetadataDescription,
       seo: cmsData?.seo,
       type: "website",
+      keywords: newsletterKeywords,
     });
   } catch {
     return buildPageMetadata({
@@ -49,16 +58,18 @@ export async function generateMetadata(): Promise<Metadata> {
       title: newsletterMetadataTitle,
       description: newsletterMetadataDescription,
       type: "website",
+      keywords: newsletterKeywords,
     });
   }
 }
 
 export default async function NewsletterPage() {
   const fallbackData = {
-    headline: "Get the weekly AI + Finance briefing",
+    headline: "Get the weekly prototype-to-production briefing",
     subheadline:
-      "Every week you get one Bina Print insight, one AI/finance perspective, and one framework you can apply immediately.",
-    socialProofText: "Built for investors, operators, and AI teams in financial services.",
+      "Every week you get one production AI teardown, one domain lesson from a high-stakes team, and one framework you can apply immediately.",
+    socialProofText:
+      "Built for engineering leaders, operators, and AI teams shipping real systems.",
     benefits: fallbackBenefits,
     archiveLinks: fallbackArchiveLinks,
   };
@@ -115,6 +126,16 @@ export default async function NewsletterPage() {
           <h1 className="mt-4 font-serif text-4xl leading-tight sm:text-5xl">{data.headline}</h1>
           <p className="mt-5 text-lg text-white/60">{data.subheadline}</p>
           <p className="mt-4 text-sm text-white/40">{data.socialProofText}</p>
+          <p className="mt-3 text-sm text-white/50">
+            Need direct help shipping?{" "}
+            <Link
+              href="/consulting"
+              className="text-accent-warm underline underline-offset-4 hover:text-white"
+            >
+              Explore consulting
+            </Link>
+            .
+          </p>
         </div>
       </section>
 
@@ -148,7 +169,7 @@ export default async function NewsletterPage() {
           <BeehiivEmbed
             source="newsletter_page"
             title="Subscribe now"
-            description="Join readers who want practical insight at the intersection of AI engineering and capital markets."
+            description="Join readers who want practical insight on shipping AI systems that work in production."
           />
         </div>
       </section>

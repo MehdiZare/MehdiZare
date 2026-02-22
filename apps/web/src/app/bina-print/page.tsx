@@ -42,7 +42,7 @@ const fallbackMovers: BinaMover[] = [
 
 const binaPrintMetadataTitle = "Bina Print";
 const binaPrintMetadataDescription =
-  "Bina Print is an AI-powered company scoring system that helps investors evaluate businesses with CFA-level rigor.";
+  "Bina Print is an AI-powered company scoring system built end-to-end as proof of production AI engineering rigor.";
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -55,6 +55,12 @@ export async function generateMetadata(): Promise<Metadata> {
       description: cmsData?.heroSubheadline || binaPrintMetadataDescription,
       seo: cmsData?.seo,
       type: "website",
+      keywords: [
+        "AI scoring system",
+        "production AI product",
+        "financial AI",
+        "LLM workflows",
+      ],
     });
   } catch {
     return buildPageMetadata({
@@ -62,6 +68,12 @@ export async function generateMetadata(): Promise<Metadata> {
       title: binaPrintMetadataTitle,
       description: binaPrintMetadataDescription,
       type: "website",
+      keywords: [
+        "AI scoring system",
+        "production AI product",
+        "financial AI",
+        "LLM workflows",
+      ],
     });
   }
 }
@@ -233,6 +245,12 @@ export default async function BinaPrintPage() {
             <p className="mt-5 text-sm font-medium text-ink">
               Built by a CFA Charterholder using production AI systems.
             </p>
+            <a
+              href="/consulting"
+              className="mt-4 inline-block text-sm text-ink underline underline-offset-4 transition-colors hover:text-mid-gray"
+            >
+              Need this rigor in your domain? Explore consulting.
+            </a>
           </article>
         </div>
       </section>

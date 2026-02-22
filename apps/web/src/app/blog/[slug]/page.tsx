@@ -81,12 +81,16 @@ export async function generateMetadata({
       pathname: `/blog/${slug}`,
       title: article.title,
       description:
-        article.excerpt || "Insights on AI engineering, finance, and production systems.",
+        article.excerpt || "Insights on AI engineering, architecture, and production systems.",
       seo: article.seo,
       image: article.featuredImage,
       type: "article",
       publishedTime: article.publishedDate || article.publishedAt,
       modifiedTime: article.updatedAt,
+      keywords:
+        article.tags && article.tags.length > 0
+          ? article.tags.map((tag) => tag.name)
+          : ["production AI engineering", "LLM systems", "AI architecture"],
     });
 
     if (!metadata.keywords && article.tags && article.tags.length > 0) {
@@ -152,7 +156,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     article.publishedDate ?? article.publishedAt;
   const articlePath = `/blog/${article.slug}`;
   const articleDescription =
-    article.excerpt || "Insights on AI engineering, finance, and production systems.";
+    article.excerpt || "Insights on AI engineering, architecture, and production systems.";
   const primaryImage =
     toAbsoluteMediaUrl(article.seo?.metaImage?.url) ??
     toAbsoluteMediaUrl(article.featuredImage?.url);
@@ -270,10 +274,23 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                       Principal AI Engineer
                     </p>
                     <p className="mt-2 text-sm text-mid-gray leading-relaxed">
-                      Bridging the worlds of artificial intelligence and finance.
-                      Passionate about building intelligent systems, quantitative
-                      strategies, and the intersection of AI with fintech.
+                      Principal AI engineer shipping production systems across
+                      finance, defense, healthcare, and enterprise.
                     </p>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <Link
+                        href="/consulting"
+                        className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
+                      >
+                        Work together
+                      </Link>
+                      <Link
+                        href="/contact"
+                        className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
+                      >
+                        Contact
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -317,8 +334,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <div className="mt-12 border-t border-warm-gray pt-10">
                 <BeehiivEmbed
                   source="blog_post_footer"
-                  title="Get the weekly AI + Finance briefing"
-                  description="One Bina Print insight, one AI/finance take, and one actionable framework each week."
+                  title="Get the weekly prototype-to-production briefing"
+                  description="One production AI teardown, one domain lesson, and one actionable framework each week."
                 />
               </div>
             </article>

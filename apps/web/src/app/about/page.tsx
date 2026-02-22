@@ -30,12 +30,12 @@ const fallbackStory = [
 ];
 
 const fallbackStats: StatItem[] = [
-  { id: 1, value: "10+", label: "Years across finance and technology" },
-  { id: 2, value: "CFA", label: "Charterholder" },
-  { id: 3, value: "Secret", label: "Active clearance" },
-  { id: 4, value: "80K+", label: "Seeking Alpha readers" },
-  { id: 5, value: "500+", label: "Seeking Alpha followers" },
-  { id: 6, value: "Fortune 100", label: "Production AI deployments" },
+  { id: 1, value: "12+", label: "Years building software and AI systems" },
+  { id: 2, value: "10+", label: "AI systems shipped to production" },
+  { id: 3, value: "6+", label: "Products built and shipped end-to-end" },
+  { id: 4, value: "4", label: "Regulated industries shipped in" },
+  { id: 5, value: "CFA", label: "Charterholder" },
+  { id: 6, value: "Secret", label: "Active clearance" },
 ];
 
 const fallbackCredentials: Credential[] = [
@@ -123,9 +123,18 @@ const fallbackLinks: SocialLink[] = [
 
 const aboutMetadataTitle = "About";
 const aboutMetadataDescription =
-  "The story behind Mehdi Zare, CFA - bridging AI engineering and financial expertise to deliver production systems.";
+  "The story behind Mehdi Zare - principal AI engineer delivering production AI systems across finance, defense, healthcare, and enterprise.";
+const consultingCalendlyHref = "/consulting#calendly";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const aboutKeywords = [
+    "principal AI engineer",
+    "production AI systems",
+    "domain-driven AI",
+    "CFA charterholder engineer",
+    "AI consulting",
+  ];
+
   try {
     const response = await getAboutPage();
     const cmsData = response.data;
@@ -136,6 +145,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description: cmsData?.positioningStatement || aboutMetadataDescription,
       seo: cmsData?.seo,
       type: "website",
+      keywords: aboutKeywords,
     });
   } catch {
     return buildPageMetadata({
@@ -143,6 +153,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: aboutMetadataTitle,
       description: aboutMetadataDescription,
       type: "website",
+      keywords: aboutKeywords,
     });
   }
 }
@@ -151,7 +162,7 @@ export default async function AboutPage() {
   const fallbackData = {
     title: "The CFA Who Codes",
     positioningStatement:
-      "I help financial institutions move AI from pilot to production with domain rigor, engineering execution, and business context.",
+      "I help high-stakes teams move AI from pilot to production with domain rigor, engineering execution, and business context.",
     story: fallbackStory,
     storyBlocks: undefined as BlocksContent | undefined,
     stats: fallbackStats,
@@ -336,7 +347,7 @@ export default async function AboutPage() {
             </div>
             <div className="mt-8 text-center">
               <Link
-                href="/consulting#calendly"
+                href={consultingCalendlyHref}
                 className="inline-flex bg-ink px-7 py-3 text-sm font-medium text-paper transition hover:bg-ink/85"
               >
                 Book a Discovery Call

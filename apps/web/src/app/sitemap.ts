@@ -1,6 +1,13 @@
 import type { MetadataRoute } from "next";
 import type { Article } from "@/types/strapi";
-import { getArticles } from "@/lib/strapi";
+import {
+  getAboutPage,
+  getArticles,
+  getBinaPrintPage,
+  getConsultingPage,
+  getHomePage,
+  getNewsletterPage,
+} from "@/lib/strapi";
 import { getSiteUrl, toAbsoluteMediaUrl } from "@/lib/seo";
 
 const SITE_URL = getSiteUrl();
@@ -42,40 +49,68 @@ async function getAllArticlesForSitemap(): Promise<Article[]> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const pageTimestamps = {
+    home: now,
+    about: now,
+    binaPrint: now,
+    consulting: now,
+    newsletter: now,
+    blog: now,
+  };
+
+  try {
+    const [homeRes, aboutRes, binaPrintRes, consultingRes, newsletterRes] =
+      await Promise.all([
+        getHomePage(),
+        getAboutPage(),
+        getBinaPrintPage(),
+        getConsultingPage(),
+        getNewsletterPage(),
+      ]);
+
+    pageTimestamps.home = safeDate(homeRes.data?.updatedAt, now);
+    pageTimestamps.about = safeDate(aboutRes.data?.updatedAt, now);
+    pageTimestamps.binaPrint = safeDate(binaPrintRes.data?.updatedAt, now);
+    pageTimestamps.consulting = safeDate(consultingRes.data?.updatedAt, now);
+    pageTimestamps.newsletter = safeDate(newsletterRes.data?.updatedAt, now);
+  } catch {
+    // Keep build-time fallback dates when CMS is unavailable.
+  }
+
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: SITE_URL,
-      lastModified: now,
+      lastModified: pageTimestamps.home,
       changeFrequency: "weekly",
       priority: 1,
     },
     {
       url: `${SITE_URL}/about`,
-      lastModified: now,
+      lastModified: pageTimestamps.about,
       changeFrequency: "monthly",
       priority: 0.9,
     },
     {
       url: `${SITE_URL}/bina-print`,
-      lastModified: now,
+      lastModified: pageTimestamps.binaPrint,
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
       url: `${SITE_URL}/consulting`,
-      lastModified: now,
+      lastModified: pageTimestamps.consulting,
       changeFrequency: "monthly",
       priority: 0.9,
     },
     {
       url: `${SITE_URL}/newsletter`,
-      lastModified: now,
+      lastModified: pageTimestamps.newsletter,
       changeFrequency: "weekly",
       priority: 0.8,
     },
     {
       url: `${SITE_URL}/blog`,
-      lastModified: now,
+      lastModified: pageTimestamps.blog,
       changeFrequency: "weekly",
       priority: 0.8,
     },
@@ -91,6 +126,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const articles = await getAllArticlesForSitemap();
+    if (articles.length > 0) {
+      pageTimestamps.blog = safeDate(articles[0]?.updatedAt, pageTimestamps.blog);
+    }
 
     articlePages = articles.map((article) => {
       const imageUrl = toAbsoluteMediaUrl(article.featuredImage?.url);
