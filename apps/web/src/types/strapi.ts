@@ -63,6 +63,7 @@ export interface SEO {
   keywords?: string;
   metaRobots?: string;
   metaImage?: StrapiImage;
+  structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
 // Rich text blocks

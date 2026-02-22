@@ -13,30 +13,30 @@ interface ServiceCard {
 const services: ServiceCard[] = [
   {
     letter: "A",
-    title: "AI Strategy",
+    title: "Production AI Engineering",
     description:
-      "Roadmap from pilot to production. Identify the right use cases, set realistic timelines, and align stakeholders before writing a single line of code.",
+      "LLM systems, RAG pipelines, AI agents — built for reliability, not demos. FastAPI, LangGraph, Databricks, AWS. Deployed, monitored, and governed.",
     href: "/consulting",
   },
   {
     letter: "B",
-    title: "Production AI Engineering",
+    title: "AI Strategy & Architecture",
     description:
-      "End-to-end build-out of AI systems that meet financial-grade reliability, compliance, and performance requirements.",
+      "Use-case prioritization, vendor evaluation, and technical roadmaps that account for your domain's actual constraints — not generic playbooks.",
     href: "/consulting",
   },
   {
     letter: "C",
     title: "Fractional AI Leadership",
     description:
-      "Embedded technical leadership for teams that need a principal-level engineer without the full-time overhead.",
+      "Embedded principal-level technical direction for startups and teams that need senior AI engineering without a full-time executive hire. 3–12 months.",
     href: "/consulting",
   },
   {
     letter: "D",
-    title: "AI + Compliance",
+    title: "GenAI Products & Prototyping",
     description:
-      "Model governance, explainability frameworks, and regulatory alignment for AI in regulated industries.",
+      "Rapid build of generative AI products — from chatbots and copilots to document intelligence and automated workflows. Prototype to v1 in weeks.",
     href: "/consulting",
   },
 ];
@@ -48,6 +48,10 @@ export function ServicesGrid() {
         <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">
           02 &mdash; What I Do
         </p>
+
+        <h2 className="mt-6 font-serif text-3xl leading-tight text-paper sm:text-4xl">
+          From prototype to production. End to end.
+        </h2>
 
         <div className="mt-12 grid gap-px bg-white/10 sm:grid-cols-2">
           {services.map((service) => (

@@ -6,12 +6,12 @@ const placeholderArticles: Article[] = [
   {
     id: 1,
     documentId: "placeholder-1",
-    title: "How CFA Charterholders Can Lead AI Transformation in Finance",
-    slug: "cfa-ai-transformation",
+    title: "How I Built a Zestimate for Stocks with LLMs and FastAPI",
+    slug: "zestimate-for-stocks",
     excerpt:
-      "The finance industry is undergoing a seismic shift. Here is how CFA professionals can position themselves at the forefront of AI adoption.",
+      "A technical walkthrough of Bina Print — from data pipeline architecture to the scoring engine that processes earnings calls at scale.",
     content: [],
-    category: { id: 1, documentId: "cat-1", name: "AI & Finance", slug: "ai-finance", createdAt: "", updatedAt: "", publishedAt: "" },
+    category: { id: 1, documentId: "cat-1", name: "Medium", slug: "medium", createdAt: "", updatedAt: "", publishedAt: "" },
     publishedDate: "2025-12-15",
     readingTime: 8,
     createdAt: "",
@@ -21,12 +21,12 @@ const placeholderArticles: Article[] = [
   {
     id: 2,
     documentId: "placeholder-2",
-    title: "Building Production ML Pipelines for Financial Risk Assessment",
-    slug: "ml-pipelines-risk",
+    title: "The $2M AI Pilot That Never Shipped",
+    slug: "ai-pilot-never-shipped",
     excerpt:
-      "A practical guide to designing, deploying, and monitoring machine learning systems that meet the rigorous demands of financial regulation.",
+      "A post-mortem on why enterprise AI projects die between demo and deployment — and what the team could have done differently.",
     content: [],
-    category: { id: 2, documentId: "cat-2", name: "Machine Learning", slug: "machine-learning", createdAt: "", updatedAt: "", publishedAt: "" },
+    category: { id: 2, documentId: "cat-2", name: "LinkedIn", slug: "linkedin", createdAt: "", updatedAt: "", publishedAt: "" },
     publishedDate: "2025-11-28",
     readingTime: 12,
     createdAt: "",
@@ -36,12 +36,12 @@ const placeholderArticles: Article[] = [
   {
     id: 3,
     documentId: "placeholder-3",
-    title: "Why Most AI Projects Fail in Financial Services",
-    slug: "ai-projects-fail-finance",
+    title: "When AI Meets the Balance Sheet",
+    slug: "ai-meets-balance-sheet",
     excerpt:
-      "The gap between technical teams and domain experts is the leading cause of AI project failure. Understanding both sides changes everything.",
+      "Why most AI-driven equity research tools fail the same way junior analysts do — and what better architecture looks like.",
     content: [],
-    category: { id: 3, documentId: "cat-3", name: "Strategy", slug: "strategy", createdAt: "", updatedAt: "", publishedAt: "" },
+    category: { id: 3, documentId: "cat-3", name: "Seeking Alpha", slug: "seeking-alpha", createdAt: "", updatedAt: "", publishedAt: "" },
     publishedDate: "2025-11-10",
     readingTime: 6,
     createdAt: "",
@@ -69,9 +69,14 @@ export async function WritingSection() {
     <section className="bg-paper py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="flex items-end justify-between">
-          <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">
-            05 &mdash; Writing
-          </p>
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">
+              05 &mdash; Writing
+            </p>
+            <h2 className="mt-4 font-serif text-3xl leading-tight text-ink sm:text-4xl">
+              Thinking in public.
+            </h2>
+          </div>
           <Link
             href="/blog"
             className="text-sm text-mid-gray underline underline-offset-4 transition-colors hover:text-ink"

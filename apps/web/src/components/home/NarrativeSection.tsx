@@ -7,23 +7,27 @@ export function NarrativeSection() {
         </p>
 
         <h2 className="mt-6 font-serif text-3xl leading-tight text-ink sm:text-4xl">
-          Most AI projects in financial services never make it to production.
+          Your AI demo worked. Your AI product didn&rsquo;t ship.
         </h2>
 
         <div className="mt-8 space-y-6 text-base leading-relaxed text-mid-gray">
           <p>
-            <strong className="text-ink">70% of enterprise AI initiatives fail</strong> before
-            they deliver business value. The gap is not technical capability &mdash; it&rsquo;s
-            the handoff between engineering teams that can ship models and domain experts who
-            understand the stakes.
+            The gap between a working prototype and a production system is where most AI
+            projects go to die. It&rsquo;s not a model problem &mdash; it&rsquo;s an
+            engineering problem compounded by a domain problem. The team that built the demo
+            doesn&rsquo;t understand your industry&rsquo;s constraints. The team that
+            understands the constraints can&rsquo;t architect the system.
           </p>
           <p>
-            Engineering can build sophisticated systems, but without deep market context the
-            outputs feel academic. Finance teams know what good looks like, but
-            can&rsquo;t translate that into production architecture.{" "}
-            <strong className="text-ink">You need someone who operates across both layers</strong>
-            &mdash; from investment logic to deployment pipelines &mdash; so the system actually
-            earns trust from the people who sign off on it.
+            I bridge that gap. I&rsquo;m a principal-level AI engineer who has shipped
+            production systems in{" "}
+            <strong className="text-ink">finance, cybersecurity, healthcare, and defense</strong>
+            {" "}&mdash; not because I dabble, but because I go deep. I earned a CFA Charter
+            to understand capital markets. I hold a Secret clearance to work in national
+            security.{" "}
+            <strong className="text-ink">
+              I learn your domain before I touch your codebase.
+            </strong>
           </p>
         </div>
       </div>

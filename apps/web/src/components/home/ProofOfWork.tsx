@@ -12,10 +12,10 @@ const overallScore = 88;
 const ticker = "MSFT";
 
 const subScores: ScoreBar[] = [
-  { label: "Fundamentals", value: 92, color: "bg-ink" },
-  { label: "Momentum", value: 85, color: "bg-ink" },
-  { label: "Sentiment", value: 88, color: "bg-ink" },
-  { label: "Risk", value: 80, color: "bg-accent-warm" },
+  { label: "Fundamentals", value: 90, color: "bg-ink" },
+  { label: "Momentum", value: 86, color: "bg-ink" },
+  { label: "Sentiment", value: 83, color: "bg-ink" },
+  { label: "Risk", value: 81, color: "bg-accent-warm" },
 ];
 
 export function ProofOfWork() {
@@ -30,18 +30,24 @@ export function ProofOfWork() {
           {/* Editorial text */}
           <div>
             <h2 className="font-serif text-3xl leading-tight text-ink sm:text-4xl">
-              Bina Print: a Zestimate for stocks.
+              I don&rsquo;t just consult. I ship products.
             </h2>
             <p className="mt-6 text-base leading-relaxed text-mid-gray">
-              I built Bina Print to prove that AI can deliver institutional-grade
-              equity analysis at scale. It scores every stock across fundamentals,
-              momentum, sentiment, and risk &mdash; giving retail investors the same
-              signal quality that hedge funds keep behind paywalls.
+              Bina Print is an AI-powered company scoring system I built from scratch
+              &mdash; end-to-end product: data pipelines, LLM analysis, scoring
+              engine, and a consumer-facing interface. Think Zestimate, but for stocks.
             </p>
             <p className="mt-4 text-base leading-relaxed text-mid-gray">
-              This is not a concept deck. It&rsquo;s a working product &mdash;
-              processing market data daily and publishing actionable scores.
+              It exists because I believe the best portfolio piece is a working
+              product, not a pitch deck. The same engineering rigor I put into client
+              work, applied to my own idea.
             </p>
+            <a
+              href="/bina-print"
+              className="mt-6 inline-flex items-center gap-1 text-sm text-ink underline underline-offset-4 transition-colors hover:text-mid-gray"
+            >
+              Explore Bina Print <span aria-hidden="true">&rarr;</span>
+            </a>
           </div>
 
           {/* Score card */}

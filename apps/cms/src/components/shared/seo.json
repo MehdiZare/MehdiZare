@@ -25,6 +25,9 @@
       "type": "media",
       "multiple": false,
       "allowedTypes": ["images"]
+    },
+    "structuredData": {
+      "type": "json"
     }
   }
 }

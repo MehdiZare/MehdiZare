@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BeehiivEmbed } from "@/components/newsletter/BeehiivEmbed";
+import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
+import { JsonLd } from "@/components/seo/JsonLd";
+import {
+  buildBreadcrumbJsonLd,
+  buildPageMetadata,
+  buildWebPageJsonLd,
+} from "@/lib/seo";
 import { getNewsletterPage } from "@/lib/strapi";
 import type { NavItem } from "@/types/strapi";
 
@@ -20,11 +27,31 @@ const fallbackArchiveLinks: NavItem[] = [
   { id: 1, label: "Archive coming soon", href: "/newsletter" },
 ];
 
-export const metadata: Metadata = {
-  title: "Newsletter",
-  description:
-    "Subscribe to the weekly AI + Finance briefing from Mehdi Zare for practical insights and frameworks.",
-};
+const newsletterMetadataTitle = "Newsletter";
+const newsletterMetadataDescription =
+  "Subscribe to the weekly AI + Finance briefing from Mehdi Zare for practical insights and frameworks.";
+
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const response = await getNewsletterPage();
+    const cmsData = response.data;
+
+    return buildPageMetadata({
+      pathname: "/newsletter",
+      title: newsletterMetadataTitle,
+      description: cmsData?.subheadline || newsletterMetadataDescription,
+      seo: cmsData?.seo,
+      type: "website",
+    });
+  } catch {
+    return buildPageMetadata({
+      pathname: "/newsletter",
+      title: newsletterMetadataTitle,
+      description: newsletterMetadataDescription,
+      type: "website",
+    });
+  }
+}
 
 export default async function NewsletterPage() {
   const fallbackData = {
@@ -37,10 +64,12 @@ export default async function NewsletterPage() {
   };
 
   let data = fallbackData;
+  let cmsStructuredData: unknown;
 
   try {
     const response = await getNewsletterPage();
     const cmsData = response.data;
+    cmsStructuredData = cmsData?.seo?.structuredData;
 
     if (cmsData) {
       data = {
@@ -60,6 +89,26 @@ export default async function NewsletterPage() {
 
   return (
     <div className="bg-paper pb-20">
+      <CmsStructuredData
+        idPrefix="newsletter-cms-jsonld"
+        data={cmsStructuredData}
+      />
+      <JsonLd
+        id="newsletter-webpage-jsonld"
+        data={buildWebPageJsonLd({
+          pathname: "/newsletter",
+          title: data.headline,
+          description: data.subheadline,
+          type: "CollectionPage",
+        })}
+      />
+      <JsonLd
+        id="newsletter-breadcrumb-jsonld"
+        data={buildBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Newsletter", path: "/newsletter" },
+        ])}
+      />
       <section className="bg-ink py-20 text-paper">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-accent-warm">Newsletter</p>

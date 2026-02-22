@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
 import { FAQ } from "@/components/consulting/FAQ";
 import { CalendlyEmbed } from "@/components/consulting/CalendlyEmbed";
+import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
+import {
+  buildBreadcrumbJsonLd,
+  buildFAQJsonLd,
+  buildPageMetadata,
+  buildWebPageJsonLd,
+} from "@/lib/seo";
 import { getConsultingPage } from "@/lib/strapi";
 import type { ConsultingAudience, FAQ as FAQType } from "@/types/strapi";
 
@@ -69,11 +77,31 @@ const fallbackFaqs: FAQType[] = [
   },
 ];
 
-export const metadata: Metadata = {
-  title: "Consulting",
-  description:
-    "AI consulting for financial institutions from strategy through production delivery.",
-};
+const consultingMetadataTitle = "Consulting";
+const consultingMetadataDescription =
+  "AI consulting for financial institutions from strategy through production delivery.";
+
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const response = await getConsultingPage();
+    const cmsData = response.data;
+
+    return buildPageMetadata({
+      pathname: "/consulting",
+      title: cmsData?.title || consultingMetadataTitle,
+      description: cmsData?.subtitle || consultingMetadataDescription,
+      seo: cmsData?.seo,
+      type: "website",
+    });
+  } catch {
+    return buildPageMetadata({
+      pathname: "/consulting",
+      title: consultingMetadataTitle,
+      description: consultingMetadataDescription,
+      type: "website",
+    });
+  }
+}
 
 export default async function ConsultingPage() {
   const fallbackData = {
@@ -90,10 +118,12 @@ export default async function ConsultingPage() {
   };
 
   let data = fallbackData;
+  let cmsStructuredData: unknown;
 
   try {
     const response = await getConsultingPage();
     const cmsData = response.data;
+    cmsStructuredData = cmsData?.seo?.structuredData;
 
     if (cmsData) {
       data = {
@@ -115,8 +145,38 @@ export default async function ConsultingPage() {
     // Fallback copy is used if CMS is unavailable.
   }
 
+  const faqJsonLd = buildFAQJsonLd(
+    data.faq
+      .filter((faq) => faq.question && faq.answer)
+      .map((faq) => ({
+        question: faq.question,
+        answer: faq.answer,
+      }))
+  );
+
   return (
     <div className="bg-paper pb-24">
+      <CmsStructuredData
+        idPrefix="consulting-cms-jsonld"
+        data={cmsStructuredData}
+      />
+      <JsonLd
+        id="consulting-webpage-jsonld"
+        data={buildWebPageJsonLd({
+          pathname: "/consulting",
+          title: data.title,
+          description: data.subtitle,
+          type: "WebPage",
+        })}
+      />
+      <JsonLd
+        id="consulting-breadcrumb-jsonld"
+        data={buildBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Consulting", path: "/consulting" },
+        ])}
+      />
+      {faqJsonLd ? <JsonLd id="consulting-faq-jsonld" data={faqJsonLd} /> : null}
       <section className="pb-16 pt-10">
         <div className="mx-auto max-w-7xl px-6">
           <AnimatedSection>

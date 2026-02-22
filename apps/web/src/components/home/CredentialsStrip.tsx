@@ -4,11 +4,11 @@ interface CredentialItem {
 }
 
 const credentials: CredentialItem[] = [
-  { label: "Designation", value: "CFA Charterholder" },
   { label: "Role", value: "Principal AI Engineer" },
+  { label: "Domains", value: "Finance · Defense · Health" },
+  { label: "Credential", value: "CFA Charterholder" },
   { label: "Clearance", value: "Active Secret" },
   { label: "Cloud", value: "AWS Solutions Architect" },
-  { label: "Published", value: "Seeking Alpha & Medium" },
 ];
 
 export function CredentialsStrip() {

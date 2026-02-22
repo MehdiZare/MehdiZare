@@ -53,17 +53,17 @@ export function Hero({
             variants={childVariants}
             className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray"
           >
-            CFA Charterholder &middot; Principal AI Engineer
+            Principal AI Engineer &middot; CFA Charterholder
           </motion.p>
 
           <motion.h1
             variants={childVariants}
             className="mt-6 font-serif text-4xl leading-[1.1] text-ink sm:text-5xl lg:text-7xl"
           >
-            {headline.includes("ship AI") ? (
+            {headline.includes("to production.") ? (
               <>
-                {headline.split("ship AI")[0]}
-                <em className="italic">ship AI{headline.split("ship AI")[1]}</em>
+                {headline.split("to production.")[0]}
+                <em className="italic">to production.</em>
               </>
             ) : (
               headline

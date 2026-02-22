@@ -7,33 +7,33 @@ interface TrackRecordEntry {
 const entries: TrackRecordEntry[] = [
   {
     org: "Sev1Tech",
-    role: "Principal AI Engineer",
+    role: "Principal AI Engineer / Cloud Architect",
     description:
-      "Leading AI/ML engineering for federal programs, building production systems at the intersection of defense and intelligence.",
+      "GenAI systems for CISA cybersecurity operations. Databricks-first pipelines, model observability, and threat-informed monitoring in production federal environments.",
   },
   {
     org: "JotPsych",
-    role: "AI Engineering Lead",
+    role: "Principal AI Engineer",
     description:
-      "Built AI-powered clinical documentation platform from prototype to production, serving healthcare providers.",
+      "Built a generative AI platform for clinical mental health documentation — ASR, LLM reasoning, and real-time transcription from prototype to production.",
   },
   {
-    org: "Booz Allen Hamilton",
-    role: "Senior AI Engineer",
+    org: "Booz Allen",
+    role: "Senior AI/ML Engineer",
     description:
-      "Delivered generative AI solutions for government and enterprise clients across defense and civilian agencies.",
+      "Delivered containerized GenAI solutions with LangChain and AWS Bedrock for government and enterprise clients at scale.",
   },
   {
     org: "Capital One",
-    role: "Quantitative Analyst",
+    role: "Quantitative Analysis Manager",
     description:
-      "Developed ML models for credit risk, fraud detection, and portfolio optimization in a regulated banking environment.",
+      "ML-driven liquidity forecasting. Time series, TensorFlow, NLP — bridging finance teams, data engineering, and compliance. This is where I earned the CFA.",
   },
   {
-    org: "Seeking Alpha",
-    role: "Contributing Analyst",
+    org: "Adviser",
+    role: "Co-Founder",
     description:
-      "Published equity research combining quantitative analysis with AI-driven valuation frameworks for public markets.",
+      "Built a virtual investment adviser for underrepresented groups — generative AI that creates personalized financial visualizations from natural conversation.",
   },
 ];
 
@@ -43,6 +43,14 @@ export function TrackRecord() {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">
           03 &mdash; Track Record
+        </p>
+
+        <h2 className="mt-6 font-serif text-3xl leading-tight text-ink sm:text-4xl">
+          Shipped across industries. Deep in each one.
+        </h2>
+        <p className="mt-4 max-w-2xl text-base leading-relaxed text-mid-gray">
+          Principal-level AI engineering across four regulated, high-stakes domains. Each
+          required learning the business &mdash; not just the tech stack.
         </p>
 
         <div className="mt-12 space-y-0 divide-y divide-warm-gray">

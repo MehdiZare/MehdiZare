@@ -1,8 +1,8 @@
 const socialLinks = [
   { label: "LinkedIn", href: "https://linkedin.com/in/mehdizare" },
+  { label: "GitHub", href: "https://github.com/mehdizare" },
   { label: "Medium", href: "https://medium.com/@mehdi-zare" },
   { label: "Seeking Alpha", href: "https://seekingalpha.com/author/mehdi-zare" },
-  { label: "GitHub", href: "https://github.com/mehdizare" },
 ];
 
 export function Footer() {
@@ -10,9 +10,9 @@ export function Footer() {
     <footer className="border-t border-warm-gray bg-paper">
       <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-6 py-12 sm:flex-row sm:items-center lg:px-8">
         <div>
-          <p className="font-mono text-sm font-medium text-ink">Mehdi Zare</p>
+          <p className="font-mono text-sm font-medium text-ink">Mehdi Zare, CFA</p>
           <p className="mt-1 text-sm text-mid-gray">
-            CFA Charterholder &middot; Principal AI Engineer
+            Principal AI Engineer &middot; Arlington, VA
           </p>
         </div>
 

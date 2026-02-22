@@ -1,22 +1,25 @@
 import type { Metadata } from "next";
 import { ContactForm } from "@/components/contact/ContactForm";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
+import {
+  buildBreadcrumbJsonLd,
+  buildPageMetadata,
+  buildWebPageJsonLd,
+} from "@/lib/seo";
 
 // ---------------------------------------------------------------------------
 // Metadata
 // ---------------------------------------------------------------------------
 
 export function generateMetadata(): Metadata {
-  return {
-    title: "Contact | Mehdi Zare",
+  return buildPageMetadata({
+    pathname: "/contact",
+    title: "Contact",
     description:
       "Get in touch with Mehdi Zare. Questions about AI consulting, collaboration opportunities, or just want to connect.",
-    openGraph: {
-      title: "Contact | Mehdi Zare",
-      description:
-        "Get in touch with Mehdi Zare for AI consulting and collaboration.",
-    },
-  };
+    type: "website",
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -65,6 +68,23 @@ const socialLinks = [
 export default function ContactPage() {
   return (
     <div className="bg-paper">
+      <JsonLd
+        id="contact-webpage-jsonld"
+        data={buildWebPageJsonLd({
+          pathname: "/contact",
+          title: "Get in Touch",
+          description:
+            "Contact Mehdi Zare about AI consulting, partnerships, and speaking opportunities.",
+          type: "ContactPage",
+        })}
+      />
+      <JsonLd
+        id="contact-breadcrumb-jsonld"
+        data={buildBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Contact", path: "/contact" },
+        ])}
+      />
       {/* Header Section */}
       <section className="pb-16 pt-10">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">

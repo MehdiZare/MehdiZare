@@ -72,7 +72,7 @@ export function PostCard({ article }: PostCardProps) {
         )}
 
         <div className="mt-4 flex items-center gap-3 font-mono text-xs text-mid-gray/60">
-          {displayDate && <time>{formatDate(displayDate)}</time>}
+          {displayDate && <time dateTime={displayDate}>{formatDate(displayDate)}</time>}
           {article.readingTime && (
             <>
               <span aria-hidden="true">&middot;</span>

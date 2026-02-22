@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import { BeehiivEmbed } from "@/components/newsletter/BeehiivEmbed";
 import { TickerLookup } from "@/components/bina/TickerLookup";
+import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
+import { JsonLd } from "@/components/seo/JsonLd";
+import {
+  buildBreadcrumbJsonLd,
+  buildPageMetadata,
+  buildWebPageJsonLd,
+} from "@/lib/seo";
 import { getBinaPrintPage } from "@/lib/strapi";
 import type { BinaMover, BinaStep } from "@/types/strapi";
 
@@ -33,11 +40,31 @@ const fallbackMovers: BinaMover[] = [
   { id: 5, ticker: "AAPL", company: "Apple", score: 84, scoreChange: 2.1 },
 ];
 
-export const metadata: Metadata = {
-  title: "Bina Print",
-  description:
-    "Bina Print is an AI-powered company scoring system that helps investors evaluate businesses with CFA-level rigor.",
-};
+const binaPrintMetadataTitle = "Bina Print";
+const binaPrintMetadataDescription =
+  "Bina Print is an AI-powered company scoring system that helps investors evaluate businesses with CFA-level rigor.";
+
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const response = await getBinaPrintPage();
+    const cmsData = response.data;
+
+    return buildPageMetadata({
+      pathname: "/bina-print",
+      title: binaPrintMetadataTitle,
+      description: cmsData?.heroSubheadline || binaPrintMetadataDescription,
+      seo: cmsData?.seo,
+      type: "website",
+    });
+  } catch {
+    return buildPageMetadata({
+      pathname: "/bina-print",
+      title: binaPrintMetadataTitle,
+      description: binaPrintMetadataDescription,
+      type: "website",
+    });
+  }
+}
 
 export default async function BinaPrintPage() {
   const fallbackData = {
@@ -63,10 +90,12 @@ export default async function BinaPrintPage() {
   };
 
   let data: typeof fallbackData = fallbackData;
+  let cmsStructuredData: unknown;
 
   try {
     const response = await getBinaPrintPage();
     const cmsData = response.data;
+    cmsStructuredData = cmsData?.seo?.structuredData;
 
     if (cmsData) {
       data = {
@@ -98,6 +127,25 @@ export default async function BinaPrintPage() {
 
   return (
     <div className="bg-paper pb-20">
+      <CmsStructuredData
+        idPrefix="bina-print-cms-jsonld"
+        data={cmsStructuredData}
+      />
+      <JsonLd
+        id="bina-print-webpage-jsonld"
+        data={buildWebPageJsonLd({
+          pathname: "/bina-print",
+          title: data.heroHeadline,
+          description: data.heroSubheadline,
+        })}
+      />
+      <JsonLd
+        id="bina-print-breadcrumb-jsonld"
+        data={buildBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Bina Print", path: "/bina-print" },
+        ])}
+      />
       <section className="bg-ink py-20 text-paper">
         <div className="mx-auto max-w-6xl px-6">
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-accent-warm">

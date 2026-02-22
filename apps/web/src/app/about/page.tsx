@@ -3,8 +3,15 @@ import Link from "next/link";
 import { CareerTimeline } from "@/components/about/CareerTimeline";
 import { CredentialBadges } from "@/components/about/CredentialBadges";
 import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
+import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
+import {
+  buildBreadcrumbJsonLd,
+  buildPageMetadata,
+  buildWebPageJsonLd,
+} from "@/lib/seo";
 import { getAboutPage } from "@/lib/strapi";
 import type {
   Credential,
@@ -114,11 +121,31 @@ const fallbackLinks: SocialLink[] = [
   { id: 4, platform: "GitHub", url: "https://github.com/mehdizare" },
 ];
 
-export const metadata: Metadata = {
-  title: "About",
-  description:
-    "The story behind Mehdi Zare, CFA - bridging AI engineering and financial expertise to deliver production systems.",
-};
+const aboutMetadataTitle = "About";
+const aboutMetadataDescription =
+  "The story behind Mehdi Zare, CFA - bridging AI engineering and financial expertise to deliver production systems.";
+
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const response = await getAboutPage();
+    const cmsData = response.data;
+
+    return buildPageMetadata({
+      pathname: "/about",
+      title: cmsData?.title || aboutMetadataTitle,
+      description: cmsData?.positioningStatement || aboutMetadataDescription,
+      seo: cmsData?.seo,
+      type: "website",
+    });
+  } catch {
+    return buildPageMetadata({
+      pathname: "/about",
+      title: aboutMetadataTitle,
+      description: aboutMetadataDescription,
+      type: "website",
+    });
+  }
+}
 
 export default async function AboutPage() {
   const fallbackData = {
@@ -135,10 +162,12 @@ export default async function AboutPage() {
   };
 
   let data = fallbackData;
+  let cmsStructuredData: unknown;
 
   try {
     const response = await getAboutPage();
     const cmsData = response.data;
+    cmsStructuredData = cmsData?.seo?.structuredData;
 
     if (cmsData) {
       const experiences =
@@ -174,6 +203,26 @@ export default async function AboutPage() {
 
   return (
     <div className="bg-paper pb-20">
+      <CmsStructuredData
+        idPrefix="about-cms-jsonld"
+        data={cmsStructuredData}
+      />
+      <JsonLd
+        id="about-webpage-jsonld"
+        data={buildWebPageJsonLd({
+          pathname: "/about",
+          title: data.title,
+          description: data.positioningStatement,
+          type: "AboutPage",
+        })}
+      />
+      <JsonLd
+        id="about-breadcrumb-jsonld"
+        data={buildBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "About", path: "/about" },
+        ])}
+      />
       <section className="pb-14 pt-10">
         <div className="mx-auto max-w-6xl px-6">
           <AnimatedSection>

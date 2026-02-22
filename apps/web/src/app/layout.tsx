@@ -3,6 +3,14 @@ import { Outfit, DM_Serif_Display, JetBrains_Mono } from "next/font/google";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PostHogScripts } from "@/components/analytics/PostHogScripts";
+import { JsonLd } from "@/components/seo/JsonLd";
+import {
+  buildPersonJsonLd,
+  buildWebsiteJsonLd,
+  DEFAULT_SITE_DESCRIPTION,
+  getSiteUrl,
+  SITE_NAME,
+} from "@/lib/seo";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -24,22 +32,38 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mehdi-zare.com";
+const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Mehdi Zare | CFA Charterholder x Principal AI Engineer",
+    default: `${SITE_NAME} | Principal AI Engineer`,
     template: "%s | Mehdi Zare",
   },
-  description:
-    "AI consulting and thought leadership at the intersection of finance and engineering. From pilot to production for financial AI systems.",
+  description: DEFAULT_SITE_DESCRIPTION,
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  authors: [{ name: SITE_NAME, url: siteUrl }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
   openGraph: {
-    title: "Mehdi Zare | AI That Thinks Like an Analyst",
+    title: `${SITE_NAME} | Principal AI Engineer`,
     description:
-      "The bridge between Wall Street and Silicon Valley. CFA-level financial rigor with principal-level AI execution.",
-    siteName: "Mehdi Zare",
+      "Principal AI Engineer shipping production AI systems across finance, defense, healthcare, and enterprise. CFA Charterholder.",
+    url: siteUrl,
+    siteName: SITE_NAME,
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} | Principal AI Engineer`,
+    description:
+      "Principal AI Engineer shipping production AI systems across finance, defense, healthcare, and enterprise. CFA Charterholder.",
   },
 };
 
@@ -51,6 +75,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.variable} ${dmSerif.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+        <JsonLd id="website-jsonld" data={buildWebsiteJsonLd()} />
+        <JsonLd id="person-jsonld" data={buildPersonJsonLd()} />
         <PostHogScripts />
         <Navbar />
         <main className="min-h-screen pt-20">{children}</main>
