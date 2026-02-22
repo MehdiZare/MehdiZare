@@ -1,11 +1,12 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const DEFAULT_SITE_URL = "https://mehdi-zare.com";
 const DEFAULT_STRAPI_URL = "http://localhost:1337";
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
 const DEFAULT_BEEHIIV_EMBED_ORIGIN = "https://embeds.beehiiv.com";
-const DEFAULT_CALENDLY_ORIGIN = "https://calendly.com";
-const DEFAULT_CALENDLY_ASSETS_ORIGIN = "https://assets.calendly.com";
+const DEFAULT_CAL_ORIGIN = "https://cal.com";
+const DEFAULT_CAL_APP_ORIGIN = "https://app.cal.com";
 
 function parseOrigin(value: string | undefined, fallback: string): URL {
   try {
@@ -44,9 +45,8 @@ const posthogUrl = parseOrigin(process.env.NEXT_PUBLIC_POSTHOG_HOST, DEFAULT_POS
 const beehiivUrl =
   parseOptionalOrigin(process.env.NEXT_PUBLIC_BEEHIIV_EMBED_URL) ??
   new URL(DEFAULT_BEEHIIV_EMBED_ORIGIN);
-const calendlyUrl =
-  parseOptionalOrigin(process.env.NEXT_PUBLIC_CALENDLY_URL) ?? new URL(DEFAULT_CALENDLY_ORIGIN);
-const calendlyAssetsUrl = new URL(DEFAULT_CALENDLY_ASSETS_ORIGIN);
+const calUrl = new URL(DEFAULT_CAL_ORIGIN);
+const calAppUrl = new URL(DEFAULT_CAL_APP_ORIGIN);
 
 const additionalImageHosts = parseHostList(process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS);
 const imageHosts = Array.from(
@@ -66,10 +66,16 @@ const imageRemotePatterns = imageHosts.flatMap((hostname) => {
 });
 
 const cspConnectOrigins = Array.from(
-  new Set([siteUrl.origin, strapiUrl.origin, posthogUrl.origin, calendlyAssetsUrl.origin])
+  new Set([
+    siteUrl.origin,
+    strapiUrl.origin,
+    posthogUrl.origin,
+    calUrl.origin,
+    calAppUrl.origin,
+  ])
 );
 const cspFrameOrigins = Array.from(
-  new Set([beehiivUrl.origin, calendlyUrl.origin, calendlyAssetsUrl.origin])
+  new Set([beehiivUrl.origin, calUrl.origin, calAppUrl.origin])
 );
 const cspImageOrigins = Array.from(
   new Set([siteUrl.origin, strapiUrl.origin, posthogUrl.origin])
@@ -128,6 +134,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
     remotePatterns: imageRemotePatterns,
+  },
+  turbopack: {
+    root: path.resolve(__dirname, "../.."),
   },
   async headers() {
     return [

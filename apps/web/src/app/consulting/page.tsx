@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FAQ } from "@/components/consulting/FAQ";
-import { CalendlyEmbed } from "@/components/consulting/CalendlyEmbed";
+import { CalComTrigger } from "@/components/scheduling/CalComTrigger";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
@@ -69,7 +69,7 @@ const fallbackFaqs: FAQType[] = [
     id: 2,
     question: "How does an engagement begin?",
     answer:
-      "We start with a 30-minute discovery call, align on target outcomes, and move into a scoped proposal.",
+      "We start with a 20-minute discovery call, align on target outcomes, and move into a scoped proposal.",
   },
   {
     id: 3,
@@ -82,8 +82,8 @@ const fallbackFaqs: FAQType[] = [
 const consultingMetadataTitle = "Consulting";
 const consultingMetadataDescription =
   "AI consulting for high-stakes teams, from strategy through production delivery.";
-const calendlySectionId = "calendly";
-const calendlyAnchorHref = `#${calendlySectionId}`;
+const schedulerSectionId = "calendly";
+const schedulerAnchorHref = `#${schedulerSectionId}`;
 
 export async function generateMetadata(): Promise<Metadata> {
   const consultingKeywords = [
@@ -125,7 +125,6 @@ export default async function ConsultingPage() {
       "From strategy to production with an engineer who learns your domain before writing code.",
     audiences: fallbackAudiences,
     services: fallbackServices,
-    calendlyUrl: "https://calendly.com/placeholder",
     faq: fallbackFaqs,
     leadMagnetTitle: "AI Readiness Scorecard for High-Stakes Teams",
     leadMagnetDescription:
@@ -149,7 +148,6 @@ export default async function ConsultingPage() {
             ? cmsData.audiences
             : fallbackData.audiences,
         services: fallbackData.services,
-        calendlyUrl: cmsData.calendlyUrl || fallbackData.calendlyUrl,
         faq: cmsData.faq && cmsData.faq.length > 0 ? cmsData.faq : fallbackData.faq,
         leadMagnetTitle: cmsData.leadMagnetTitle || fallbackData.leadMagnetTitle,
         leadMagnetDescription:
@@ -258,7 +256,7 @@ export default async function ConsultingPage() {
           </div>
           <AnimatedSection delay={0.3} className="mt-10 text-center">
             <a
-              href={calendlyAnchorHref}
+              href={schedulerAnchorHref}
               className="inline-flex bg-ink px-8 py-3 text-sm font-medium text-paper transition hover:bg-ink/85"
             >
               Book a Free Discovery Call
@@ -285,7 +283,7 @@ export default async function ConsultingPage() {
           <AnimatedSection delay={0.15} className="mt-8">
             <div className="grid gap-4 sm:grid-cols-3">
               {[
-                "Discovery Call (free 30 min)",
+                "Discovery Call (free 20 min)",
                 "Custom Proposal",
                 "Engagement Kickoff",
               ].map((step, index) => (
@@ -299,13 +297,19 @@ export default async function ConsultingPage() {
         </div>
       </section>
 
-      <section id={calendlySectionId} className="py-16">
+      <section id={schedulerSectionId} className="py-16">
         <div className="mx-auto max-w-4xl px-6">
           <AnimatedSection>
-            <SectionHeading title="Book a Discovery Call" subtitle="Schedule a free 30-minute session" />
+            <SectionHeading title="Book a Discovery Call" subtitle="Schedule a free 20-minute session" />
           </AnimatedSection>
           <AnimatedSection delay={0.15} className="mt-10">
-            <CalendlyEmbed url={data.calendlyUrl} />
+            <div className="border border-warm-gray bg-paper p-8 text-center">
+              <p className="mx-auto max-w-2xl text-sm text-mid-gray">
+                Pick a time that works for you and we&apos;ll focus on your
+                goals, current blockers, and fastest path to production.
+              </p>
+              <CalComTrigger className="mt-6" label="Open Scheduling" />
+            </div>
           </AnimatedSection>
         </div>
       </section>

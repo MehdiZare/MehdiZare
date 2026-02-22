@@ -124,7 +124,7 @@ const fallbackLinks: SocialLink[] = [
 const aboutMetadataTitle = "About";
 const aboutMetadataDescription =
   "The story behind Mehdi Zare - principal AI engineer delivering production AI systems across finance, defense, healthcare, and enterprise.";
-const consultingCalendlyHref = "/consulting#calendly";
+const consultingCallHref = "/consulting#calendly";
 
 export async function generateMetadata(): Promise<Metadata> {
   const aboutKeywords = [
@@ -347,7 +347,7 @@ export default async function AboutPage() {
             </div>
             <div className="mt-8 text-center">
               <Link
-                href={consultingCalendlyHref}
+                href={consultingCallHref}
                 className="inline-flex bg-ink px-7 py-3 text-sm font-medium text-paper transition hover:bg-ink/85"
               >
                 Book a Discovery Call

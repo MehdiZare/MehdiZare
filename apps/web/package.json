@@ -10,12 +10,12 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts"
   },
   "dependencies": {
+    "@calcom/embed-react": "^1.5.2",
     "@strapi/blocks-react-renderer": "^1.0.2",
     "clsx": "^2.1.1",
     "framer-motion": "^12.34.3",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-calendly": "^4.4.0",
     "react-dom": "19.2.3",
     "react-syntax-highlighter": "^16.1.0",
     "tailwind-merge": "^3.5.0"

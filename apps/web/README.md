@@ -23,7 +23,6 @@ Next.js App Router frontend for the public portfolio.
 - `NEXT_PUBLIC_POSTHOG_KEY`
 - `NEXT_PUBLIC_POSTHOG_HOST`
 - `NEXT_PUBLIC_BEEHIIV_EMBED_URL`
-- `NEXT_PUBLIC_CALENDLY_URL`
 
 ## Security Notes
 

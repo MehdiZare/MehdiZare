@@ -291,7 +291,6 @@ export interface ConsultingPage {
   audiences?: ConsultingAudience[];
   tiers?: ConsultingTier[];
   faq?: FAQ[];
-  calendlyUrl?: string;
   leadMagnetTitle?: string;
   leadMagnetDescription?: string;
   seo?: SEO;

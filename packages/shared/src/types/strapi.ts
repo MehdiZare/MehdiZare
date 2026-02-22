@@ -138,7 +138,6 @@ export interface ConsultingPage {
   headline: string;
   intro: string | null;
   tiers: ConsultingTier[];
-  calendlyUrl: string | null;
   faq: FAQ[];
 }
 

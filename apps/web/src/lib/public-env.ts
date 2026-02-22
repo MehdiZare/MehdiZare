@@ -64,10 +64,6 @@ const beehiivEmbedUrl = parseOptionalUrl(
   "NEXT_PUBLIC_BEEHIIV_EMBED_URL",
   process.env.NEXT_PUBLIC_BEEHIIV_EMBED_URL
 );
-const calendlyUrl = parseOptionalUrl(
-  "NEXT_PUBLIC_CALENDLY_URL",
-  process.env.NEXT_PUBLIC_CALENDLY_URL
-);
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim() || "";
 
 ensureHttpsInProduction("NEXT_PUBLIC_SITE_URL", siteUrl);
@@ -78,10 +74,6 @@ if (beehiivEmbedUrl) {
   ensureHttpsInProduction("NEXT_PUBLIC_BEEHIIV_EMBED_URL", beehiivEmbedUrl);
 }
 
-if (calendlyUrl) {
-  ensureHttpsInProduction("NEXT_PUBLIC_CALENDLY_URL", calendlyUrl);
-}
-
 export const publicEnv = {
   siteUrl: siteUrl.origin,
   strapiUrl: strapiUrl.origin,
@@ -89,8 +81,6 @@ export const publicEnv = {
   posthogKey,
   beehiivEmbedUrl: beehiivEmbedUrl?.toString() ?? "",
   beehiivEmbedOrigin: beehiivEmbedUrl?.origin ?? "",
-  calendlyUrl: calendlyUrl?.toString() ?? "",
-  calendlyOrigin: calendlyUrl?.origin ?? "",
   allowedImageHosts: parseCsvList(process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS),
 } as const;
 

@@ -26,9 +26,6 @@
       "repeatable": true,
       "component": "consulting.tier"
     },
-    "calendlyUrl": {
-      "type": "string"
-    },
     "faq": {
       "type": "component",
       "repeatable": true,

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ContactForm } from "@/components/contact/ContactForm";
+import { CalComTrigger } from "@/components/scheduling/CalComTrigger";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import {
@@ -79,7 +80,6 @@ export default function ContactPage() {
     "@type": "ContactPoint",
     "@id": `${siteUrl}/contact#contactpoint`,
     url: `${siteUrl}/contact`,
-    email: "mehdi@mehdizare.com",
     contactType: "consulting inquiries",
     availableLanguage: ["English"],
     areaServed: "US",
@@ -138,19 +138,6 @@ export default function ContactPage() {
                   Let&apos;s Connect
                 </h2>
 
-                {/* Email */}
-                <div className="mt-8">
-                  <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray">
-                    Email
-                  </h3>
-                  <a
-                    href="mailto:mehdi@mehdizare.com"
-                    className="mt-2 block text-lg text-ink underline underline-offset-4 hover:text-accent-warm"
-                  >
-                    mehdi@mehdizare.com
-                  </a>
-                </div>
-
                 {/* Social Links */}
                 <div className="mt-8">
                   <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray">
@@ -172,12 +159,14 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                {/* Response time note */}
-                <div className="mt-10 bg-muted p-4">
-                  <p className="text-sm text-mid-gray">
-                    I typically respond within 24 hours. For urgent consulting
-                    inquiries, please mention it in the subject line.
+                <div className="mt-10 border border-warm-gray bg-muted p-5">
+                  <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray">
+                    Schedule
+                  </h3>
+                  <p className="mt-2 text-sm text-mid-gray">
+                    Prefer to talk live? Book a 20-minute call.
                   </p>
+                  <CalComTrigger className="mt-4" />
                 </div>
               </div>
             </AnimatedSection>

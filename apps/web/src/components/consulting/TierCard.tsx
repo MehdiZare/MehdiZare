@@ -58,7 +58,7 @@ export function TierCard({ tier, highlighted = false }: TierCardProps) {
         <a
           href="#calendly"
           onClick={() => {
-            trackEvent("calendly_opened", {
+            trackEvent("scheduler_opened", {
               page: "consulting",
               section: "service_tiers",
               tier: tier.name,
