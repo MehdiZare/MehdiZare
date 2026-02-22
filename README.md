@@ -81,6 +81,7 @@ Useful commands:
 - `JWT_SECRET`
 - `ENCRYPTION_KEY`
 - Database vars for production (`DATABASE_CLIENT=postgres`, `DATABASE_URL`)
+- Cloudflare R2 vars for media uploads (`R2_*`; see `apps/cms/R2_SETUP.md`)
 
 ## Deployment
 

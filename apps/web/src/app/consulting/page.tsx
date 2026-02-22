@@ -1,175 +1,233 @@
 import type { Metadata } from "next";
-import { TierCard } from "@/components/consulting/TierCard";
 import { FAQ } from "@/components/consulting/FAQ";
 import { CalendlyEmbed } from "@/components/consulting/CalendlyEmbed";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
+import { getConsultingPage } from "@/lib/strapi";
+import type { ConsultingAudience, FAQ as FAQType } from "@/types/strapi";
 
-// ---------------------------------------------------------------------------
-// Static data
-// ---------------------------------------------------------------------------
-
-const tiers = [
+const fallbackAudiences: ConsultingAudience[] = [
   {
-    name: "Advisory",
-    priceRange: "$5K\u2013$10K/mo",
-    hoursPerMonth: "5\u201310 hrs/mo",
-    scope: "AI strategy & architecture review",
-    features: [
-      "AI readiness assessment",
-      "Architecture review",
-      "Technology recommendations",
-      "Monthly strategy sessions",
-      "Email support",
-    ],
-    ctaText: "Get Started",
+    id: 1,
+    title: "Asset Managers / Hedge Funds",
+    description:
+      "Production-ready AI systems for alpha generation with CFA-level rigor and risk framing.",
   },
   {
-    name: "Comprehensive",
-    priceRange: "$10K\u2013$20K/mo",
-    hoursPerMonth: "15\u201325 hrs/mo",
-    scope: "Hands-on implementation + strategy",
-    features: [
-      "Everything in Advisory",
-      "Hands-on development",
-      "Code review & best practices",
-      "Team mentoring",
-      "Weekly syncs",
-      "Priority support",
-    ],
-    ctaText: "Get Started",
+    id: 2,
+    title: "Fintech Startups",
+    description: "Build AI products with governance and compliance built in from day one.",
   },
   {
-    name: "Fractional AI Lead",
-    priceRange: "$20K\u2013$50K/mo",
-    hoursPerMonth: "25\u201340 hrs/mo",
-    scope: "Embedded AI leadership",
-    features: [
-      "Everything in Comprehensive",
-      "Team leadership",
-      "Hiring & talent strategy",
-      "Stakeholder management",
-      "Architecture ownership",
-      "Dedicated Slack channel",
-    ],
-    ctaText: "Contact Me",
+    id: 3,
+    title: "Enterprise AI Teams",
+    description: "Move financial AI from pilot experiments to robust production systems.",
+  },
+  {
+    id: 4,
+    title: "Government / Defense",
+    description: "AI-powered threat and intelligence workflows under strict constraints.",
   },
 ];
 
-const faqs = [
+const fallbackServices = [
   {
-    question: "What types of companies do you work with?",
-    answer:
-      "I primarily work with financial institutions, fintech startups, and government agencies looking to integrate AI and machine learning into their operations. My experience spans hedge funds, banks, federal cybersecurity agencies, and technology companies.",
+    id: 1,
+    name: "Advisory",
+    scope: "AI strategy, architecture review, and vendor evaluation.",
   },
   {
-    question: "How does a typical engagement begin?",
-    answer:
-      "Every engagement starts with a free 30-minute discovery call where we discuss your goals, current capabilities, and challenges. From there, I provide a tailored proposal outlining the scope, timeline, and expected outcomes.",
+    id: 2,
+    name: "Hands-On Implementation",
+    scope: "Hands-on development with strategic leadership and team mentoring.",
   },
   {
-    question: "What is the minimum engagement duration?",
+    id: 3,
+    name: "Fractional AI Lead",
+    scope: "Embedded AI leadership for mission-critical programs with delivery ownership.",
+  },
+];
+
+const fallbackFaqs: FAQType[] = [
+  {
+    id: 1,
+    question: "What types of organizations do you work with?",
     answer:
-      "I recommend a minimum of three months for any engagement to ensure meaningful impact. Most advisory clients work with me for 6\u201312 months, while Fractional AI Lead engagements typically run 6+ months.",
+      "Most engagements are with financial institutions, fintech companies, or regulated teams that need AI outcomes they can defend to stakeholders.",
   },
   {
+    id: 2,
+    question: "How does an engagement begin?",
+    answer:
+      "We start with a 30-minute discovery call, align on target outcomes, and move into a scoped proposal.",
+  },
+  {
+    id: 3,
     question: "Can you work with our existing team?",
     answer:
-      "Absolutely. A core part of my approach is upskilling your existing team while delivering results. I integrate with your engineers, data scientists, and product managers to build internal capabilities that last beyond our engagement.",
-  },
-  {
-    question: "What makes your consulting different?",
-    answer:
-      "My unique combination of CFA expertise and hands-on AI engineering means I understand both the financial domain and the technical implementation. I do not just advise \u2014 I build. You get a consultant who can architect a solution, write the code, and explain the ROI to your board.",
-  },
-  {
-    question: "Do you offer project-based pricing?",
-    answer:
-      "Yes, for well-defined projects with clear deliverables, I can offer fixed-price engagements. Contact me to discuss your specific needs and I will put together a custom proposal.",
+      "Yes. I typically embed into existing engineering and product teams while transferring delivery practices.",
   },
 ];
 
-// ---------------------------------------------------------------------------
-// Metadata
-// ---------------------------------------------------------------------------
+export const metadata: Metadata = {
+  title: "Consulting",
+  description:
+    "AI consulting for financial institutions from strategy through production delivery.",
+};
 
-export function generateMetadata(): Metadata {
-  return {
-    title: "AI Consulting | Mehdi Zare",
-    description:
-      "AI consulting for financial institutions. Strategy, implementation, and fractional AI leadership from a CFA Charterholder and Principal AI Engineer.",
-    openGraph: {
-      title: "AI Consulting | Mehdi Zare",
-      description:
-        "AI consulting for financial institutions. Strategy, implementation, and fractional AI leadership.",
-    },
+export default async function ConsultingPage() {
+  const fallbackData = {
+    title: "AI Consulting for Financial Institutions",
+    subtitle:
+      "From strategy to production with someone who speaks both code and capital markets.",
+    audiences: fallbackAudiences,
+    services: fallbackServices,
+    calendlyUrl: "https://calendly.com/placeholder",
+    faq: fallbackFaqs,
+    leadMagnetTitle: "AI Readiness Scorecard for Financial Institutions",
+    leadMagnetDescription:
+      "Download the checklist used to evaluate whether a financial AI initiative is ready for production.",
   };
-}
 
-// ---------------------------------------------------------------------------
-// Page component
-// ---------------------------------------------------------------------------
+  let data = fallbackData;
 
-export default function ConsultingPage() {
+  try {
+    const response = await getConsultingPage();
+    const cmsData = response.data;
+
+    if (cmsData) {
+      data = {
+        title: cmsData.title || fallbackData.title,
+        subtitle: cmsData.subtitle || fallbackData.subtitle,
+        audiences:
+          cmsData.audiences && cmsData.audiences.length > 0
+            ? cmsData.audiences
+            : fallbackData.audiences,
+        services: fallbackData.services,
+        calendlyUrl: cmsData.calendlyUrl || fallbackData.calendlyUrl,
+        faq: cmsData.faq && cmsData.faq.length > 0 ? cmsData.faq : fallbackData.faq,
+        leadMagnetTitle: cmsData.leadMagnetTitle || fallbackData.leadMagnetTitle,
+        leadMagnetDescription:
+          cmsData.leadMagnetDescription || fallbackData.leadMagnetDescription,
+      };
+    }
+  } catch {
+    // Fallback copy is used if CMS is unavailable.
+  }
+
   return (
-    <div className="bg-gray-50">
-      {/* Header Section */}
-      <section className="bg-gradient-to-b from-white to-gray-50 pb-16 pt-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="bg-slate-50 pb-24">
+      <section className="bg-gradient-to-b from-white to-slate-100 pb-16 pt-24">
+        <div className="mx-auto max-w-7xl px-6">
           <AnimatedSection>
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-              AI Consulting for Financial Institutions
-            </h1>
-            <p className="mt-6 max-w-3xl text-xl leading-relaxed text-gray-600">
-              Whether you need strategic guidance, hands-on implementation, or
-              embedded AI leadership, I bring a rare combination of deep
-              financial expertise and production ML engineering to help your
-              organization harness the power of artificial intelligence.
-            </p>
+            <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">{data.title}</h1>
+            <p className="mt-6 max-w-3xl text-xl leading-relaxed text-slate-600">{data.subtitle}</p>
           </AnimatedSection>
         </div>
       </section>
 
-      {/* Pricing Tiers */}
       <section className="py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 md:grid-cols-3">
-            {tiers.map((tier, index) => (
-              <AnimatedSection key={tier.name} delay={index * 0.15}>
-                <TierCard tier={tier} highlighted={index === 1} />
+        <div className="mx-auto max-w-7xl px-6">
+          <AnimatedSection>
+            <SectionHeading title="Who I Help" subtitle="Teams where finance context and AI delivery both matter" />
+          </AnimatedSection>
+          <div className="mt-10 grid gap-6 md:grid-cols-2">
+            {data.audiences.map((audience, index) => (
+              <AnimatedSection key={audience.id} delay={index * 0.08}>
+                <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-slate-900">{audience.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{audience.description}</p>
+                </article>
               </AnimatedSection>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Calendly Section */}
-      <section id="calendly" className="py-16">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <section className="py-16">
+        <div className="mx-auto max-w-7xl px-6">
           <AnimatedSection>
-            <SectionHeading
-              title="Schedule a Discovery Call"
-              subtitle="Book a free 30-minute consultation to discuss your AI needs"
-            />
+            <SectionHeading title="How I Can Help" subtitle="Flexible engagement models tailored to your needs" />
           </AnimatedSection>
-          <AnimatedSection delay={0.2} className="mt-10">
-            <CalendlyEmbed />
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {data.services.map((service, index) => (
+              <AnimatedSection key={service.id} delay={index * 0.1}>
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-slate-900">{service.name}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{service.scope}</p>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
+          <AnimatedSection delay={0.3} className="mt-10 text-center">
+            <a
+              href="#calendly"
+              className="inline-flex rounded-full bg-slate-900 px-8 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+            >
+              Book a Free Discovery Call
+            </a>
           </AnimatedSection>
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="pb-24 pt-16">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+      <section className="py-16">
+        <div className="mx-auto max-w-4xl px-6">
           <AnimatedSection>
-            <SectionHeading
-              title="Frequently Asked Questions"
-              subtitle="Common questions about working together"
-            />
+            <SectionHeading title="How It Works" subtitle="Simple process designed for executive clarity and execution speed" />
           </AnimatedSection>
-          <AnimatedSection delay={0.2} className="mt-10">
-            <div className="rounded-2xl border border-gray-100 bg-white px-6 shadow-sm">
-              <FAQ faqs={faqs} />
+          <AnimatedSection delay={0.15} className="mt-8">
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[
+                "Discovery Call (free 30 min)",
+                "Custom Proposal",
+                "Engagement Kickoff",
+              ].map((step, index) => (
+                <div key={step} className="rounded-xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">Step {index + 1}</p>
+                  <p className="mt-3 text-sm font-medium text-slate-800">{step}</p>
+                </div>
+              ))}
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      <section id="calendly" className="py-16">
+        <div className="mx-auto max-w-4xl px-6">
+          <AnimatedSection>
+            <SectionHeading title="Book a Discovery Call" subtitle="Schedule a free 30-minute session" />
+          </AnimatedSection>
+          <AnimatedSection delay={0.15} className="mt-10">
+            <CalendlyEmbed url={data.calendlyUrl} />
+          </AnimatedSection>
+        </div>
+      </section>
+
+      <section className="py-16">
+        <div className="mx-auto max-w-4xl px-6">
+          <AnimatedSection>
+            <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+              <h3 className="text-2xl font-semibold text-slate-900">{data.leadMagnetTitle}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600">{data.leadMagnetDescription}</p>
+              <a
+                href="/newsletter"
+                className="mt-5 inline-flex rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+              >
+                Request the Scorecard
+              </a>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      <section className="pt-4">
+        <div className="mx-auto max-w-3xl px-6">
+          <AnimatedSection>
+            <SectionHeading title="Frequently Asked Questions" />
+          </AnimatedSection>
+          <AnimatedSection delay={0.15} className="mt-8">
+            <div className="rounded-2xl border border-slate-200 bg-white px-6 shadow-sm">
+              <FAQ faqs={data.faq} />
             </div>
           </AnimatedSection>
         </div>

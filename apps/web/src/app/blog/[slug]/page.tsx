@@ -6,6 +6,7 @@ import { StrapiImage } from "@/components/shared/StrapiImage";
 import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
 import { TableOfContents } from "@/components/blog/TableOfContents";
 import { TagBadge } from "@/components/blog/TagBadge";
+import { BeehiivEmbed } from "@/components/newsletter/BeehiivEmbed";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -27,51 +28,54 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: BlogPostPageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const res = await getArticleBySlug(slug);
-  const article = res.data[0];
+  try {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mehdi-zare.com";
+    const { slug } = await params;
+    const res = await getArticleBySlug(slug);
+    const article = res.data[0];
 
-  if (!article) {
-    return { title: "Post Not Found | Mehdi Zare" };
-  }
+    if (!article) {
+      return { title: "Post Not Found | Mehdi Zare" };
+    }
 
-  const seo = article.seo;
-  return {
-    title: seo?.metaTitle ?? `${article.title} | Mehdi Zare`,
-    description:
-      seo?.metaDescription ?? article.excerpt ?? "",
-    keywords: seo?.keywords,
-    robots: seo?.metaRobots,
-    alternates: seo?.canonicalURL
-      ? { canonical: seo.canonicalURL }
-      : undefined,
-    openGraph: {
-      title: seo?.metaTitle ?? article.title,
-      description: seo?.metaDescription ?? article.excerpt ?? "",
-      type: "article",
-      publishedTime: article.publishedDate ?? article.publishedAt,
-      images: seo?.metaImage
-        ? [
-            {
-              url: seo.metaImage.url,
-              width: seo.metaImage.width,
-              height: seo.metaImage.height,
-              alt: seo.metaImage.alternativeText ?? article.title,
-            },
-          ]
-        : article.featuredImage
+    const seo = article.seo;
+    return {
+      title: seo?.metaTitle ?? `${article.title} | Mehdi Zare`,
+      description:
+        seo?.metaDescription ?? article.excerpt ?? "",
+      keywords: seo?.keywords,
+      robots: seo?.metaRobots,
+      alternates: { canonical: seo?.canonicalURL ?? `${siteUrl}/blog/${slug}` },
+      openGraph: {
+        title: seo?.metaTitle ?? article.title,
+        description: seo?.metaDescription ?? article.excerpt ?? "",
+        type: "article",
+        publishedTime: article.publishedDate ?? article.publishedAt,
+        images: seo?.metaImage
           ? [
               {
-                url: article.featuredImage.url,
-                width: article.featuredImage.width,
-                height: article.featuredImage.height,
-                alt:
-                  article.featuredImage.alternativeText ?? article.title,
+                url: seo.metaImage.url,
+                width: seo.metaImage.width,
+                height: seo.metaImage.height,
+                alt: seo.metaImage.alternativeText ?? article.title,
               },
             ]
-          : undefined,
-    },
-  };
+          : article.featuredImage
+            ? [
+                {
+                  url: article.featuredImage.url,
+                  width: article.featuredImage.width,
+                  height: article.featuredImage.height,
+                  alt:
+                    article.featuredImage.alternativeText ?? article.title,
+                },
+              ]
+            : undefined,
+      },
+    };
+  } catch {
+    return { title: "Post Not Found | Mehdi Zare" };
+  }
 }
 
 function formatDate(dateString: string): string {
@@ -84,8 +88,14 @@ function formatDate(dateString: string): string {
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  const res = await getArticleBySlug(slug);
-  const article = res.data[0];
+
+  let article;
+  try {
+    const res = await getArticleBySlug(slug);
+    article = res.data[0];
+  } catch {
+    notFound();
+  }
 
   if (!article) {
     notFound();
@@ -237,6 +247,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 )}
               </nav>
             )}
+
+            <div className="mt-12 border-t border-gray-200 pt-10">
+              <BeehiivEmbed
+                source="blog_post_footer"
+                title="Get the weekly AI + Finance briefing"
+                description="One Bina Print insight, one AI/finance take, and one actionable framework each week."
+              />
+            </div>
           </article>
 
           {/* Sidebar */}

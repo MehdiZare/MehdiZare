@@ -12,7 +12,16 @@
     "metaDescription": {
       "type": "text"
     },
-    "ogImage": {
+    "canonicalURL": {
+      "type": "string"
+    },
+    "keywords": {
+      "type": "string"
+    },
+    "metaRobots": {
+      "type": "string"
+    },
+    "metaImage": {
       "type": "media",
       "multiple": false,
       "allowedTypes": ["images"]

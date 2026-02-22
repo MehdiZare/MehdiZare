@@ -33,22 +33,30 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
     filters.tags = { slug: { $eq: tagSlug } };
   }
 
-  const [articlesRes, categoriesRes] = await Promise.all([
-    getArticles({
-      filters: Object.keys(filters).length > 0 ? filters : undefined,
-      sort: "publishedDate:desc",
-      pagination: {
-        page: currentPage,
-        pageSize: 9,
-        withCount: true,
-      },
-    }),
-    getCategories(),
-  ]);
+  let articles: Awaited<ReturnType<typeof getArticles>>["data"] = [];
+  let pagination: Awaited<ReturnType<typeof getArticles>>["meta"]["pagination"] | undefined;
+  let categories: Awaited<ReturnType<typeof getCategories>>["data"] = [];
 
-  const articles = articlesRes.data;
-  const pagination = articlesRes.meta.pagination;
-  const categories = categoriesRes.data;
+  try {
+    const [articlesRes, categoriesRes] = await Promise.all([
+      getArticles({
+        filters: Object.keys(filters).length > 0 ? filters : undefined,
+        sort: "publishedDate:desc",
+        pagination: {
+          page: currentPage,
+          pageSize: 9,
+          withCount: true,
+        },
+      }),
+      getCategories(),
+    ]);
+
+    articles = articlesRes.data;
+    pagination = articlesRes.meta.pagination;
+    categories = categoriesRes.data;
+  } catch {
+    // CMS unavailable — render empty state
+  }
 
   const hasNextPage = pagination
     ? currentPage < pagination.pageCount

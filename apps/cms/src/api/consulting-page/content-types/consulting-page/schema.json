@@ -10,11 +10,16 @@
     "draftAndPublish": true
   },
   "attributes": {
-    "headline": {
+    "title": {
       "type": "string"
     },
-    "intro": {
+    "subtitle": {
       "type": "text"
+    },
+    "audiences": {
+      "type": "component",
+      "repeatable": true,
+      "component": "consulting.audience"
     },
     "tiers": {
       "type": "component",
@@ -28,6 +33,17 @@
       "type": "component",
       "repeatable": true,
       "component": "consulting.faq"
+    },
+    "leadMagnetTitle": {
+      "type": "string"
+    },
+    "leadMagnetDescription": {
+      "type": "text"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
     }
   }
 }

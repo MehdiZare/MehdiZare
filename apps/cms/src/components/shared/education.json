@@ -10,12 +10,15 @@
       "type": "string",
       "required": true
     },
+    "field": {
+      "type": "string"
+    },
     "institution": {
       "type": "string",
       "required": true
     },
-    "year": {
-      "type": "string"
+    "description": {
+      "type": "text"
     }
   }
 }

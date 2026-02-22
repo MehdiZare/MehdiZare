@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { cn } from "@/lib/utils";
 import { submitContact } from "@/app/contact/actions";
+import { trackEvent } from "@/lib/analytics";
 
 interface FormState {
   name: string;
@@ -70,6 +71,10 @@ export function ContactForm() {
     if (result.success) {
       setStatus("success");
       setForm({ name: "", email: "", subject: "", message: "" });
+      trackEvent("consulting_form_submitted", {
+        page: "contact",
+        section: "contact_form",
+      });
     } else {
       setStatus("error");
       setServerError(result.error || "Something went wrong. Please try again.");

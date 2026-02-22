@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { PostHogScripts } from "@/components/analytics/PostHogScripts";
 import "./globals.css";
 
 const inter = Inter({
@@ -10,10 +11,29 @@ const inter = Inter({
   display: "swap",
 });
 
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mehdi-zare.com";
+
 export const metadata: Metadata = {
-  title: "Mehdi Zare | CFA Charterholder & Principal AI Engineer",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Mehdi Zare | CFA Charterholder x Principal AI Engineer",
+    template: "%s | Mehdi Zare",
+  },
   description:
-    "Bridging the worlds of artificial intelligence and finance. Insights on AI engineering, quantitative strategies, and the future of fintech.",
+    "AI consulting and thought leadership at the intersection of finance and engineering. From pilot to production for financial AI systems.",
+  openGraph: {
+    title: "Mehdi Zare | AI That Thinks Like an Analyst",
+    description:
+      "The bridge between Wall Street and Silicon Valley. CFA-level financial rigor with principal-level AI execution.",
+    siteName: "Mehdi Zare",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -23,7 +43,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+        <PostHogScripts />
         <Navbar />
         <main className="min-h-screen">{children}</main>
         <Footer />

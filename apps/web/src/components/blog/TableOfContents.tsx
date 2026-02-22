@@ -19,9 +19,17 @@ function slugify(text: string): string {
     .trim();
 }
 
-function extractTextFromBlock(block: Record<string, unknown>): string {
+function extractTextFromBlock(block: {
+  children?: unknown;
+  type?: unknown;
+  text?: unknown;
+}): string {
   if (!block) return "";
-  const children = block.children as Array<Record<string, unknown>> | undefined;
+  const children = block.children as Array<{
+    children?: unknown;
+    type?: unknown;
+    text?: unknown;
+  }> | undefined;
   if (!children || !Array.isArray(children)) return "";
   return children
     .map((child) => {
@@ -29,7 +37,7 @@ function extractTextFromBlock(block: Record<string, unknown>): string {
         return child.text;
       }
       if (child.children) {
-        return extractTextFromBlock(child as Record<string, unknown>);
+        return extractTextFromBlock(child);
       }
       return "";
     })

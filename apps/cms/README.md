@@ -40,6 +40,12 @@ Strapi gives you many possible deployment options for your project including [St
 yarn strapi deploy
 ```
 
+## Cloudflare R2 Media Storage
+
+This project supports Cloudflare R2 media uploads via Strapi's S3 upload provider.
+
+See `apps/cms/R2_SETUP.md` for required environment variables and deployment notes.
+
 ## 📚 Learn more
 
 - [Resource center](https://strapi.io/resource-center) - Strapi resource center.

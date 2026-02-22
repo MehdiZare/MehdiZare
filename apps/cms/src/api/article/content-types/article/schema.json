@@ -41,6 +41,9 @@
       "target": "api::tag.tag",
       "inversedBy": "articles"
     },
+    "publishedDate": {
+      "type": "date"
+    },
     "readingTime": {
       "type": "integer"
     },

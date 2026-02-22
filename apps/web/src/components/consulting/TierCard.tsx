@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 
 interface Tier {
   name: string;
@@ -56,6 +57,13 @@ export function TierCard({ tier, highlighted = false }: TierCardProps) {
 
         <a
           href="#calendly"
+          onClick={() => {
+            trackEvent("calendly_opened", {
+              page: "consulting",
+              section: "service_tiers",
+              tier: tier.name,
+            });
+          }}
           className={cn(
             "mt-8 block w-full rounded-lg px-6 py-3 text-center font-medium transition",
             highlighted

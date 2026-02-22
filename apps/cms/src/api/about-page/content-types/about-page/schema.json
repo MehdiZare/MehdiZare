@@ -19,12 +19,17 @@
     "bio": {
       "type": "blocks"
     },
+    "stats": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.stat"
+    },
     "credentials": {
       "type": "component",
       "repeatable": true,
       "component": "shared.credential"
     },
-    "experience": {
+    "experiences": {
       "type": "component",
       "repeatable": true,
       "component": "shared.experience"
@@ -38,6 +43,11 @@
       "type": "component",
       "repeatable": true,
       "component": "shared.social-link"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
     }
   }
 }

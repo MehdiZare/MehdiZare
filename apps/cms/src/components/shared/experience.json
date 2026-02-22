@@ -14,9 +14,16 @@
       "type": "string",
       "required": true
     },
-    "period": {
+    "startDate": {
       "type": "string",
       "required": true
+    },
+    "endDate": {
+      "type": "string"
+    },
+    "current": {
+      "type": "boolean",
+      "default": false
     },
     "description": {
       "type": "text"

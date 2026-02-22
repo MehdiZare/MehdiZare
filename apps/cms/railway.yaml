@@ -20,3 +20,13 @@ services:
       TRANSFER_TOKEN_SALT: ${{shared.TRANSFER_TOKEN_SALT}}
       ENCRYPTION_KEY: ${{shared.ENCRYPTION_KEY}}
       JWT_SECRET: ${{shared.JWT_SECRET}}
+      R2_ACCOUNT_ID: ${{shared.R2_ACCOUNT_ID}}
+      R2_ACCESS_KEY_ID: ${{shared.R2_ACCESS_KEY_ID}}
+      R2_SECRET_ACCESS_KEY: ${{shared.R2_SECRET_ACCESS_KEY}}
+      R2_BUCKET: ${{shared.R2_BUCKET}}
+      R2_ENDPOINT: ${{shared.R2_ENDPOINT}}
+      R2_PUBLIC_URL: ${{shared.R2_PUBLIC_URL}}
+      R2_REGION: ${{shared.R2_REGION}}
+      R2_ROOT_PATH: ${{shared.R2_ROOT_PATH}}
+      R2_SIGNED_URL_EXPIRES: ${{shared.R2_SIGNED_URL_EXPIRES}}
+      R2_ACL: ""

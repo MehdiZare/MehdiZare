@@ -1,4 +1,4 @@
-// Strapi generic response types
+// Generic Strapi response types
 
 export interface StrapiMeta {
   pagination?: {
@@ -19,7 +19,7 @@ export interface StrapiCollectionResponse<T> {
   meta: StrapiMeta;
 }
 
-// Strapi media types
+// Media
 
 export interface StrapiImageFormat {
   url: string;
@@ -53,25 +53,23 @@ export interface StrapiImage {
   size: number;
 }
 
-// SEO component
+// SEO
 
 export interface SEO {
   id: number;
-  metaTitle: string;
-  metaDescription: string;
+  metaTitle?: string;
+  metaDescription?: string;
   canonicalURL?: string;
-  metaImage?: StrapiImage;
   keywords?: string;
   metaRobots?: string;
-  structuredData?: Record<string, unknown>;
-  metaViewport?: string;
+  metaImage?: StrapiImage;
 }
 
-// Blocks content (Strapi rich text blocks)
+// Rich text blocks
 
-export type BlocksContent = any[];
+export type BlocksContent = import("@strapi/blocks-react-renderer").BlocksContent;
 
-// Content types
+// Blog
 
 export interface Category {
   id: number;
@@ -112,55 +110,107 @@ export interface Article {
   publishedAt: string;
 }
 
-// About page types
+// Shared content blocks
 
 export interface SocialLink {
   id: number;
   platform: string;
   url: string;
-  icon?: string;
 }
 
 export interface Credential {
   id: number;
   title: string;
-  issuer: string;
-  date?: string;
-  url?: string;
+  issuer?: string;
   description?: string;
-  icon?: string;
+  url?: string;
 }
 
 export interface Experience {
   id: number;
   title: string;
   company: string;
-  location?: string;
   startDate: string;
   endDate?: string;
   current?: boolean;
   description?: string;
-  technologies?: string;
 }
 
 export interface Education {
   id: number;
   degree: string;
-  institution: string;
-  location?: string;
-  startDate?: string;
-  endDate?: string;
-  description?: string;
   field?: string;
+  institution: string;
+  description?: string;
 }
+
+export interface StatItem {
+  id: number;
+  value: string;
+  label: string;
+}
+
+export interface NavItem {
+  id: number;
+  label: string;
+  href: string;
+  order?: number;
+  external?: boolean;
+}
+
+// Home page
+
+export interface HomeCredibilityItem {
+  id: number;
+  organization: string;
+  detail?: string;
+  url?: string;
+}
+
+export interface HomeFeaturedOnItem {
+  id: number;
+  platform: string;
+  url?: string;
+}
+
+export interface HomeValueCard {
+  id: number;
+  title: string;
+  description?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+}
+
+export interface HomePage {
+  id: number;
+  documentId: string;
+  heroHeadline?: string;
+  heroSubheadline?: string;
+  heroPrimaryCtaLabel?: string;
+  heroPrimaryCtaHref?: string;
+  heroSecondaryCtaLabel?: string;
+  heroSecondaryCtaHref?: string;
+  heroImage?: StrapiImage;
+  credibilityItems?: HomeCredibilityItem[];
+  featuredOnItems?: HomeFeaturedOnItem[];
+  whatIDoCards?: HomeValueCard[];
+  newsletterHeadline?: string;
+  newsletterCopy?: string;
+  seo?: SEO;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+}
+
+// About page
 
 export interface AboutPage {
   id: number;
   documentId: string;
-  title: string;
-  subtitle?: string;
-  bio: BlocksContent;
-  profileImage?: StrapiImage;
+  title?: string;
+  positioningStatement?: string;
+  bio?: BlocksContent;
+  stats?: StatItem[];
   credentials?: Credential[];
   experiences?: Experience[];
   education?: Education[];
@@ -171,18 +221,53 @@ export interface AboutPage {
   publishedAt: string;
 }
 
-// Consulting page types
+// Bina Print page
+
+export interface BinaStep {
+  id: number;
+  title: string;
+  description: string;
+}
+
+export interface BinaMover {
+  id: number;
+  ticker: string;
+  company: string;
+  score?: number;
+  scoreChange?: number;
+  analysisUrl?: string;
+}
+
+export interface BinaPrintPage {
+  id: number;
+  documentId: string;
+  heroHeadline?: string;
+  heroSubheadline?: string;
+  searchPlaceholder?: string;
+  howItWorks?: BinaStep[];
+  topMovers?: BinaMover[];
+  exampleTicker?: string;
+  exampleOverallScore?: number;
+  exampleSubScores?: Record<string, number>;
+  methodologySummary?: string;
+  emailGateHeadline?: string;
+  emailGateCopy?: string;
+  seo?: SEO;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+}
+
+// Consulting page
 
 export interface ConsultingTier {
   id: number;
   name: string;
-  description?: string;
-  price?: string;
-  priceUnit?: string;
-  features?: string;
-  highlighted?: boolean;
+  priceRange: string;
+  hoursPerMonth?: string;
+  scope?: string;
+  features?: string[];
   ctaText?: string;
-  ctaLink?: string;
 }
 
 export interface FAQ {
@@ -191,40 +276,56 @@ export interface FAQ {
   answer: string;
 }
 
+export interface ConsultingAudience {
+  id: number;
+  title: string;
+  description: string;
+}
+
 export interface ConsultingPage {
   id: number;
   documentId: string;
-  title: string;
+  title?: string;
   subtitle?: string;
-  description?: BlocksContent;
+  audiences?: ConsultingAudience[];
   tiers?: ConsultingTier[];
-  faqs?: FAQ[];
+  faq?: FAQ[];
   calendlyUrl?: string;
+  leadMagnetTitle?: string;
+  leadMagnetDescription?: string;
   seo?: SEO;
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
 }
 
-// Site settings types
+// Newsletter page
 
-export interface NavItem {
+export interface NewsletterPage {
   id: number;
-  label: string;
-  href: string;
-  order?: number;
-  external?: boolean;
+  documentId: string;
+  headline?: string;
+  subheadline?: string;
+  benefits?: string[];
+  archiveLinks?: NavItem[];
+  signupCtaLabel?: string;
+  socialProofText?: string;
+  seo?: SEO;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
 }
+
+// Site settings
 
 export interface SiteSettings {
   id: number;
   documentId: string;
-  siteName: string;
+  siteName?: string;
   siteDescription?: string;
-  logo?: StrapiImage;
-  favicon?: StrapiImage;
-  navItems?: NavItem[];
   footerText?: string;
+  bookCallHref?: string;
+  navItems?: NavItem[];
   socialLinks?: SocialLink[];
   defaultSeo?: SEO;
   createdAt: string;
