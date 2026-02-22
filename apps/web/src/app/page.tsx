@@ -112,7 +112,6 @@ export default async function Home() {
         primaryCtaHref={homeData.heroPrimaryCtaHref}
         secondaryCtaLabel={homeData.heroSecondaryCtaLabel}
         secondaryCtaHref={homeData.heroSecondaryCtaHref}
-        heroImage={homeData.heroImage}
       />
 
       <AnimatedSection>
