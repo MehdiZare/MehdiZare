@@ -42,6 +42,16 @@ export function Hero({
   secondaryCtaLabel,
   secondaryCtaHref,
 }: HeroProps) {
+  const emphasisPhrase = "because I learn your domain before I write a line of code.";
+  const hasEmphasisPhrase = subheadline.includes(emphasisPhrase);
+  const leadSubheadline = hasEmphasisPhrase
+    ? subheadline
+        .replace(` — ${emphasisPhrase}`, "")
+        .replace(` - ${emphasisPhrase}`, "")
+        .replace(emphasisPhrase, "")
+        .trim()
+    : subheadline;
+
   return (
     <section id="hero" className="-mt-20 flex min-h-screen items-center bg-paper pt-20">
       <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-12 lg:gap-16 lg:px-8">
@@ -74,7 +84,10 @@ export function Hero({
             variants={childVariants}
             className="mt-6 max-w-xl text-base leading-relaxed text-mid-gray sm:text-lg"
           >
-            {subheadline}
+            {leadSubheadline}
+            {hasEmphasisPhrase && (
+              <span className="mt-4 block text-ink">{emphasisPhrase}</span>
+            )}
           </motion.p>
 
           <motion.div

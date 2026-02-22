@@ -18,7 +18,7 @@ import type { SEO, StrapiImage } from "@/types/strapi";
 const fallbackHome = {
   heroHeadline: "I take AI from prototype to production.",
   heroSubheadline:
-    "Most AI projects stall between demo and deployment. I'm a principal-level engineer who ships production systems — across finance, defense, healthcare, and enterprise. The rare engineer who learns your domain before writing a line of code.",
+    "Most AI projects stall between demo and deployment. I'm the engineer who gets them across that gap — because I learn your domain before I write a line of code.",
   heroPrimaryCtaLabel: "Let's Talk",
   heroPrimaryCtaHref: "/consulting#calendly",
   heroSecondaryCtaLabel: "How I work",

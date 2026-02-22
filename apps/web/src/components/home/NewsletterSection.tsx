@@ -17,7 +17,7 @@ export function NewsletterSection({ headline, copy }: NewsletterSectionProps) {
         </h2>
 
         <p className="mt-4 text-sm font-medium text-accent-warm">
-          Join 500+ AI engineers and leaders
+          Join AI engineers and leaders shipping real systems
         </p>
 
         <p className="mt-3 text-base text-mid-gray">{copy}</p>

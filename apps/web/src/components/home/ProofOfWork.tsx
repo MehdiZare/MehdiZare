@@ -33,14 +33,12 @@ export function ProofOfWork() {
               I don&rsquo;t just consult. I ship products.
             </h2>
             <p className="mt-6 text-base leading-relaxed text-mid-gray">
-              Bina Print is an AI-powered company scoring system I built from scratch
-              &mdash; end-to-end product: data pipelines, LLM analysis, scoring
-              engine, and a consumer-facing interface. Think Zestimate, but for stocks.
+              Bina Print is an AI-powered scoring system for public companies, built
+              end-to-end from data pipelines to consumer interface. Think Zestimate,
+              but for stocks.
             </p>
             <p className="mt-4 text-base leading-relaxed text-mid-gray">
-              It exists because I believe the best portfolio piece is a working
-              product, not a pitch deck. The same engineering rigor I put into client
-              work, applied to my own idea.
+              The best portfolio piece is a product that works.
             </p>
             <a
               href="/bina-print"

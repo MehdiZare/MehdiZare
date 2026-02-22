@@ -16,28 +16,28 @@ const services: ServiceCard[] = [
     number: "01",
     title: "Production AI Engineering",
     description:
-      "LLM systems, RAG pipelines, AI agents — built for reliability, not demos. FastAPI, LangGraph, Databricks, AWS. Deployed, monitored, and governed.",
+      "Your AI system needs to work on Monday morning, not just in a Thursday demo. I build LLM-powered products—agents, search, and document intelligence—that run in production with monitoring and governance.",
     href: "/consulting",
   },
   {
     number: "02",
     title: "AI Strategy & Architecture",
     description:
-      "Use-case prioritization, vendor evaluation, and technical roadmaps that account for your domain's actual constraints — not generic playbooks.",
+      "Before writing code, I help you choose the highest-leverage use cases, evaluate vendors against real constraints, and define a roadmap your team can actually execute.",
     href: "/consulting",
   },
   {
     number: "03",
     title: "Fractional AI Leadership",
     description:
-      "Embedded principal-level technical direction for startups and teams that need senior AI engineering without a full-time executive hire. 3–12 months.",
+      "Senior technical direction for teams that need experienced AI engineering leadership without a full-time executive hire. Embedded support over focused 3–12 month engagements.",
     href: "/consulting",
   },
   {
     number: "04",
     title: "GenAI Products & Prototyping",
     description:
-      "Rapid build of generative AI products — from chatbots and copilots to document intelligence and automated workflows. Prototype to v1 in weeks.",
+      "When speed matters, I take ideas from concept to usable v1 quickly—then design the path from prototype to dependable production.",
     href: "/consulting",
   },
 ];

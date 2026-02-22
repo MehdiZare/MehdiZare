@@ -21,7 +21,7 @@ const entries: TrackRecordEntry[] = [
     role: "Principal AI Engineer / Cloud Architect",
     dates: "2024 – Present",
     description:
-      "GenAI systems for CISA cybersecurity operations. Databricks-first pipelines, model observability, and threat-informed monitoring in production federal environments.",
+      "Built GenAI systems for CISA cybersecurity operations, focused on production observability and threat-informed monitoring in federal environments where reliability is non-negotiable.",
     category: "Cybersecurity",
     categoryColor: "bg-red-500/10 text-red-700",
     current: true,
@@ -32,7 +32,7 @@ const entries: TrackRecordEntry[] = [
     role: "Senior AI/ML Engineer",
     dates: "2022 – 2023",
     description:
-      "Delivered containerized GenAI solutions with LangChain and AWS Bedrock for government and enterprise clients at scale.",
+      "Delivered containerized GenAI solutions for government and enterprise teams that needed secure, scalable deployments rather than lab demos.",
     category: "Defense",
     categoryColor: "bg-blue-500/10 text-blue-700",
   },
@@ -42,7 +42,7 @@ const entries: TrackRecordEntry[] = [
     role: "Co-Founder",
     dates: "2024 – 2024",
     description:
-      "Built a virtual investment adviser for underrepresented groups — generative AI that creates personalized financial visualizations from natural conversation.",
+      "Co-built a virtual investment adviser for underrepresented groups, turning natural conversation into personalized financial visualizations people could actually use.",
     category: "Startup",
     categoryColor: "bg-violet-500/10 text-violet-700",
   },
@@ -52,7 +52,7 @@ const entries: TrackRecordEntry[] = [
     role: "Quantitative Analysis Manager",
     dates: "2020 – 2022",
     description:
-      "ML-driven liquidity forecasting. Time series, TensorFlow, NLP — bridging finance teams, data engineering, and compliance. This is where I earned the CFA.",
+      "Led ML-driven liquidity forecasting across finance, data engineering, and compliance teams; this is where I earned the CFA to deepen domain rigor.",
     category: "Finance",
     categoryColor: "bg-amber-500/10 text-amber-700",
   },
@@ -62,7 +62,7 @@ const entries: TrackRecordEntry[] = [
     role: "Senior Consultant",
     dates: "2019 – 2020",
     description:
-      "Financial data series published by OFR — Office of Financial Research, Department of Treasury. Data-driven consulting at the intersection of finance, policy, and technology.",
+      "Contributed to financial data series work with the Office of Financial Research, translating policy and market context into usable analytical outputs.",
     category: "Finance",
     categoryColor: "bg-amber-500/10 text-amber-700",
   },
@@ -72,7 +72,7 @@ const entries: TrackRecordEntry[] = [
     role: "Chief AI Scientist",
     dates: "2015 – 2019",
     description:
-      "Led AI and data science at a global digital marketing agency — building predictive models, audience intelligence, and automated campaign optimization at scale.",
+      "Led AI and data science initiatives to improve audience intelligence and campaign optimization, connecting model outputs to operational marketing decisions.",
     category: "Startup",
     categoryColor: "bg-violet-500/10 text-violet-700",
   },
@@ -82,7 +82,7 @@ const entries: TrackRecordEntry[] = [
     role: "Founder & CEO",
     dates: "2012 – 2014",
     description:
-      "Founded and scaled the leading online bookshop focused on textbooks — end-to-end product development, e-commerce operations, and go-to-market strategy.",
+      "Founded and scaled a textbook-focused online bookstore, owning product, operations, and go-to-market from zero to running business.",
     category: "Startup",
     categoryColor: "bg-violet-500/10 text-violet-700",
   },

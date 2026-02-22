@@ -22,9 +22,8 @@ export function NarrativeSection() {
             I bridge that gap. I&rsquo;m a principal-level AI engineer who has shipped
             production systems in{" "}
             <strong className="text-ink">finance, cybersecurity, healthcare, and defense</strong>
-            {" "}&mdash; not because I dabble, but because I go deep. I earned a CFA Charter
-            to understand capital markets. I hold a Secret clearance to work in national
-            security.{" "}
+            . I earned a CFA Charter to understand capital markets. I hold a Secret
+            clearance to work in national security.{" "}
             <strong className="text-ink">
               I learn your domain before I touch your codebase.
             </strong>
