@@ -126,9 +126,6 @@ export default async function ConsultingPage() {
     audiences: fallbackAudiences,
     services: fallbackServices,
     faq: fallbackFaqs,
-    leadMagnetTitle: "AI Readiness Scorecard for High-Stakes Teams",
-    leadMagnetDescription:
-      "Download the checklist used to evaluate whether an AI initiative is ready for production.",
   };
 
   let data = fallbackData;
@@ -149,9 +146,6 @@ export default async function ConsultingPage() {
             : fallbackData.audiences,
         services: fallbackData.services,
         faq: cmsData.faq && cmsData.faq.length > 0 ? cmsData.faq : fallbackData.faq,
-        leadMagnetTitle: cmsData.leadMagnetTitle || fallbackData.leadMagnetTitle,
-        leadMagnetDescription:
-          cmsData.leadMagnetDescription || fallbackData.leadMagnetDescription,
       };
     }
   } catch {
@@ -309,23 +303,6 @@ export default async function ConsultingPage() {
                 goals, current blockers, and fastest path to production.
               </p>
               <CalComTrigger className="mt-6" label="Open Scheduling" />
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
-
-      <section className="py-16">
-        <div className="mx-auto max-w-4xl px-6">
-          <AnimatedSection>
-            <div className="border border-warm-gray bg-paper p-7">
-              <h3 className="font-serif text-2xl text-ink">{data.leadMagnetTitle}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-mid-gray">{data.leadMagnetDescription}</p>
-              <a
-                href="/newsletter"
-                className="mt-5 inline-flex bg-ink px-6 py-2.5 text-sm font-medium text-paper transition hover:bg-ink/85"
-              >
-                Request the Scorecard
-              </a>
             </div>
           </AnimatedSection>
         </div>
