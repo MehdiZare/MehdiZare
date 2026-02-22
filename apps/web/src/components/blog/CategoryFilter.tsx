@@ -16,10 +16,10 @@ export function CategoryFilter({ categories, activeSlug }: CategoryFilterProps) 
         <Link
           href="/blog"
           className={cn(
-            "rounded-full px-4 py-2 text-sm font-medium transition whitespace-nowrap",
+            "px-4 py-2 text-sm font-medium transition whitespace-nowrap",
             activeSlug === null
-              ? "bg-primary text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              ? "bg-ink text-paper"
+              : "border border-warm-gray text-mid-gray hover:text-ink"
           )}
         >
           All
@@ -29,10 +29,10 @@ export function CategoryFilter({ categories, activeSlug }: CategoryFilterProps) 
             key={category.id}
             href={`/blog?category=${category.slug}`}
             className={cn(
-              "rounded-full px-4 py-2 text-sm font-medium transition whitespace-nowrap",
+              "px-4 py-2 text-sm font-medium transition whitespace-nowrap",
               activeSlug === category.slug
-                ? "bg-primary text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                ? "bg-ink text-paper"
+                : "border border-warm-gray text-mid-gray hover:text-ink"
             )}
           >
             {category.name}

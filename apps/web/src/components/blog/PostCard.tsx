@@ -34,7 +34,7 @@ export function PostCard({ article }: PostCardProps) {
   return (
     <Link
       href={`/blog/${article.slug}`}
-      className="group block overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md"
+      className="group block overflow-hidden border border-warm-gray bg-paper transition-colors hover:border-mid-gray"
     >
       {/* Image */}
       <div className="relative aspect-video overflow-hidden">
@@ -47,8 +47,8 @@ export function PostCard({ article }: PostCardProps) {
             sizes="(max-width: 768px) 100vw, 33vw"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-teal-50 to-gray-100">
-            <span className="text-4xl font-bold text-primary/20">MZ</span>
+          <div className="flex h-full w-full items-center justify-center bg-muted">
+            <span className="font-serif text-4xl text-ink/10">MZ</span>
           </div>
         )}
       </div>
@@ -56,22 +56,22 @@ export function PostCard({ article }: PostCardProps) {
       {/* Content */}
       <div className="p-6">
         {categoryName && (
-          <span className="inline-block rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-primary">
+          <span className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-accent-warm">
             {categoryName}
           </span>
         )}
 
-        <h3 className="mt-3 line-clamp-2 text-lg font-semibold text-gray-900">
+        <h3 className="mt-2 line-clamp-2 font-serif text-lg text-ink">
           {article.title}
         </h3>
 
         {article.excerpt && (
-          <p className="mt-2 line-clamp-3 text-sm text-gray-600">
+          <p className="mt-2 line-clamp-3 text-sm text-mid-gray">
             {article.excerpt}
           </p>
         )}
 
-        <div className="mt-4 flex items-center gap-3 text-xs text-gray-400">
+        <div className="mt-4 flex items-center gap-3 font-mono text-xs text-mid-gray/60">
           {displayDate && <time>{formatDate(displayDate)}</time>}
           {article.readingTime && (
             <>

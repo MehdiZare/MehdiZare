@@ -21,17 +21,17 @@ export function FAQ({ faqs }: FAQProps) {
   };
 
   return (
-    <div className="divide-y divide-gray-200">
+    <div className="divide-y divide-warm-gray">
       {faqs.map((faq, index) => (
         <div key={index}>
           <button
             onClick={() => toggle(index)}
             className="flex w-full items-center justify-between py-4 text-left"
           >
-            <span className="font-medium text-gray-900">{faq.question}</span>
+            <span className="font-medium text-ink">{faq.question}</span>
             <svg
               className={cn(
-                "ml-4 h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200",
+                "ml-4 h-5 w-5 shrink-0 text-mid-gray transition-transform duration-200",
                 openIndex === index && "rotate-180"
               )}
               fill="none"
@@ -56,7 +56,7 @@ export function FAQ({ faqs }: FAQProps) {
                 transition={{ duration: 0.25, ease: "easeInOut" }}
                 className="overflow-hidden"
               >
-                <p className="pb-4 text-gray-600">{faq.answer}</p>
+                <p className="pb-4 text-mid-gray">{faq.answer}</p>
               </motion.div>
             )}
           </AnimatePresence>

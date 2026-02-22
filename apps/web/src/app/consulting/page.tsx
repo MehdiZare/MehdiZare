@@ -116,12 +116,13 @@ export default async function ConsultingPage() {
   }
 
   return (
-    <div className="bg-slate-50 pb-24">
-      <section className="bg-gradient-to-b from-white to-slate-100 pb-16 pt-24">
+    <div className="bg-paper pb-24">
+      <section className="pb-16 pt-10">
         <div className="mx-auto max-w-7xl px-6">
           <AnimatedSection>
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">{data.title}</h1>
-            <p className="mt-6 max-w-3xl text-xl leading-relaxed text-slate-600">{data.subtitle}</p>
+            <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">Consulting</p>
+            <h1 className="mt-4 font-serif text-4xl leading-tight text-ink sm:text-5xl">{data.title}</h1>
+            <p className="mt-6 max-w-3xl text-xl leading-relaxed text-mid-gray">{data.subtitle}</p>
           </AnimatedSection>
         </div>
       </section>
@@ -134,9 +135,9 @@ export default async function ConsultingPage() {
           <div className="mt-10 grid gap-6 md:grid-cols-2">
             {data.audiences.map((audience, index) => (
               <AnimatedSection key={audience.id} delay={index * 0.08}>
-                <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-slate-900">{audience.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{audience.description}</p>
+                <article className="border border-warm-gray bg-paper p-6">
+                  <h3 className="font-serif text-lg text-ink">{audience.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-mid-gray">{audience.description}</p>
                 </article>
               </AnimatedSection>
             ))}
@@ -152,9 +153,9 @@ export default async function ConsultingPage() {
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {data.services.map((service, index) => (
               <AnimatedSection key={service.id} delay={index * 0.1}>
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-slate-900">{service.name}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{service.scope}</p>
+                <div className="border border-warm-gray bg-paper p-6">
+                  <h3 className="font-serif text-lg text-ink">{service.name}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-mid-gray">{service.scope}</p>
                 </div>
               </AnimatedSection>
             ))}
@@ -162,7 +163,7 @@ export default async function ConsultingPage() {
           <AnimatedSection delay={0.3} className="mt-10 text-center">
             <a
               href="#calendly"
-              className="inline-flex rounded-full bg-slate-900 px-8 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+              className="inline-flex bg-ink px-8 py-3 text-sm font-medium text-paper transition hover:bg-ink/85"
             >
               Book a Free Discovery Call
             </a>
@@ -182,9 +183,9 @@ export default async function ConsultingPage() {
                 "Custom Proposal",
                 "Engagement Kickoff",
               ].map((step, index) => (
-                <div key={step} className="rounded-xl border border-slate-200 bg-white p-5 text-center shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">Step {index + 1}</p>
-                  <p className="mt-3 text-sm font-medium text-slate-800">{step}</p>
+                <div key={step} className="border border-warm-gray bg-paper p-5 text-center">
+                  <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-warm">Step {index + 1}</p>
+                  <p className="mt-3 text-sm font-medium text-ink">{step}</p>
                 </div>
               ))}
             </div>
@@ -206,12 +207,12 @@ export default async function ConsultingPage() {
       <section className="py-16">
         <div className="mx-auto max-w-4xl px-6">
           <AnimatedSection>
-            <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-              <h3 className="text-2xl font-semibold text-slate-900">{data.leadMagnetTitle}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-slate-600">{data.leadMagnetDescription}</p>
+            <div className="border border-warm-gray bg-paper p-7">
+              <h3 className="font-serif text-2xl text-ink">{data.leadMagnetTitle}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-mid-gray">{data.leadMagnetDescription}</p>
               <a
                 href="/newsletter"
-                className="mt-5 inline-flex rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+                className="mt-5 inline-flex bg-ink px-6 py-2.5 text-sm font-medium text-paper transition hover:bg-ink/85"
               >
                 Request the Scorecard
               </a>
@@ -226,7 +227,7 @@ export default async function ConsultingPage() {
             <SectionHeading title="Frequently Asked Questions" />
           </AnimatedSection>
           <AnimatedSection delay={0.15} className="mt-8">
-            <div className="rounded-2xl border border-slate-200 bg-white px-6 shadow-sm">
+            <div className="border border-warm-gray bg-paper px-6">
               <FAQ faqs={data.faq} />
             </div>
           </AnimatedSection>

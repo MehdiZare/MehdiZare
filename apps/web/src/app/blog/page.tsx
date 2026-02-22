@@ -74,14 +74,15 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
   }
 
   return (
-    <section className="bg-gray-50 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="bg-paper py-16 sm:py-24">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* Page Header */}
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+        <div className="mb-12">
+          <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">Writing</p>
+          <h1 className="mt-4 font-serif text-4xl text-ink sm:text-5xl">
             Blog
           </h1>
-          <p className="mt-4 text-lg text-gray-600">
+          <p className="mt-4 text-lg text-mid-gray">
             Insights on AI, finance, and technology
           </p>
         </div>
@@ -103,8 +104,8 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
           </div>
         ) : (
           <div className="py-20 text-center">
-            <p className="text-lg text-gray-500">No posts yet.</p>
-            <p className="mt-2 text-sm text-gray-400">
+            <p className="text-lg text-mid-gray">No posts yet.</p>
+            <p className="mt-2 text-sm text-mid-gray/60">
               Check back soon for new content.
             </p>
           </div>
@@ -116,29 +117,29 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
             {hasPrevPage ? (
               <Link
                 href={buildPageUrl(currentPage - 1)}
-                className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                className="border border-warm-gray bg-paper px-5 py-2.5 text-sm font-medium text-ink transition hover:border-ink"
               >
                 Previous
               </Link>
             ) : (
-              <span className="rounded-lg border border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-medium text-gray-400 cursor-not-allowed">
+              <span className="border border-warm-gray bg-muted px-5 py-2.5 text-sm font-medium text-mid-gray/50 cursor-not-allowed">
                 Previous
               </span>
             )}
 
-            <span className="text-sm text-gray-600">
+            <span className="font-mono text-sm text-mid-gray">
               Page {currentPage} of {pagination.pageCount}
             </span>
 
             {hasNextPage ? (
               <Link
                 href={buildPageUrl(currentPage + 1)}
-                className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                className="border border-warm-gray bg-paper px-5 py-2.5 text-sm font-medium text-ink transition hover:border-ink"
               >
                 Next
               </Link>
             ) : (
-              <span className="rounded-lg border border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-medium text-gray-400 cursor-not-allowed">
+              <span className="border border-warm-gray bg-muted px-5 py-2.5 text-sm font-medium text-mid-gray/50 cursor-not-allowed">
                 Next
               </span>
             )}

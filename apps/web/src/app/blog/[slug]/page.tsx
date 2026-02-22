@@ -129,8 +129,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     article.publishedDate ?? article.publishedAt;
 
   return (
-    <section className="bg-gray-50 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="bg-paper py-16 sm:py-24">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
           {/* Main Content */}
           <article className="lg:col-span-8">
@@ -139,7 +139,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               {article.category && (
                 <Link
                   href={`/blog?category=${article.category.slug}`}
-                  className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition hover:bg-primary/20"
+                  className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-accent-warm"
                 >
                   {article.category.name}
                 </Link>
@@ -147,26 +147,26 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               {displayDate && (
                 <time
                   dateTime={displayDate}
-                  className="text-gray-500"
+                  className="font-mono text-xs text-mid-gray"
                 >
                   {formatDate(displayDate)}
                 </time>
               )}
               {article.readingTime && (
-                <span className="text-gray-400">
+                <span className="font-mono text-xs text-mid-gray/60">
                   {article.readingTime} min read
                 </span>
               )}
             </div>
 
             {/* Title */}
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 lg:text-4xl">
+            <h1 className="font-serif text-3xl leading-tight text-ink lg:text-4xl">
               {article.title}
             </h1>
 
             {/* Featured Image */}
             {article.featuredImage && (
-              <div className="mt-8 aspect-video overflow-hidden rounded-xl relative">
+              <div className="mt-8 aspect-video overflow-hidden relative">
                 <StrapiImage
                   image={article.featuredImage}
                   fill
@@ -183,7 +183,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
             {/* Tags */}
             {article.tags && article.tags.length > 0 && (
-              <div className="mt-10 flex flex-wrap gap-2 border-t border-gray-200 pt-6">
+              <div className="mt-10 flex flex-wrap gap-2 border-t border-warm-gray pt-6">
                 {article.tags.map((tag) => (
                   <TagBadge key={tag.id} tag={tag} />
                 ))}
@@ -191,19 +191,19 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             )}
 
             {/* Author Card */}
-            <div className="mt-10 rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
+            <div className="mt-10 border border-warm-gray bg-paper p-6 sm:p-8">
               <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-muted font-serif text-xl text-ink">
                   MZ
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="font-serif text-lg text-ink">
                     Mehdi Zare, CFA
                   </h3>
-                  <p className="text-sm text-primary font-medium">
+                  <p className="font-mono text-xs text-accent-warm">
                     Principal AI Engineer
                   </p>
-                  <p className="mt-2 text-sm text-gray-600 leading-relaxed">
+                  <p className="mt-2 text-sm text-mid-gray leading-relaxed">
                     Bridging the worlds of artificial intelligence and finance.
                     Passionate about building intelligent systems, quantitative
                     strategies, and the intersection of AI with fintech.
@@ -218,12 +218,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 {previousArticle ? (
                   <Link
                     href={`/blog/${previousArticle.slug}`}
-                    className="group rounded-xl border border-gray-200 bg-white p-5 transition hover:border-primary/30 hover:shadow-sm"
+                    className="group border border-warm-gray bg-paper p-5 transition hover:border-ink"
                   >
-                    <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                    <span className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray/60">
                       Previous
                     </span>
-                    <p className="mt-1 text-sm font-semibold text-gray-900 group-hover:text-primary transition">
+                    <p className="mt-1 text-sm font-medium text-ink group-hover:text-accent-warm transition">
                       {previousArticle.title}
                     </p>
                   </Link>
@@ -233,12 +233,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 {nextArticle ? (
                   <Link
                     href={`/blog/${nextArticle.slug}`}
-                    className="group rounded-xl border border-gray-200 bg-white p-5 text-right transition hover:border-primary/30 hover:shadow-sm"
+                    className="group border border-warm-gray bg-paper p-5 text-right transition hover:border-ink"
                   >
-                    <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                    <span className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray/60">
                       Next
                     </span>
-                    <p className="mt-1 text-sm font-semibold text-gray-900 group-hover:text-primary transition">
+                    <p className="mt-1 text-sm font-medium text-ink group-hover:text-accent-warm transition">
                       {nextArticle.title}
                     </p>
                   </Link>
@@ -248,7 +248,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               </nav>
             )}
 
-            <div className="mt-12 border-t border-gray-200 pt-10">
+            <div className="mt-12 border-t border-warm-gray pt-10">
               <BeehiivEmbed
                 source="blog_post_footer"
                 title="Get the weekly AI + Finance briefing"

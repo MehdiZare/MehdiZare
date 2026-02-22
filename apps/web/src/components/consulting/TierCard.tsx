@@ -24,33 +24,33 @@ export function TierCard({ tier, highlighted = false }: TierCardProps) {
       whileHover={{ scale: 1.02 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className={cn(
-        "relative rounded-2xl border p-8 transition-shadow",
+        "relative border p-8 transition-shadow",
         highlighted
-          ? "border-primary shadow-lg ring-1 ring-primary/10"
-          : "border-gray-200 shadow-sm hover:shadow-md"
+          ? "border-ink shadow-lg ring-1 ring-ink/10"
+          : "border-warm-gray hover:shadow-md"
       )}
     >
       {highlighted && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="rounded-full bg-primary px-4 py-1 text-xs font-semibold text-white">
+          <span className="bg-ink px-4 py-1 text-xs font-medium text-paper">
             Most Popular
           </span>
         </div>
       )}
 
-      <div className="bg-white">
-        <h3 className="text-xl font-bold text-gray-900">{tier.name}</h3>
-        <p className="mt-4 text-3xl font-bold text-primary">{tier.priceRange}</p>
-        <p className="mt-1 text-sm text-gray-500">{tier.hoursPerMonth}</p>
-        <p className="mt-4 text-gray-600">{tier.scope}</p>
+      <div className="bg-paper">
+        <h3 className="font-serif text-xl text-ink">{tier.name}</h3>
+        <p className="mt-4 font-serif text-3xl text-ink">{tier.priceRange}</p>
+        <p className="mt-1 text-sm text-mid-gray">{tier.hoursPerMonth}</p>
+        <p className="mt-4 text-mid-gray">{tier.scope}</p>
 
-        <div className="my-6 h-px bg-gray-200" />
+        <div className="my-6 h-px bg-warm-gray" />
 
         <ul className="space-y-3">
           {tier.features.map((feature, index) => (
             <li key={index} className="flex items-start gap-2">
-              <span className="mt-0.5 font-bold text-primary">&#10003;</span>
-              <span className="text-sm text-gray-700">{feature}</span>
+              <span className="mt-0.5 text-accent-warm">&#10003;</span>
+              <span className="text-sm text-mid-gray">{feature}</span>
             </li>
           ))}
         </ul>
@@ -65,10 +65,10 @@ export function TierCard({ tier, highlighted = false }: TierCardProps) {
             });
           }}
           className={cn(
-            "mt-8 block w-full rounded-lg px-6 py-3 text-center font-medium transition",
+            "mt-8 block w-full px-6 py-3 text-center font-medium transition",
             highlighted
-              ? "bg-primary text-white hover:bg-teal-800"
-              : "border border-primary text-primary hover:bg-teal-50"
+              ? "bg-ink text-paper hover:bg-ink/85"
+              : "border border-ink text-ink hover:bg-ink hover:text-paper"
           )}
         >
           {tier.ctaText}

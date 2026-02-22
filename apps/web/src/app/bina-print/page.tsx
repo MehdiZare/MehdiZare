@@ -97,14 +97,14 @@ export default async function BinaPrintPage() {
   }
 
   return (
-    <div className="bg-slate-50 pb-20">
-      <section className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 py-20 text-white">
+    <div className="bg-paper pb-20">
+      <section className="bg-ink py-20 text-paper">
         <div className="mx-auto max-w-6xl px-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-300">
+          <p className="font-mono text-xs uppercase tracking-[0.25em] text-accent-warm">
             AI-Powered Investment Scoring
           </p>
-          <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">{data.heroHeadline}</h1>
-          <p className="mt-5 max-w-3xl text-lg text-slate-200">{data.heroSubheadline}</p>
+          <h1 className="mt-4 font-serif text-4xl leading-tight sm:text-5xl">{data.heroHeadline}</h1>
+          <p className="mt-5 max-w-3xl text-lg text-white/60">{data.heroSubheadline}</p>
           <div className="mt-8 max-w-2xl">
             <TickerLookup placeholder={data.searchPlaceholder} />
           </div>
@@ -113,13 +113,13 @@ export default async function BinaPrintPage() {
 
       <section className="py-16">
         <div className="mx-auto max-w-6xl px-6">
-          <h2 className="text-3xl font-bold text-slate-900">How It Works</h2>
+          <h2 className="font-serif text-3xl text-ink">How It Works</h2>
           <div className="mt-8 grid gap-5 md:grid-cols-3">
             {data.howItWorks.map((step, index) => (
-              <article key={step.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p className="text-sm font-semibold text-blue-700">Step {index + 1}</p>
-                <h3 className="mt-2 text-lg font-semibold text-slate-900">{step.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-slate-600">{step.description}</p>
+              <article key={step.id} className="border border-warm-gray bg-paper p-6">
+                <p className="font-mono text-xs text-accent-warm">Step {index + 1}</p>
+                <h3 className="mt-2 font-serif text-lg text-ink">{step.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-mid-gray">{step.description}</p>
               </article>
             ))}
           </div>
@@ -128,10 +128,10 @@ export default async function BinaPrintPage() {
 
       <section className="py-16">
         <div className="mx-auto max-w-6xl px-6">
-          <h2 className="text-3xl font-bold text-slate-900">Top Movers This Week</h2>
-          <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <h2 className="font-serif text-3xl text-ink">Top Movers This Week</h2>
+          <div className="mt-8 overflow-hidden border border-warm-gray bg-paper">
             <table className="w-full text-left">
-              <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-600">
+              <thead className="bg-muted font-mono text-xs uppercase tracking-[0.15em] text-mid-gray">
                 <tr>
                   <th className="px-4 py-3">Ticker</th>
                   <th className="px-4 py-3">Company</th>
@@ -139,13 +139,13 @@ export default async function BinaPrintPage() {
                   <th className="px-4 py-3">Weekly Change</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 text-sm text-slate-700">
+              <tbody className="divide-y divide-warm-gray text-sm text-mid-gray">
                 {data.topMovers.map((mover) => (
                   <tr key={mover.id}>
-                    <td className="px-4 py-3 font-semibold text-slate-900">{mover.ticker}</td>
+                    <td className="px-4 py-3 font-medium text-ink">{mover.ticker}</td>
                     <td className="px-4 py-3">{mover.company}</td>
                     <td className="px-4 py-3">{mover.score ?? "-"}</td>
-                    <td className="px-4 py-3 text-emerald-700">
+                    <td className="px-4 py-3 text-accent-warm">
                       {typeof mover.scoreChange === "number"
                         ? `${mover.scoreChange > 0 ? "+" : ""}${mover.scoreChange}`
                         : "-"}
@@ -160,29 +160,29 @@ export default async function BinaPrintPage() {
 
       <section className="py-16">
         <div className="mx-auto grid max-w-6xl gap-8 px-6 lg:grid-cols-2">
-          <article className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Score Card Example</p>
-            <h3 className="mt-3 text-2xl font-bold text-slate-900">{data.exampleTicker} - Overall {data.exampleOverallScore}</h3>
+          <article className="border border-warm-gray bg-paper p-7">
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray">Score Card Example</p>
+            <h3 className="mt-3 font-serif text-2xl text-ink">{data.exampleTicker} &mdash; Overall {data.exampleOverallScore}</h3>
 
             <div className="mt-6 space-y-4">
               {Object.entries(data.exampleSubScores).map(([label, value]) => (
                 <div key={label}>
-                  <div className="flex items-center justify-between text-sm text-slate-700">
-                    <span className="capitalize">{label}</span>
-                    <span className="font-semibold text-slate-900">{value}</span>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="capitalize text-ink">{label}</span>
+                    <span className="font-mono text-mid-gray">{value}</span>
                   </div>
-                  <div className="mt-2 h-2 rounded-full bg-slate-200">
-                    <div className="h-2 rounded-full bg-blue-600" style={{ width: `${value}%` }} />
+                  <div className="mt-2 h-1.5 rounded-full bg-warm-gray">
+                    <div className="h-1.5 rounded-full bg-ink" style={{ width: `${value}%` }} />
                   </div>
                 </div>
               ))}
             </div>
           </article>
 
-          <article className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Methodology Overview</p>
-            <p className="mt-4 text-sm leading-relaxed text-slate-700">{data.methodologySummary}</p>
-            <p className="mt-5 text-sm font-medium text-slate-900">
+          <article className="border border-warm-gray bg-paper p-7">
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray">Methodology Overview</p>
+            <p className="mt-4 text-sm leading-relaxed text-mid-gray">{data.methodologySummary}</p>
+            <p className="mt-5 text-sm font-medium text-ink">
               Built by a CFA Charterholder using production AI systems.
             </p>
           </article>

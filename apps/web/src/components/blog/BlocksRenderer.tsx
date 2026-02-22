@@ -45,29 +45,29 @@ export function BlocksRenderer({ content }: BlocksRendererProps) {
   }
 
   return (
-    <div className="prose prose-gray max-w-none">
+    <div className="prose max-w-none">
       <StrapiBlocksRenderer
         content={content}
         blocks={{
           paragraph: ({ children }) => (
-            <p className="text-gray-700 leading-relaxed mb-4">{children}</p>
+            <p className="text-mid-gray leading-relaxed mb-4">{children}</p>
           ),
           heading: ({ children, level }) => {
             const text = extractText(children);
             const id = slugify(text);
             const Tag = `h${level}` as keyof JSX.IntrinsicElements;
             const sizeClasses: Record<number, string> = {
-              1: "text-4xl",
-              2: "text-3xl",
-              3: "text-2xl",
-              4: "text-xl",
-              5: "text-lg",
-              6: "text-base",
+              1: "font-serif text-4xl",
+              2: "font-serif text-3xl",
+              3: "font-serif text-2xl",
+              4: "text-xl font-medium",
+              5: "text-lg font-medium",
+              6: "text-base font-medium",
             };
             return (
               <Tag
                 id={id}
-                className={`${sizeClasses[level] || "text-base"} font-bold text-gray-900 mb-4`}
+                className={`${sizeClasses[level] || "text-base font-medium"} text-ink mb-4`}
               >
                 {children}
               </Tag>
@@ -76,29 +76,26 @@ export function BlocksRenderer({ content }: BlocksRendererProps) {
           list: ({ children, format }) => {
             if (format === "ordered") {
               return (
-                <ol className="list-decimal ml-6 mb-4 text-gray-700 space-y-1">
+                <ol className="list-decimal ml-6 mb-4 text-mid-gray space-y-1">
                   {children}
                 </ol>
               );
             }
             return (
-              <ul className="list-disc ml-6 mb-4 text-gray-700 space-y-1">
+              <ul className="list-disc ml-6 mb-4 text-mid-gray space-y-1">
                 {children}
               </ul>
             );
           },
           quote: ({ children }) => (
-            <blockquote className="border-l-4 border-primary pl-4 italic text-gray-600 my-6">
+            <blockquote className="border-l-2 border-accent-warm pl-4 italic text-mid-gray my-6">
               {children}
             </blockquote>
           ),
           code: ({ children }) => {
             const text = extractText(children);
-            // Strapi blocks code block: plainText contains the code
-            // Try to detect language from the first line or default to "text"
             const lines = text.split("\n");
             let language = "text";
-            // Simple language detection heuristic
             if (lines[0]?.startsWith("```")) {
               language = lines[0].replace("```", "").trim() || "text";
               lines.shift();
@@ -119,10 +116,10 @@ export function BlocksRenderer({ content }: BlocksRendererProps) {
                   alt={image.alternativeText || ""}
                   width={image.width}
                   height={image.height}
-                  className="rounded-lg w-full h-auto"
+                  className="w-full h-auto"
                 />
                 {image.caption && (
-                  <figcaption className="text-center text-sm text-gray-500 mt-2">
+                  <figcaption className="text-center text-sm text-mid-gray mt-2">
                     {image.caption}
                   </figcaption>
                 )}
@@ -132,13 +129,13 @@ export function BlocksRenderer({ content }: BlocksRendererProps) {
         }}
         modifiers={{
           bold: ({ children }) => (
-            <strong className="font-semibold">{children}</strong>
+            <strong className="font-semibold text-ink">{children}</strong>
           ),
           italic: ({ children }) => <em className="italic">{children}</em>,
           underline: ({ children }) => <u>{children}</u>,
           strikethrough: ({ children }) => <s>{children}</s>,
           code: ({ children }) => (
-            <code className="bg-gray-100 text-sm font-mono px-1.5 py-0.5 rounded">
+            <code className="bg-muted text-sm font-mono px-1.5 py-0.5">
               {children}
             </code>
           ),

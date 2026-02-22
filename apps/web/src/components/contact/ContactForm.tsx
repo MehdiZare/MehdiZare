@@ -86,7 +86,6 @@ export function ContactForm() {
   ) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    // Clear field error on change
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -94,8 +93,8 @@ export function ContactForm() {
 
   if (status === "success") {
     return (
-      <div className="rounded-lg bg-green-50 p-6 text-center">
-        <p className="font-medium text-green-800">
+      <div className="border border-warm-gray bg-muted p-6 text-center">
+        <p className="font-medium text-ink">
           Thank you for your message! I will get back to you soon.
         </p>
       </div>
@@ -105,14 +104,14 @@ export function ContactForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
       {status === "error" && serverError && (
-        <div className="rounded-lg bg-red-50 p-4">
+        <div className="border border-red-200 bg-red-50 p-4">
           <p className="text-sm text-red-600">{serverError}</p>
         </div>
       )}
 
       {/* Name */}
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="name" className="block text-sm font-medium text-ink">
           Name <span className="text-red-500">*</span>
         </label>
         <input
@@ -122,9 +121,9 @@ export function ContactForm() {
           value={form.name}
           onChange={handleChange}
           className={cn(
-            "mt-1 w-full rounded-lg border px-4 py-3 text-gray-900 outline-none transition",
-            "focus:border-primary focus:ring-1 focus:ring-primary",
-            errors.name ? "border-red-400" : "border-gray-300"
+            "mt-1 w-full border px-4 py-3 text-ink outline-none transition",
+            "focus:border-ink focus:ring-1 focus:ring-ink",
+            errors.name ? "border-red-400" : "border-warm-gray"
           )}
           placeholder="Your name"
         />
@@ -135,7 +134,7 @@ export function ContactForm() {
 
       {/* Email */}
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="email" className="block text-sm font-medium text-ink">
           Email <span className="text-red-500">*</span>
         </label>
         <input
@@ -145,9 +144,9 @@ export function ContactForm() {
           value={form.email}
           onChange={handleChange}
           className={cn(
-            "mt-1 w-full rounded-lg border px-4 py-3 text-gray-900 outline-none transition",
-            "focus:border-primary focus:ring-1 focus:ring-primary",
-            errors.email ? "border-red-400" : "border-gray-300"
+            "mt-1 w-full border px-4 py-3 text-ink outline-none transition",
+            "focus:border-ink focus:ring-1 focus:ring-ink",
+            errors.email ? "border-red-400" : "border-warm-gray"
           )}
           placeholder="you@example.com"
         />
@@ -158,7 +157,7 @@ export function ContactForm() {
 
       {/* Subject */}
       <div>
-        <label htmlFor="subject" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="subject" className="block text-sm font-medium text-ink">
           Subject
         </label>
         <input
@@ -168,8 +167,8 @@ export function ContactForm() {
           value={form.subject}
           onChange={handleChange}
           className={cn(
-            "mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none transition",
-            "focus:border-primary focus:ring-1 focus:ring-primary"
+            "mt-1 w-full border border-warm-gray px-4 py-3 text-ink outline-none transition",
+            "focus:border-ink focus:ring-1 focus:ring-ink"
           )}
           placeholder="What is this about?"
         />
@@ -177,7 +176,7 @@ export function ContactForm() {
 
       {/* Message */}
       <div>
-        <label htmlFor="message" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="message" className="block text-sm font-medium text-ink">
           Message <span className="text-red-500">*</span>
         </label>
         <textarea
@@ -187,9 +186,9 @@ export function ContactForm() {
           value={form.message}
           onChange={handleChange}
           className={cn(
-            "mt-1 w-full resize-y rounded-lg border px-4 py-3 text-gray-900 outline-none transition",
-            "focus:border-primary focus:ring-1 focus:ring-primary",
-            errors.message ? "border-red-400" : "border-gray-300"
+            "mt-1 w-full resize-y border px-4 py-3 text-ink outline-none transition",
+            "focus:border-ink focus:ring-1 focus:ring-ink",
+            errors.message ? "border-red-400" : "border-warm-gray"
           )}
           placeholder="Your message..."
         />
@@ -203,8 +202,8 @@ export function ContactForm() {
         type="submit"
         disabled={status === "submitting"}
         className={cn(
-          "rounded-lg bg-primary px-8 py-3 font-medium text-white transition",
-          "hover:bg-teal-800 disabled:opacity-50"
+          "bg-ink px-8 py-3 font-medium text-paper transition",
+          "hover:bg-ink/85 disabled:opacity-50"
         )}
       >
         {status === "submitting" ? (

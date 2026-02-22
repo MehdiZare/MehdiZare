@@ -31,18 +31,18 @@ export function TickerLookup({ placeholder }: TickerLookupProps) {
           value={ticker}
           onChange={(event) => setTicker(event.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          className="w-full border border-warm-gray bg-paper px-4 py-3 text-ink outline-none focus:border-ink focus:ring-1 focus:ring-ink"
         />
         <button
           type="submit"
-          className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+          className="bg-paper px-6 py-3 text-sm font-medium text-ink border border-paper transition hover:bg-warm-gray"
         >
           Lookup Score
         </button>
       </form>
 
       {submittedTicker ? (
-        <p className="mt-3 text-sm text-slate-600">
+        <p className="mt-3 text-sm text-paper/70">
           {submittedTicker} captured. Live scoring API is coming in Phase 2.
         </p>
       ) : null}

@@ -10,16 +10,16 @@ export function CredentialBadges({ credentials }: CredentialBadgesProps) {
       {credentials.map((credential) => (
         <div
           key={credential.id}
-          className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-4"
+          className="flex items-center gap-3 border border-warm-gray bg-paper p-4"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-50">
-            <span className="text-sm font-bold text-primary">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-accent-warm/10">
+            <span className="font-mono text-sm font-medium text-accent-warm">
               {credential.title.charAt(0)}
             </span>
           </div>
           <div className="min-w-0">
-            <p className="font-medium text-gray-900">{credential.title}</p>
-            <p className="text-sm text-gray-500">{credential.issuer}</p>
+            <p className="font-medium text-ink">{credential.title}</p>
+            <p className="text-sm text-mid-gray">{credential.issuer}</p>
           </div>
         </div>
       ))}

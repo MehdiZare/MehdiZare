@@ -173,12 +173,13 @@ export default async function AboutPage() {
   }
 
   return (
-    <div className="bg-slate-50 pb-20">
-      <section className="bg-gradient-to-b from-white to-slate-100 pb-14 pt-20">
+    <div className="bg-paper pb-20">
+      <section className="pb-14 pt-10">
         <div className="mx-auto max-w-6xl px-6">
           <AnimatedSection>
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">{data.title}</h1>
-            <p className="mt-5 max-w-3xl text-xl leading-relaxed text-slate-600">
+            <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">About</p>
+            <h1 className="mt-4 font-serif text-4xl leading-tight text-ink sm:text-5xl">{data.title}</h1>
+            <p className="mt-5 max-w-3xl text-xl leading-relaxed text-mid-gray">
               {data.positioningStatement}
             </p>
           </AnimatedSection>
@@ -192,13 +193,13 @@ export default async function AboutPage() {
           </AnimatedSection>
           <AnimatedSection delay={0.15} className="mt-8">
             {data.storyBlocks && data.storyBlocks.length > 0 ? (
-              <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+              <div className="mx-auto max-w-3xl border border-warm-gray bg-paper p-7">
                 <BlocksRenderer content={data.storyBlocks} />
               </div>
             ) : (
               <div className="mx-auto max-w-3xl space-y-5">
                 {data.story.map((paragraph) => (
-                  <p key={paragraph} className="text-lg leading-relaxed text-slate-700">
+                  <p key={paragraph} className="text-lg leading-relaxed text-mid-gray">
                     {paragraph}
                   </p>
                 ))}
@@ -216,9 +217,9 @@ export default async function AboutPage() {
           <AnimatedSection delay={0.15} className="mt-8">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {data.stats.map((stat) => (
-                <article key={stat.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                  <p className="mt-2 text-sm text-slate-600">{stat.label}</p>
+                <article key={stat.id} className="border border-warm-gray bg-paper p-5">
+                  <p className="font-serif text-2xl text-ink">{stat.value}</p>
+                  <p className="mt-2 text-sm text-mid-gray">{stat.label}</p>
                 </article>
               ))}
             </div>
@@ -249,14 +250,14 @@ export default async function AboutPage() {
           <AnimatedSection delay={0.2} className="mt-10">
             <div className="grid gap-4 sm:grid-cols-2">
               {data.education.map((edu) => (
-                <article key={edu.id} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h3 className="font-semibold text-slate-900">
+                <article key={edu.id} className="border border-warm-gray bg-paper p-6">
+                  <h3 className="font-medium text-ink">
                     {edu.degree}
                     {edu.field ? `, ${edu.field}` : ""}
                   </h3>
-                  <p className="mt-1 text-sm text-blue-700">{edu.institution}</p>
+                  <p className="mt-1 text-sm text-accent-warm">{edu.institution}</p>
                   {edu.description ? (
-                    <p className="mt-3 text-sm text-slate-600">{edu.description}</p>
+                    <p className="mt-3 text-sm text-mid-gray">{edu.description}</p>
                   ) : null}
                 </article>
               ))}
@@ -278,7 +279,7 @@ export default async function AboutPage() {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-xl border border-slate-200 bg-white p-5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-700"
+                  className="border border-warm-gray bg-paper p-5 text-sm font-medium text-mid-gray transition hover:border-ink hover:text-ink"
                 >
                   {link.platform}
                 </a>
@@ -287,7 +288,7 @@ export default async function AboutPage() {
             <div className="mt-8 text-center">
               <Link
                 href="/consulting#calendly"
-                className="inline-flex rounded-full bg-slate-900 px-7 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+                className="inline-flex bg-ink px-7 py-3 text-sm font-medium text-paper transition hover:bg-ink/85"
               >
                 Book a Discovery Call
               </Link>

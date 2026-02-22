@@ -64,15 +64,16 @@ const socialLinks = [
 
 export default function ContactPage() {
   return (
-    <div className="bg-gray-50">
+    <div className="bg-paper">
       {/* Header Section */}
-      <section className="bg-gradient-to-b from-white to-gray-50 pb-16 pt-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="pb-16 pt-10">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <AnimatedSection>
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+            <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">Contact</p>
+            <h1 className="mt-4 font-serif text-4xl leading-tight text-ink sm:text-5xl">
               Get in Touch
             </h1>
-            <p className="mt-4 text-xl text-gray-600">
+            <p className="mt-4 text-xl text-mid-gray">
               Have a question or want to work together?
             </p>
           </AnimatedSection>
@@ -81,30 +82,30 @@ export default function ContactPage() {
 
       {/* Form + Info Section */}
       <section className="pb-24 pt-4">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-12">
             {/* Contact Form */}
             <AnimatedSection className="lg:col-span-7">
-              <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
+              <div className="border border-warm-gray bg-paper p-8">
                 <ContactForm />
               </div>
             </AnimatedSection>
 
             {/* Contact Info */}
             <AnimatedSection delay={0.2} className="lg:col-span-5">
-              <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-                <h2 className="text-2xl font-bold text-gray-900">
+              <div className="border border-warm-gray bg-paper p-8">
+                <h2 className="font-serif text-2xl text-ink">
                   Let&apos;s Connect
                 </h2>
 
                 {/* Email */}
                 <div className="mt-8">
-                  <h3 className="text-sm font-medium uppercase tracking-wider text-gray-500">
+                  <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray">
                     Email
                   </h3>
                   <a
                     href="mailto:mehdi@mehdizare.com"
-                    className="mt-2 block text-lg text-primary hover:underline"
+                    className="mt-2 block text-lg text-ink underline underline-offset-4 hover:text-accent-warm"
                   >
                     mehdi@mehdizare.com
                   </a>
@@ -112,7 +113,7 @@ export default function ContactPage() {
 
                 {/* Social Links */}
                 <div className="mt-8">
-                  <h3 className="text-sm font-medium uppercase tracking-wider text-gray-500">
+                  <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray">
                     Social
                   </h3>
                   <div className="mt-3 flex flex-col gap-3">
@@ -122,7 +123,7 @@ export default function ContactPage() {
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 text-gray-700 transition hover:text-primary"
+                        className="flex items-center gap-3 text-mid-gray transition hover:text-ink"
                       >
                         <SocialIcon platform={link.platform} />
                         <span className="font-medium">{link.platform}</span>
@@ -132,8 +133,8 @@ export default function ContactPage() {
                 </div>
 
                 {/* Response time note */}
-                <div className="mt-10 rounded-lg bg-gray-50 p-4">
-                  <p className="text-sm text-gray-600">
+                <div className="mt-10 bg-muted p-4">
+                  <p className="text-sm text-mid-gray">
                     I typically respond within 24 hours. For urgent consulting
                     inquiries, please mention it in the subject line.
                   </p>

@@ -81,7 +81,6 @@ export function TableOfContents({ content }: TableOfContentsProps) {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        // Find the first heading that is currently intersecting
         const visibleEntries = entries.filter((entry) => entry.isIntersecting);
         if (visibleEntries.length > 0) {
           setActiveId(visibleEntries[0].target.id);
@@ -110,7 +109,7 @@ export function TableOfContents({ content }: TableOfContentsProps) {
 
   return (
     <nav className="sticky top-24">
-      <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">
+      <h4 className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-mid-gray mb-4">
         Table of Contents
       </h4>
       <ul className="space-y-1">
@@ -122,10 +121,10 @@ export function TableOfContents({ content }: TableOfContentsProps) {
                 "block text-sm py-1 transition-colors",
                 heading.level === 3 && "pl-4",
                 activeId === heading.id
-                  ? "text-primary font-medium"
+                  ? "text-ink font-medium"
                   : heading.level === 2
-                    ? "text-gray-600 hover:text-primary"
-                    : "text-gray-400 hover:text-primary"
+                    ? "text-mid-gray hover:text-ink"
+                    : "text-mid-gray/60 hover:text-ink"
               )}
             >
               {heading.text}
