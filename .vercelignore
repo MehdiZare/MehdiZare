@@ -7,40 +7,31 @@ dist/
 build/
 .turbo/
 
-# Environment
+# CMS app (not needed for web deployment)
+apps/cms/
+
+# Environment files
 .env
 .env.local
 .env.*.local
 
-# IDE
+# IDE / OS
 .idea/
 .vscode/
 *.swp
 *.swo
-
-# OS
 .DS_Store
 Thumbs.db
 
-# Strapi
-apps/cms/.tmp/
-apps/cms/.cache/
-apps/cms/build/
-apps/cms/dist/
-apps/cms/exports/
-
-# Debug
+# Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Worktrees
-.worktrees/
-.vercel
-
-# Claude
+# Other
+.git/
 .claude/
-
-# Package manager
 .pnpm-store/
+.worktrees/
+.vercel/
