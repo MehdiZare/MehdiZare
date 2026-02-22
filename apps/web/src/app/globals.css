@@ -17,15 +17,17 @@
   --color-muted: #f4f3f0;
   --color-border: var(--color-warm-gray);
 
-  /* Fonts — Next.js sets --font-outfit, --font-dm-serif, --font-jetbrains at runtime */
+  /* Fonts — Next.js sets --font-outfit, --font-playfair, --font-jetbrains at runtime */
   --font-sans: var(--font-outfit, ui-sans-serif, system-ui, sans-serif);
-  --font-serif: var(--font-dm-serif, ui-serif, Georgia, serif);
+  --font-serif: var(--font-playfair, ui-serif, Georgia, serif);
   --font-mono: var(--font-jetbrains, ui-monospace, SFMono-Regular, monospace);
 }
 
 body {
   background: var(--color-paper);
   color: var(--color-ink);
+  font-size: 17px;
+  line-height: 1.65;
 }
 
 code,

@@ -1,12 +1,12 @@
+import { Label } from "@/components/shared/Label";
+
 export function NarrativeSection() {
   return (
-    <section className="bg-paper py-24">
+    <section id="the-problem" className="bg-paper py-24">
       <div className="mx-auto max-w-[680px] px-6">
-        <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">
-          01 &mdash; The Problem
-        </p>
+        <Label>01 &mdash; The Problem</Label>
 
-        <h2 className="mt-6 font-serif text-3xl leading-tight text-ink sm:text-4xl">
+        <h2 className="mt-6 font-serif text-4xl font-bold leading-tight text-ink sm:text-5xl">
           Your AI demo worked. Your AI product didn&rsquo;t ship.
         </h2>
 

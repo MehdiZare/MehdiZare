@@ -18,6 +18,8 @@ export function BeehiivEmbed({ source, title, description }: BeehiivEmbedProps) 
     return `${embedUrl}${hasQuery ? "&" : "?"}utm_source=${encodeURIComponent(source)}`;
   }, [embedUrl, source]);
 
+  if (!embedUrl) return null;
+
   return (
     <div className="border border-warm-gray bg-paper p-6 sm:p-8">
       {title ? (
@@ -48,13 +50,7 @@ export function BeehiivEmbed({ source, title, description }: BeehiivEmbedProps) 
               Open signup form in a new tab
             </a>
           </div>
-        ) : (
-          <div className="border border-dashed border-warm-gray bg-muted p-6">
-            <p className="text-sm text-mid-gray">
-              Set <code className="font-mono">NEXT_PUBLIC_BEEHIIV_EMBED_URL</code> to render the live signup form.
-            </p>
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

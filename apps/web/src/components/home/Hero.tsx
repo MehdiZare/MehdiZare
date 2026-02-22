@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { trackEvent } from "@/lib/analytics";
+import { Label } from "@/components/shared/Label";
+import { HeroStats } from "@/components/home/HeroStats";
 
 interface HeroProps {
   headline: string;
@@ -41,28 +43,26 @@ export function Hero({
   secondaryCtaHref,
 }: HeroProps) {
   return (
-    <section className="-mt-20 flex min-h-screen items-center bg-paper">
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center px-6 lg:grid-cols-12 lg:px-8">
+    <section id="hero" className="-mt-20 flex min-h-screen items-center bg-paper pt-20">
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-12 lg:gap-16 lg:px-8">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="lg:col-span-8"
+          className="lg:col-span-7"
         >
-          <motion.p
-            variants={childVariants}
-            className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray"
-          >
-            Principal AI Engineer &middot; CFA Charterholder
-          </motion.p>
+          <motion.div variants={childVariants}>
+            <Label>Principal AI Engineer &middot; CFA Charterholder</Label>
+          </motion.div>
 
           <motion.h1
             variants={childVariants}
-            className="mt-6 font-serif text-4xl leading-[1.1] text-ink sm:text-5xl lg:text-7xl"
+            className="mt-6 font-serif text-4xl font-bold leading-[1.1] text-ink sm:text-5xl lg:text-7xl"
           >
             {headline.includes("to production.") ? (
               <>
                 {headline.split("to production.")[0]}
+                <br className="hidden lg:block" />
                 <em className="italic">to production.</em>
               </>
             ) : (
@@ -83,7 +83,7 @@ export function Hero({
           >
             <Link
               href={primaryCtaHref}
-              className="inline-flex items-center gap-3 bg-ink px-7 py-3 text-sm font-medium text-paper transition-all hover:bg-ink/85"
+              className="inline-flex items-center gap-3 rounded-sm bg-ink px-7 py-3 text-sm font-medium text-paper transition-all hover:-translate-y-0.5 hover:bg-ink/85 hover:shadow-lg"
               onClick={() => {
                 trackEvent("cta_primary_clicked", {
                   page: "home",
@@ -105,7 +105,7 @@ export function Hero({
             </Link>
             <Link
               href={secondaryCtaHref}
-              className="text-sm text-mid-gray underline underline-offset-4 transition-colors hover:text-ink"
+              className="rounded-sm border border-ink/20 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
               onClick={() => {
                 trackEvent("cta_secondary_clicked", {
                   page: "home",
@@ -119,19 +119,9 @@ export function Hero({
           </motion.div>
         </motion.div>
 
-        {/* Decorative scroll indicator */}
-        <div className="hidden lg:col-span-4 lg:flex lg:items-end lg:justify-end">
-          <div className="flex flex-col items-center gap-2">
-            <span className="font-mono text-[0.55rem] uppercase tracking-[0.25em] text-mid-gray/50">
-              Scroll
-            </span>
-            <motion.div
-              className="h-16 w-px bg-gradient-to-b from-mid-gray/40 to-transparent"
-              animate={{ scaleY: [0, 1, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              style={{ transformOrigin: "top" }}
-            />
-          </div>
+        {/* Terminal-style stats block */}
+        <div className="hidden lg:col-span-5 lg:block">
+          <HeroStats />
         </div>
       </div>
     </section>

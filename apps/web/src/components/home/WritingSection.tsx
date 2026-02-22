@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getArticles } from "@/lib/strapi";
+import { Label } from "@/components/shared/Label";
 import type { Article } from "@/types/strapi";
 
 const placeholderArticles: Article[] = [
@@ -66,23 +67,13 @@ export async function WritingSection() {
   const displayArticles = articles.length > 0 ? articles : placeholderArticles;
 
   return (
-    <section className="bg-paper py-24">
+    <section id="writing" className="bg-paper py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">
-              05 &mdash; Writing
-            </p>
-            <h2 className="mt-4 font-serif text-3xl leading-tight text-ink sm:text-4xl">
-              Thinking in public.
-            </h2>
-          </div>
-          <Link
-            href="/blog"
-            className="text-sm text-mid-gray underline underline-offset-4 transition-colors hover:text-ink"
-          >
-            View all articles
-          </Link>
+        <div>
+          <Label>05 &mdash; Writing</Label>
+          <h2 className="mt-4 font-serif text-4xl font-bold leading-tight text-ink sm:text-5xl">
+            Thinking in public.
+          </h2>
         </div>
 
         <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
@@ -90,7 +81,7 @@ export async function WritingSection() {
             <Link
               key={article.documentId}
               href={`/blog/${article.slug}`}
-              className="group"
+              className="group border border-warm-gray p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-mid-gray hover:shadow-sm"
             >
               {article.category && (
                 <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-accent-warm">
@@ -112,6 +103,15 @@ export async function WritingSection() {
               )}
             </Link>
           ))}
+        </div>
+
+        <div className="mt-10 text-center">
+          <Link
+            href="/blog"
+            className="inline-block rounded-sm border border-ink/20 px-6 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
+          >
+            View all articles
+          </Link>
         </div>
       </div>
     </section>

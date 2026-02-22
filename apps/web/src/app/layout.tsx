@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit, DM_Serif_Display, JetBrains_Mono } from "next/font/google";
+import { Outfit, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PostHogScripts } from "@/components/analytics/PostHogScripts";
@@ -19,9 +19,9 @@ const outfit = Outfit({
   display: "swap",
 });
 
-const dmSerif = DM_Serif_Display({
-  variable: "--font-dm-serif",
-  weight: "400",
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  weight: ["400", "700", "900"],
   subsets: ["latin"],
   display: "swap",
 });
@@ -74,7 +74,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${outfit.variable} ${dmSerif.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body className={`${outfit.variable} ${playfair.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <JsonLd id="website-jsonld" data={buildWebsiteJsonLd()} />
         <JsonLd id="person-jsonld" data={buildPersonJsonLd()} />
         <PostHogScripts />

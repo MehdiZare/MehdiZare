@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Label } from "@/components/shared/Label";
+import { CountUp } from "@/components/shared/CountUp";
 
 interface ScoreBar {
   label: string;
@@ -20,16 +22,14 @@ const subScores: ScoreBar[] = [
 
 export function ProofOfWork() {
   return (
-    <section className="bg-[#f4f3f0] py-24">
+    <section id="proof-of-work" className="border-t border-warm-gray bg-paper py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">
-          04 &mdash; Proof of Work
-        </p>
+        <Label>04 &mdash; Proof of Work</Label>
 
         <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-2">
           {/* Editorial text */}
           <div>
-            <h2 className="font-serif text-3xl leading-tight text-ink sm:text-4xl">
+            <h2 className="font-serif text-4xl font-bold leading-tight text-ink sm:text-5xl">
               I don&rsquo;t just consult. I ship products.
             </h2>
             <p className="mt-6 text-base leading-relaxed text-mid-gray">
@@ -54,7 +54,10 @@ export function ProofOfWork() {
           <div className="rounded-2xl border border-warm-gray bg-paper p-8">
             <div className="flex items-baseline justify-between">
               <span className="font-mono text-sm text-mid-gray">{ticker}</span>
-              <span className="font-serif text-5xl text-ink">{overallScore}</span>
+              <CountUp
+                end={overallScore}
+                className="font-serif text-5xl text-ink"
+              />
             </div>
             <p className="mt-1 text-right font-mono text-xs text-mid-gray">Overall Score</p>
 
@@ -63,7 +66,10 @@ export function ProofOfWork() {
                 <div key={score.label}>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-ink">{score.label}</span>
-                    <span className="font-mono text-sm text-mid-gray">{score.value}</span>
+                    <CountUp
+                      end={score.value}
+                      className="font-mono text-sm text-mid-gray"
+                    />
                   </div>
                   <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-warm-gray">
                     <motion.div

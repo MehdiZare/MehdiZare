@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
+import { ClientLogos } from "@/components/home/ClientLogos";
 import { CredentialsStrip } from "@/components/home/CredentialsStrip";
 import { NarrativeSection } from "@/components/home/NarrativeSection";
 import { ServicesGrid } from "@/components/home/ServicesGrid";
@@ -107,6 +108,8 @@ export default async function Home() {
         secondaryCtaLabel={homeData.heroSecondaryCtaLabel}
         secondaryCtaHref={homeData.heroSecondaryCtaHref}
       />
+
+      <ClientLogos />
 
       <AnimatedSection>
         <CredentialsStrip />
