@@ -1,0 +1,68 @@
+version: "3"
+
+silent: true
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmd: task --list
+
+  install:
+    desc: Install all dependencies
+    cmd: pnpm install
+
+  dev:
+    desc: Start web + CMS dev servers via Turborepo
+    cmd: pnpm turbo dev
+
+  dev:web:
+    desc: Start Next.js dev server only
+    cmd: pnpm turbo dev --filter=web
+
+  dev:cms:
+    desc: Start Strapi dev server only
+    cmd: pnpm turbo dev --filter=cms
+
+  build:
+    desc: Build all packages
+    cmd: pnpm turbo build
+
+  build:web:
+    desc: Build Next.js only
+    cmd: pnpm turbo build --filter=web
+
+  build:cms:
+    desc: Build Strapi only
+    cmd: pnpm turbo build --filter=cms
+
+  lint:
+    desc: Run linting
+    cmd: pnpm turbo lint
+
+  typecheck:
+    desc: Run TypeScript type checking on web app
+    cmd: pnpm --filter=web exec tsc --noEmit
+
+  deps:check-updates:
+    desc: Check for outdated dependencies
+    cmd: pnpm outdated -r
+
+  deps:upgrade:
+    desc: Upgrade dependencies
+    cmd: pnpm update -r
+
+  docker:build:cms:
+    desc: Build CMS Docker image
+    cmd: docker build -t mehdi-zare-cms -f apps/cms/Dockerfile .
+
+  deploy:web:
+    desc: Deploy web to Vercel (preview)
+    cmd: vercel --cwd apps/web
+
+  deploy:web:prod:
+    desc: Deploy web to Vercel (production)
+    cmd: vercel --prod --cwd apps/web
+
+  clean:
+    desc: Remove node_modules, build caches, and generated files
+    cmd: rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/web/.next apps/cms/dist .turbo apps/*/.turbo packages/*/.turbo
