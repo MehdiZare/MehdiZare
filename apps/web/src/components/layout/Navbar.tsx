@@ -2,33 +2,44 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { trackEvent } from "@/lib/analytics";
 
 const navLinks = [
-  { label: "Home", href: "/" },
   { label: "About", href: "/about" },
+  { label: "Writing", href: "/blog" },
   { label: "Bina Print", href: "/bina-print" },
-  { label: "Blog", href: "/blog" },
-  { label: "Consulting", href: "/consulting" },
-  { label: "Newsletter", href: "/newsletter" },
 ];
 
-const bookCallHref = "/consulting#calendly";
+const ctaHref = "/consulting#calendly";
 
 export function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur-lg">
+    <header
+      className={cn(
+        "fixed top-0 z-50 w-full transition-all duration-300",
+        scrolled
+          ? "border-b border-warm-gray/50 bg-paper/80 backdrop-blur-lg"
+          : "bg-transparent"
+      )}
+    >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
-        <Link href="/" className="text-xl font-bold text-slate-900">
-          MZ
+        <Link href="/" className="font-mono text-sm font-medium tracking-wide text-ink">
+          Mehdi Zare
         </Link>
 
-        <ul className="hidden items-center gap-7 md:flex">
+        <ul className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => {
             const isActive =
               link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
@@ -38,8 +49,8 @@ export function Navbar() {
                 <Link
                   href={link.href}
                   className={cn(
-                    "text-sm font-medium transition-colors",
-                    isActive ? "text-blue-700" : "text-slate-600 hover:text-slate-900"
+                    "text-sm transition-colors",
+                    isActive ? "text-ink" : "text-mid-gray hover:text-ink"
                   )}
                 >
                   {link.label}
@@ -51,23 +62,23 @@ export function Navbar() {
 
         <div className="hidden md:block">
           <Link
-            href={bookCallHref}
-            className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+            href={ctaHref}
+            className="border border-ink px-5 py-2 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-paper"
             onClick={() => {
-              trackEvent("cta_book_call_clicked", {
+              trackEvent("cta_work_with_me_clicked", {
                 page: "global",
                 section: "navbar",
-                cta_label: "Book a Call",
+                cta_label: "Work With Me",
               });
             }}
           >
-            Book a Call
+            Work With Me
           </Link>
         </div>
 
         <button
           type="button"
-          className="inline-flex items-center justify-center rounded-md p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 md:hidden"
+          className="inline-flex items-center justify-center rounded-md p-2 text-mid-gray transition-colors hover:text-ink md:hidden"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-expanded={mobileMenuOpen}
           aria-label="Toggle navigation menu"
@@ -85,7 +96,7 @@ export function Navbar() {
       </nav>
 
       {mobileMenuOpen && (
-        <div className="border-t border-slate-200 bg-white md:hidden">
+        <div className="border-t border-warm-gray/50 bg-paper/95 backdrop-blur-lg md:hidden">
           <ul className="space-y-1 px-6 py-4">
             {navLinks.map((link) => {
               const isActive =
@@ -97,10 +108,8 @@ export function Navbar() {
                     href={link.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "block rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-blue-50 text-blue-700"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      "block px-3 py-2 text-sm transition-colors",
+                      isActive ? "text-ink" : "text-mid-gray hover:text-ink"
                     )}
                   >
                     {link.label}
@@ -110,18 +119,18 @@ export function Navbar() {
             })}
             <li className="pt-2">
               <Link
-                href={bookCallHref}
+                href={ctaHref}
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  trackEvent("cta_book_call_clicked", {
+                  trackEvent("cta_work_with_me_clicked", {
                     page: "global",
                     section: "navbar_mobile",
-                    cta_label: "Book a Call",
+                    cta_label: "Work With Me",
                   });
                 }}
-                className="block rounded-md bg-slate-900 px-3 py-2 text-center text-sm font-semibold text-white"
+                className="block border border-ink px-3 py-2 text-center text-sm font-medium text-ink"
               >
-                Book a Call
+                Work With Me
               </Link>
             </li>
           </ul>

@@ -41,100 +41,98 @@ export function Hero({
   secondaryCtaHref,
 }: HeroProps) {
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black">
-      {/* Animated gradient background */}
-      <motion.div
-        className="pointer-events-none absolute inset-0"
-        animate={{ backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"] }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-        style={{
-          background:
-            "radial-gradient(ellipse at 20% 50%, rgba(45,212,191,0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.1) 0%, transparent 40%), radial-gradient(ellipse at 50% 80%, rgba(0,0,0,0.8) 0%, transparent 60%)",
-          backgroundSize: "200% 200%",
-        }}
-      />
-
-      {/* Content */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="relative z-10 mx-auto max-w-3xl px-6 text-center"
-      >
-        <motion.p
-          variants={childVariants}
-          className="mb-6 font-mono text-[0.65rem] font-medium uppercase tracking-[0.35em] text-teal-300"
-        >
-          AI Engineer &middot; CFA Charterholder &middot; Builder
-        </motion.p>
-
-        <motion.h1
-          variants={childVariants}
-          className="text-4xl font-bold leading-[0.95] tracking-tight text-white sm:text-5xl lg:text-7xl"
-        >
-          {headline}
-        </motion.h1>
-
-        <motion.p
-          variants={childVariants}
-          className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-white/55 sm:text-lg"
-        >
-          {subheadline}
-        </motion.p>
-
+    <section className="-mt-20 flex min-h-screen items-center bg-paper">
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center px-6 lg:grid-cols-12 lg:px-8">
         <motion.div
-          variants={childVariants}
-          className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="lg:col-span-8"
         >
-          <Link
-            href={primaryCtaHref}
-            className="inline-flex items-center gap-3 bg-teal-400 px-7 py-3 font-mono text-xs font-medium uppercase tracking-[0.12em] text-slate-950 transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_10px_40px_rgba(45,212,191,0.2)]"
-            onClick={() => {
-              trackEvent("cta_book_call_clicked", {
-                page: "home",
-                section: "hero",
-                cta_label: primaryCtaLabel,
-              });
-            }}
+          <motion.p
+            variants={childVariants}
+            className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray"
           >
-            {primaryCtaLabel}
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              className="h-3.5 w-3.5"
+            CFA Charterholder &middot; Principal AI Engineer
+          </motion.p>
+
+          <motion.h1
+            variants={childVariants}
+            className="mt-6 font-serif text-4xl leading-[1.1] text-ink sm:text-5xl lg:text-7xl"
+          >
+            {headline.includes("ship AI") ? (
+              <>
+                {headline.split("ship AI")[0]}
+                <em className="italic">ship AI{headline.split("ship AI")[1]}</em>
+              </>
+            ) : (
+              headline
+            )}
+          </motion.h1>
+
+          <motion.p
+            variants={childVariants}
+            className="mt-6 max-w-xl text-base leading-relaxed text-mid-gray sm:text-lg"
+          >
+            {subheadline}
+          </motion.p>
+
+          <motion.div
+            variants={childVariants}
+            className="mt-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center"
+          >
+            <Link
+              href={primaryCtaHref}
+              className="inline-flex items-center gap-3 bg-ink px-7 py-3 text-sm font-medium text-paper transition-all hover:bg-ink/85"
+              onClick={() => {
+                trackEvent("cta_primary_clicked", {
+                  page: "home",
+                  section: "hero",
+                  cta_label: primaryCtaLabel,
+                });
+              }}
             >
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </Link>
-          <Link
-            href={secondaryCtaHref}
-            className="inline-flex items-center gap-2 border border-white/20 px-7 py-3 font-mono text-xs font-medium uppercase tracking-[0.12em] text-white/70 transition-all hover:border-white/40 hover:text-white"
-            onClick={() => {
-              trackEvent("cta_secondary_clicked", {
-                page: "home",
-                section: "hero",
-                cta_label: secondaryCtaLabel,
-              });
-            }}
-          >
-            {secondaryCtaLabel}
-          </Link>
+              {primaryCtaLabel}
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="h-3.5 w-3.5"
+              >
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </Link>
+            <Link
+              href={secondaryCtaHref}
+              className="text-sm text-mid-gray underline underline-offset-4 transition-colors hover:text-ink"
+              onClick={() => {
+                trackEvent("cta_secondary_clicked", {
+                  page: "home",
+                  section: "hero",
+                  cta_label: secondaryCtaLabel,
+                });
+              }}
+            >
+              {secondaryCtaLabel}
+            </Link>
+          </motion.div>
         </motion.div>
-      </motion.div>
 
-      {/* Scroll hint */}
-      <div className="absolute bottom-10 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2">
-        <span className="font-mono text-[0.55rem] uppercase tracking-[0.25em] text-white/30">
-          Scroll
-        </span>
-        <motion.div
-          className="h-10 w-px bg-gradient-to-b from-white/40 to-transparent"
-          animate={{ scaleY: [0, 1, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          style={{ transformOrigin: "top" }}
-        />
+        {/* Decorative scroll indicator */}
+        <div className="hidden lg:col-span-4 lg:flex lg:items-end lg:justify-end">
+          <div className="flex flex-col items-center gap-2">
+            <span className="font-mono text-[0.55rem] uppercase tracking-[0.25em] text-mid-gray/50">
+              Scroll
+            </span>
+            <motion.div
+              className="h-16 w-px bg-gradient-to-b from-mid-gray/40 to-transparent"
+              animate={{ scaleY: [0, 1, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              style={{ transformOrigin: "top" }}
+            />
+          </div>
+        </div>
       </div>
     </section>
   );

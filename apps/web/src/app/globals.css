@@ -1,23 +1,34 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
-  --color-primary: #0f172a;
+  /* New editorial palette */
+  --color-ink: #0f0f0f;
+  --color-paper: #fafaf8;
+  --color-warm-gray: #e8e6e1;
+  --color-mid-gray: #6b6560;
+  --color-accent-warm: #c4956a;
+
+  /* Backward-compatible aliases */
+  --color-background: var(--color-paper);
+  --color-foreground: var(--color-ink);
+  --color-primary: var(--color-ink);
   --color-primary-light: #1e293b;
   --color-primary-dark: #020617;
-  --color-muted: #f1f5f9;
-  --color-border: #cbd5e1;
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-mono);
+  --color-muted: #f4f3f0;
+  --color-border: var(--color-warm-gray);
+
+  /* Fonts — Next.js sets --font-outfit, --font-dm-serif, --font-jetbrains at runtime */
+  --font-sans: var(--font-outfit, ui-sans-serif, system-ui, sans-serif);
+  --font-serif: var(--font-dm-serif, ui-serif, Georgia, serif);
+  --font-mono: var(--font-jetbrains, ui-monospace, SFMono-Regular, monospace);
 }
 
 body {
-  background: var(--color-background);
-  color: var(--color-foreground);
+  background: var(--color-paper);
+  color: var(--color-ink);
 }
 
 code,
 pre {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono), monospace;
 }

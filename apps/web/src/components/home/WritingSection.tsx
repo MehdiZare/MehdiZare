@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getArticles } from "@/lib/strapi";
-import { PostCard } from "@/components/blog/PostCard";
 import type { Article } from "@/types/strapi";
 
 const placeholderArticles: Article[] = [
@@ -51,7 +50,7 @@ const placeholderArticles: Article[] = [
   },
 ];
 
-export async function FeaturedPosts() {
+export async function WritingSection() {
   let articles: Article[];
 
   try {
@@ -61,38 +60,53 @@ export async function FeaturedPosts() {
     });
     articles = response.data;
   } catch {
-    // Strapi not running — fall back to placeholders
     articles = [];
   }
 
   const displayArticles = articles.length > 0 ? articles : placeholderArticles;
 
   return (
-    <section className="bg-white py-24">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-            Latest Insights
-          </h2>
-          <p className="mt-3 text-lg text-gray-600">
-            Thoughts on AI, finance, and the intersection of both
+    <section className="bg-paper py-24">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="flex items-end justify-between">
+          <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">
+            05 &mdash; Writing
           </p>
+          <Link
+            href="/blog"
+            className="text-sm text-mid-gray underline underline-offset-4 transition-colors hover:text-ink"
+          >
+            View all articles
+          </Link>
         </div>
 
         <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
           {displayArticles.map((article) => (
-            <PostCard key={article.documentId} article={article} />
+            <Link
+              key={article.documentId}
+              href={`/blog/${article.slug}`}
+              className="group"
+            >
+              {article.category && (
+                <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-accent-warm">
+                  {article.category.name}
+                </p>
+              )}
+              <h3 className="mt-2 font-serif text-xl leading-snug text-ink transition-colors group-hover:text-mid-gray">
+                {article.title}
+              </h3>
+              {article.excerpt && (
+                <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-mid-gray">
+                  {article.excerpt}
+                </p>
+              )}
+              {article.readingTime && (
+                <p className="mt-3 font-mono text-xs text-mid-gray/60">
+                  {article.readingTime} min read
+                </p>
+              )}
+            </Link>
           ))}
-        </div>
-
-        <div className="mt-12 text-center">
-          <Link
-            href="/blog"
-            className="inline-flex items-center text-sm font-semibold text-primary transition-colors hover:text-primary-dark"
-          >
-            View All Posts
-            <span className="ml-1" aria-hidden="true">&rarr;</span>
-          </Link>
         </div>
       </div>
     </section>
