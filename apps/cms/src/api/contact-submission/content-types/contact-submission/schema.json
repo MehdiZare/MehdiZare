@@ -12,18 +12,24 @@
   "attributes": {
     "name": {
       "type": "string",
-      "required": true
+      "required": true,
+      "minLength": 2,
+      "maxLength": 120
     },
     "email": {
       "type": "email",
-      "required": true
+      "required": true,
+      "maxLength": 320
     },
     "subject": {
-      "type": "string"
+      "type": "string",
+      "maxLength": 160
     },
     "message": {
       "type": "text",
-      "required": true
+      "required": true,
+      "minLength": 10,
+      "maxLength": 5000
     }
   }
 }

@@ -17,19 +17,15 @@ const ctaHref = "/consulting#calendly";
 
 export function Navbar() {
   const pathname = usePathname();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openMenuForPath, setOpenMenuForPath] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const mobileMenuOpen = openMenuForPath === pathname;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
-  // Close mobile menu on navigation
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
 
   return (
     <header
@@ -87,7 +83,9 @@ export function Navbar() {
         <button
           type="button"
           className="inline-flex items-center justify-center rounded-md p-2 text-mid-gray transition-colors hover:text-ink md:hidden"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onClick={() => {
+            setOpenMenuForPath((current) => (current === pathname ? null : pathname));
+          }}
           aria-expanded={mobileMenuOpen}
           aria-label="Toggle navigation menu"
         >
@@ -121,7 +119,7 @@ export function Navbar() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={() => setOpenMenuForPath(null)}
                       className={cn(
                         "block px-3 py-2 text-sm transition-colors",
                         isActive ? "text-ink" : "text-mid-gray hover:text-ink"
@@ -136,7 +134,7 @@ export function Navbar() {
                 <Link
                   href={ctaHref}
                   onClick={() => {
-                    setMobileMenuOpen(false);
+                    setOpenMenuForPath(null);
                     trackEvent("cta_work_with_me_clicked", {
                       page: "global",
                       section: "navbar_mobile",

@@ -63,6 +63,9 @@ Useful commands:
 - `task dev:cms`: run Strapi only
 - `task build`: build all apps/packages
 - `task lint`: run workspace lint
+- `task typecheck`: run TypeScript type checks
+- `task test`: run web unit tests
+- `task security:audit`: run dependency vulnerability audit
 
 ## Environment Variables
 
@@ -70,10 +73,12 @@ Useful commands:
 
 - `NEXT_PUBLIC_STRAPI_URL`: Strapi base URL (local: `http://localhost:1337`)
 - `STRAPI_API_TOKEN`: Strapi API token used by server-side requests
+- `NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS`: optional comma-separated image host allowlist
 
 ### CMS (`apps/cms/.env`)
 
 - `HOST`, `PORT`
+- `CORS_ORIGINS`
 - `APP_KEYS`
 - `API_TOKEN_SALT`
 - `ADMIN_JWT_SECRET`

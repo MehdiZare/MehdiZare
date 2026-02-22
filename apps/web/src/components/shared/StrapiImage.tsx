@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { StrapiImage as StrapiImageType } from "@/types/strapi";
 import { cn } from "@/lib/utils";
+import { toAbsoluteStrapiMediaUrl } from "@/lib/public-env";
 
 interface StrapiImageProps {
   image: StrapiImageType | null | undefined;
@@ -12,11 +13,7 @@ interface StrapiImageProps {
 }
 
 function getStrapiImageUrl(url: string): string {
-  if (url.startsWith("/")) {
-    const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL ?? "http://localhost:1337";
-    return `${baseUrl}${url}`;
-  }
-  return url;
+  return toAbsoluteStrapiMediaUrl(url);
 }
 
 export function StrapiImage({

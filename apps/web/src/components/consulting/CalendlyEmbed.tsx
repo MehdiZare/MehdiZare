@@ -1,13 +1,14 @@
 "use client";
 
 import { InlineWidget } from "react-calendly";
+import { publicEnv } from "@/lib/public-env";
 
 interface CalendlyEmbedProps {
   url?: string;
 }
 
 export function CalendlyEmbed({
-  url = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/placeholder",
+  url = publicEnv.calendlyUrl || "https://calendly.com/placeholder",
 }: CalendlyEmbedProps) {
   if (url.includes("placeholder")) {
     return (

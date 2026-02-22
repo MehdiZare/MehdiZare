@@ -1,14 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Article } from "@/types/strapi";
-
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+import { toAbsoluteStrapiMediaUrl } from "@/lib/public-env";
 
 function getStrapiImageUrl(url: string): string {
-  if (url.startsWith("/")) {
-    return `${STRAPI_URL}${url}`;
-  }
-  return url;
+  return toAbsoluteStrapiMediaUrl(url);
 }
 
 function formatDate(dateString: string): string {

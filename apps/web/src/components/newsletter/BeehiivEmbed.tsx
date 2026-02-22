@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { trackEvent } from "@/lib/analytics";
+import { publicEnv } from "@/lib/public-env";
 
 interface BeehiivEmbedProps {
   source: string;
@@ -10,7 +11,7 @@ interface BeehiivEmbedProps {
 }
 
 export function BeehiivEmbed({ source, title, description }: BeehiivEmbedProps) {
-  const embedUrl = process.env.NEXT_PUBLIC_BEEHIIV_EMBED_URL;
+  const embedUrl = publicEnv.beehiivEmbedUrl;
 
   const trackedEmbedUrl = useMemo(() => {
     if (!embedUrl) return null;

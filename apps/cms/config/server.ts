@@ -1,4 +1,5 @@
 import type { Core } from '@strapi/strapi';
+import { validateCmsEnv } from './env-validation';
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Server => ({
   host: env('HOST', '0.0.0.0'),
@@ -6,6 +7,10 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Server =>
   app: {
     keys: env.array('APP_KEYS'),
   },
+  proxy: env.bool('IS_BEHIND_PROXY', true),
 });
 
-export default config;
+export default ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Server => {
+  validateCmsEnv(env);
+  return config({ env });
+};

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Outfit, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PostHogScripts } from "@/components/analytics/PostHogScripts";
@@ -12,25 +11,6 @@ import {
   SITE_NAME,
 } from "@/lib/seo";
 import "./globals.css";
-
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  weight: ["400", "700", "900"],
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 const siteUrl = getSiteUrl();
 
@@ -90,12 +70,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${outfit.variable} ${playfair.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
+        <a
+          href={"#main-content"}
+          className="sr-only z-[100] focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:bg-ink focus:px-3 focus:py-2 focus:text-paper"
+        >
+          Skip to content
+        </a>
         <JsonLd id="website-jsonld" data={buildWebsiteJsonLd()} />
         <JsonLd id="person-jsonld" data={buildPersonJsonLd()} />
         <PostHogScripts />
         <Navbar />
-        <main className="min-h-screen pt-20">{children}</main>
+        <main id="main-content" className="min-h-screen pt-20">{children}</main>
         <Footer />
       </body>
     </html>

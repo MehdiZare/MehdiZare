@@ -6,6 +6,7 @@ import {
 } from "@strapi/blocks-react-renderer";
 import Image from "next/image";
 import { CodeBlock } from "./CodeBlock";
+import { toAbsoluteStrapiMediaUrl } from "@/lib/public-env";
 
 function slugify(text: string): string {
   return text
@@ -106,9 +107,7 @@ export function BlocksRenderer({ content }: BlocksRendererProps) {
             return <CodeBlock code={lines.join("\n")} language={language} />;
           },
           image: ({ image }) => {
-            const src = image.url.startsWith("/")
-              ? `${process.env.NEXT_PUBLIC_STRAPI_URL ?? "http://localhost:1337"}${image.url}`
-              : image.url;
+            const src = toAbsoluteStrapiMediaUrl(image.url);
             return (
               <figure className="my-6">
                 <Image

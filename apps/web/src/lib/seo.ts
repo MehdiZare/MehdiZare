@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { SEO, StrapiImage } from "@/types/strapi";
+import { publicEnv } from "@/lib/public-env";
 
 const DEFAULT_SITE_URL = "https://mehdi-zare.com";
 const DEFAULT_STRAPI_URL = "http://localhost:1337";
@@ -83,11 +84,11 @@ function normalizeOrigin(value: string, fallback: string): string {
 }
 
 export function getSiteUrl(): string {
-  return normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL ?? DEFAULT_SITE_URL, DEFAULT_SITE_URL);
+  return normalizeOrigin(publicEnv.siteUrl ?? DEFAULT_SITE_URL, DEFAULT_SITE_URL);
 }
 
 export function getStrapiUrl(): string {
-  return normalizeOrigin(process.env.NEXT_PUBLIC_STRAPI_URL ?? DEFAULT_STRAPI_URL, DEFAULT_STRAPI_URL);
+  return normalizeOrigin(publicEnv.strapiUrl ?? DEFAULT_STRAPI_URL, DEFAULT_STRAPI_URL);
 }
 
 export function toAbsoluteUrl(pathOrUrl: string, baseUrl = getSiteUrl()): string {

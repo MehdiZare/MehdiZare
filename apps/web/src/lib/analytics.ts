@@ -7,6 +7,8 @@ declare global {
   interface Window {
     posthog?: {
       capture?: (event: string, properties?: AnalyticsProperties) => void;
+      init?: (apiKey: string, options?: Record<string, unknown>) => void;
+      __mzInitialized?: boolean;
     };
   }
 }

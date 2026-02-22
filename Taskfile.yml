@@ -43,6 +43,14 @@ tasks:
     desc: Run TypeScript type checking on web app
     cmd: pnpm --filter=web exec tsc --noEmit
 
+  test:
+    desc: Run web test suite
+    cmd: pnpm --filter=web test
+
+  security:audit:
+    desc: Run dependency vulnerability audit (requires network access)
+    cmd: pnpm audit --audit-level high
+
   deps:check-updates:
     desc: Check for outdated dependencies
     cmd: pnpm outdated -r

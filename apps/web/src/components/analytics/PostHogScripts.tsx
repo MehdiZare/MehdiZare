@@ -1,30 +1,45 @@
-import Script from "next/script";
+"use client";
 
-const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-const POSTHOG_HOST = (process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com").replace(/\/$/, "");
+import { useEffect } from "react";
+import { publicEnv } from "@/lib/public-env";
+
+const SCRIPT_ID = "posthog-array-js";
 
 export function PostHogScripts() {
-  if (!POSTHOG_KEY) {
-    return null;
-  }
+  const { posthogHost, posthogKey } = publicEnv;
 
-  return (
-    <>
-      <Script src={`${POSTHOG_HOST}/static/array.js`} strategy="afterInteractive" />
-      <Script
-        id="posthog-init"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            window.posthog = window.posthog || [];
-            window.posthog.init('${POSTHOG_KEY}', {
-              api_host: '${POSTHOG_HOST}',
-              person_profiles: 'identified_only',
-              capture_pageview: true
-            });
-          `,
-        }}
-      />
-    </>
-  );
+  useEffect(() => {
+    if (!posthogKey) {
+      return;
+    }
+
+    const initPosthog = () => {
+      if (!window.posthog?.init || window.posthog.__mzInitialized) {
+        return;
+      }
+
+      window.posthog.init(posthogKey, {
+        api_host: posthogHost,
+        person_profiles: "identified_only",
+        capture_pageview: true,
+      });
+      window.posthog.__mzInitialized = true;
+    };
+
+    const existingScript = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+    if (existingScript) {
+      initPosthog();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = SCRIPT_ID;
+    script.async = true;
+    script.src = `${posthogHost}/static/array.js`;
+    script.referrerPolicy = "strict-origin-when-cross-origin";
+    script.onload = initPosthog;
+    document.head.appendChild(script);
+  }, [posthogHost, posthogKey]);
+
+  return null;
 }

@@ -12,9 +12,12 @@ import type {
   StrapiResponse,
   StrapiCollectionResponse,
 } from "@/types/strapi";
+import { publicEnv } from "@/lib/public-env";
+import { serverEnv } from "@/lib/server-env";
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
-const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
+const STRAPI_URL = publicEnv.strapiUrl;
+const STRAPI_API_TOKEN = serverEnv.strapiApiToken;
+const STRAPI_TIMEOUT_MS = 15_000;
 
 interface FetchAPIParams {
   populate?: string | string[] | Record<string, unknown>;
@@ -28,52 +31,117 @@ interface FetchAPIParams {
   [key: string]: unknown;
 }
 
-export async function fetchAPI<T>(
-  path: string,
-  params?: FetchAPIParams
-): Promise<T> {
-  const url = new URL(`/api${path}`, STRAPI_URL);
+class StrapiRequestError extends Error {
+  readonly path: string;
+  readonly status?: number;
+  readonly statusText?: string;
 
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value === undefined || value === null) return;
+  constructor(message: string, options: { path: string; status?: number; statusText?: string }) {
+    super(message);
+    this.name = "StrapiRequestError";
+    this.path = options.path;
+    this.status = options.status;
+    this.statusText = options.statusText;
+  }
+}
 
-      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-        url.searchParams.set(key, String(value));
-      } else if (Array.isArray(value)) {
-        value.forEach((v, i) => {
-          if (typeof v === "object" && v !== null) {
-            flattenParams(`${key}[${i}]`, v as Record<string, unknown>, url.searchParams);
-          } else {
-            url.searchParams.set(`${key}[${i}]`, String(v));
-          }
-        });
-      } else if (typeof value === "object") {
-        flattenParams(key, value as Record<string, unknown>, url.searchParams);
-      }
-    });
+function normalizePath(path: string): string {
+  if (!path.startsWith("/")) {
+    throw new StrapiRequestError("Strapi path must start with '/'", { path });
   }
 
+  if (path.includes("://")) {
+    throw new StrapiRequestError("Absolute URLs are not allowed in Strapi path", { path });
+  }
+
+  return path;
+}
+
+function buildApiUrl(path: string, params?: FetchAPIParams): URL {
+  const normalizedPath = normalizePath(path);
+  const url = new URL(`/api${normalizedPath}`, STRAPI_URL);
+
+  if (!params) {
+    return url;
+  }
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      url.searchParams.set(key, String(value));
+    } else if (Array.isArray(value)) {
+      value.forEach((v, i) => {
+        if (typeof v === "object" && v !== null) {
+          flattenParams(`${key}[${i}]`, v as Record<string, unknown>, url.searchParams);
+        } else {
+          url.searchParams.set(`${key}[${i}]`, String(v));
+        }
+      });
+    } else if (typeof value === "object") {
+      flattenParams(key, value as Record<string, unknown>, url.searchParams);
+    }
+  });
+
+  return url;
+}
+
+function buildHeaders(): HeadersInit {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
   };
 
   if (STRAPI_API_TOKEN) {
-    headers["Authorization"] = `Bearer ${STRAPI_API_TOKEN}`;
+    headers.Authorization = `Bearer ${STRAPI_API_TOKEN}`;
   }
 
-  const res = await fetch(url.toString(), {
-    headers,
+  return headers;
+}
+
+function truncateForLogs(value: string): string {
+  return value.length > 512 ? `${value.slice(0, 512)}...` : value;
+}
+
+async function fetchStrapi(input: URL, init: RequestInit & { path: string }): Promise<Response> {
+  let response: Response;
+
+  try {
+    response = await fetch(input.toString(), {
+      ...init,
+      signal: AbortSignal.timeout(STRAPI_TIMEOUT_MS),
+    });
+  } catch {
+    throw new StrapiRequestError("Failed to reach Strapi API", { path: init.path });
+  }
+
+  if (!response.ok) {
+    const errorBody = truncateForLogs(await response.text());
+    console.error("Strapi API request failed", {
+      path: init.path,
+      status: response.status,
+      statusText: response.statusText,
+      bodyPreview: errorBody,
+    });
+    throw new StrapiRequestError("Strapi API returned an error response", {
+      path: init.path,
+      status: response.status,
+      statusText: response.statusText,
+    });
+  }
+
+  return response;
+}
+
+export async function fetchAPI<T>(path: string, params?: FetchAPIParams): Promise<T> {
+  const url = buildApiUrl(path, params);
+  const response = await fetchStrapi(url, {
+    method: "GET",
+    headers: buildHeaders(),
     next: { revalidate: 60 },
+    path,
   });
 
-  if (!res.ok) {
-    const errorBody = await res.text();
-    console.error(`Strapi API error [${res.status}] ${res.statusText}: ${errorBody}`);
-    throw new Error(`Failed to fetch from Strapi: ${res.status} ${res.statusText}`);
-  }
-
-  return (await res.json()) as T;
+  return (await response.json()) as T;
 }
 
 function flattenParams(
@@ -218,27 +286,18 @@ export async function submitContactForm(
     "id" | "documentId" | "createdAt" | "updatedAt" | "publishedAt"
   >
 ): Promise<StrapiResponse<ContactSubmission>> {
-  const url = new URL("/api/contact-submissions", STRAPI_URL);
+  const path = "/contact-submissions";
+  const url = buildApiUrl(path);
 
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-  };
-
-  if (STRAPI_API_TOKEN) {
-    headers["Authorization"] = `Bearer ${STRAPI_API_TOKEN}`;
-  }
-
-  const res = await fetch(url.toString(), {
+  const response = await fetchStrapi(url, {
     method: "POST",
-    headers,
+    headers: buildHeaders(),
     body: JSON.stringify({ data }),
+    cache: "no-store",
+    path,
   });
 
-  if (!res.ok) {
-    const errorBody = await res.text();
-    console.error(`Strapi API error [${res.status}] ${res.statusText}: ${errorBody}`);
-    throw new Error(`Failed to submit contact form: ${res.status} ${res.statusText}`);
-  }
-
-  return (await res.json()) as StrapiResponse<ContactSubmission>;
+  return (await response.json()) as StrapiResponse<ContactSubmission>;
 }
+
+export { StrapiRequestError };

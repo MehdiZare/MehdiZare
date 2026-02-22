@@ -1,6 +1,12 @@
 import type { Core } from '@strapi/strapi';
+import { validateCmsEnv } from './env-validation';
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin => {
+  validateCmsEnv(env);
+  const usersPermissionsJwtSecret = env(
+    'USERS_PERMISSIONS_JWT_SECRET',
+    env('JWT_SECRET')
+  );
   const r2AccessKeyId = env('R2_ACCESS_KEY_ID');
   const r2SecretAccessKey = env('R2_SECRET_ACCESS_KEY');
   const r2Bucket = env('R2_BUCKET');
@@ -17,13 +23,16 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
       resolvedEndpoint
   );
 
-  if (!hasR2Config) {
-    // Falls back to Strapi's default local provider when R2 is not configured.
-    return {};
-  }
+  const pluginConfig: Core.Config.Plugin = {
+    'users-permissions': {
+      config: {
+        jwtSecret: usersPermissionsJwtSecret,
+      },
+    },
+  };
 
-  return {
-    upload: {
+  if (hasR2Config) {
+    pluginConfig.upload = {
       config: {
         provider: 'aws-s3',
         providerOptions: {
@@ -52,8 +61,10 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
           delete: {},
         },
       },
-    },
-  };
+    };
+  }
+
+  return pluginConfig;
 };
 
 export default config;

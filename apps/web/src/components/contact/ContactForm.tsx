@@ -10,6 +10,8 @@ interface FormState {
   email: string;
   subject: string;
   message: string;
+  company: string;
+  submittedAt: string;
 }
 
 interface FormErrors {
@@ -20,13 +22,19 @@ interface FormErrors {
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-export function ContactForm() {
-  const [form, setForm] = useState<FormState>({
+function createInitialFormState(): FormState {
+  return {
     name: "",
     email: "",
     subject: "",
     message: "",
-  });
+    company: "",
+    submittedAt: String(Date.now()),
+  };
+}
+
+export function ContactForm() {
+  const [form, setForm] = useState<FormState>(createInitialFormState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<Status>("idle");
   const [serverError, setServerError] = useState("");
@@ -36,6 +44,8 @@ export function ContactForm() {
 
     if (!form.name.trim()) {
       newErrors.name = "Name is required.";
+    } else if (form.name.trim().length > 120) {
+      newErrors.name = "Name must be 120 characters or fewer.";
     }
 
     if (!form.email.trim()) {
@@ -46,6 +56,10 @@ export function ContactForm() {
 
     if (!form.message.trim()) {
       newErrors.message = "Message is required.";
+    } else if (form.message.trim().length < 10) {
+      newErrors.message = "Message must be at least 10 characters.";
+    } else if (form.message.trim().length > 5000) {
+      newErrors.message = "Message must be 5000 characters or fewer.";
     }
 
     setErrors(newErrors);
@@ -65,12 +79,14 @@ export function ContactForm() {
     formData.set("email", form.email);
     formData.set("subject", form.subject);
     formData.set("message", form.message);
+    formData.set("company", form.company);
+    formData.set("submittedAt", form.submittedAt);
 
     const result = await submitContact(formData);
 
     if (result.success) {
       setStatus("success");
-      setForm({ name: "", email: "", subject: "", message: "" });
+      setForm(createInitialFormState());
       trackEvent("consulting_form_submitted", {
         page: "contact",
         section: "contact_form",
@@ -104,7 +120,7 @@ export function ContactForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
       {status === "error" && serverError && (
-        <div className="border border-red-200 bg-red-50 p-4">
+        <div className="border border-red-200 bg-red-50 p-4" role="alert" aria-live="polite">
           <p className="text-sm text-red-600">{serverError}</p>
         </div>
       )}
@@ -120,6 +136,8 @@ export function ContactForm() {
           type="text"
           value={form.name}
           onChange={handleChange}
+          autoComplete="name"
+          maxLength={120}
           className={cn(
             "mt-1 w-full border px-4 py-3 text-ink outline-none transition",
             "focus:border-ink focus:ring-1 focus:ring-ink",
@@ -143,6 +161,8 @@ export function ContactForm() {
           type="email"
           value={form.email}
           onChange={handleChange}
+          autoComplete="email"
+          maxLength={320}
           className={cn(
             "mt-1 w-full border px-4 py-3 text-ink outline-none transition",
             "focus:border-ink focus:ring-1 focus:ring-ink",
@@ -166,6 +186,7 @@ export function ContactForm() {
           type="text"
           value={form.subject}
           onChange={handleChange}
+          maxLength={160}
           className={cn(
             "mt-1 w-full border border-warm-gray px-4 py-3 text-ink outline-none transition",
             "focus:border-ink focus:ring-1 focus:ring-ink"
@@ -185,6 +206,7 @@ export function ContactForm() {
           rows={5}
           value={form.message}
           onChange={handleChange}
+          maxLength={5000}
           className={cn(
             "mt-1 w-full resize-y border px-4 py-3 text-ink outline-none transition",
             "focus:border-ink focus:ring-1 focus:ring-ink",
@@ -196,6 +218,24 @@ export function ContactForm() {
           <p className="mt-1 text-sm text-red-500">{errors.message}</p>
         )}
       </div>
+
+      <div className="sr-only" aria-hidden="true">
+        <label htmlFor="company">Company</label>
+        <input
+          id="company"
+          name="company"
+          type="text"
+          autoComplete="off"
+          tabIndex={-1}
+          value={form.company}
+          onChange={handleChange}
+        />
+      </div>
+      <input
+        type="hidden"
+        name="submittedAt"
+        value={form.submittedAt}
+      />
 
       {/* Submit */}
       <button
