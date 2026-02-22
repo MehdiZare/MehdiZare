@@ -166,7 +166,11 @@ export default function ContactPage() {
                   <p className="mt-2 text-sm text-mid-gray">
                     Prefer to talk live? Book a 20-minute call.
                   </p>
-                  <CalComTrigger className="mt-4" />
+                  <CalComTrigger
+                    className="mt-4"
+                    page="contact"
+                    section="schedule_panel"
+                  />
                 </div>
               </div>
             </AnimatedSection>

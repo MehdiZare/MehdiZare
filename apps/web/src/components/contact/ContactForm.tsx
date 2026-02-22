@@ -38,6 +38,7 @@ export function ContactForm() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<Status>("idle");
   const [serverError, setServerError] = useState("");
+  const [hasStarted, setHasStarted] = useState(false);
 
   function validate(): boolean {
     const newErrors: FormErrors = {};
@@ -63,6 +64,13 @@ export function ContactForm() {
     }
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      trackEvent("consulting_form_validation_failed", {
+        page: "contact",
+        section: "contact_form",
+        fields: Object.keys(newErrors).join(","),
+      });
+    }
     return Object.keys(newErrors).length === 0;
   }
 
@@ -94,6 +102,10 @@ export function ContactForm() {
     } else {
       setStatus("error");
       setServerError(result.error || "Something went wrong. Please try again.");
+      trackEvent("consulting_form_submit_failed", {
+        page: "contact",
+        section: "contact_form",
+      });
     }
   }
 
@@ -107,6 +119,15 @@ export function ContactForm() {
     }
   }
 
+  function handleFirstInteraction() {
+    if (hasStarted) return;
+    setHasStarted(true);
+    trackEvent("consulting_form_started", {
+      page: "contact",
+      section: "contact_form",
+    });
+  }
+
   if (status === "success") {
     return (
       <div className="border border-warm-gray bg-muted p-6 text-center">
@@ -118,7 +139,12 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+    <form
+      onSubmit={handleSubmit}
+      onFocusCapture={handleFirstInteraction}
+      className="space-y-6"
+      noValidate
+    >
       {status === "error" && serverError && (
         <div className="border border-red-200 bg-red-50 p-4" role="alert" aria-live="polite">
           <p className="text-sm text-red-600">{serverError}</p>

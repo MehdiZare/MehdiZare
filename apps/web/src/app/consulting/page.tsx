@@ -302,7 +302,12 @@ export default async function ConsultingPage() {
                 Pick a time that works for you and we&apos;ll focus on your
                 goals, current blockers, and fastest path to production.
               </p>
-              <CalComTrigger className="mt-6" label="Open Scheduling" />
+              <CalComTrigger
+                className="mt-6"
+                label="Open Scheduling"
+                page="consulting"
+                section="booking_section"
+              />
             </div>
           </AnimatedSection>
         </div>
