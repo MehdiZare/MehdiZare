@@ -1,0 +1,39 @@
+{
+  "kind": "singleType",
+  "collectionName": "newsletter_pages",
+  "info": {
+    "singularName": "newsletter-page",
+    "pluralName": "newsletter-pages",
+    "displayName": "Newsletter Page"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "headline": {
+      "type": "string"
+    },
+    "subheadline": {
+      "type": "text"
+    },
+    "benefits": {
+      "type": "json"
+    },
+    "archiveLinks": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.nav-item"
+    },
+    "signupCtaLabel": {
+      "type": "string"
+    },
+    "socialProofText": {
+      "type": "string"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
+    }
+  }
+}

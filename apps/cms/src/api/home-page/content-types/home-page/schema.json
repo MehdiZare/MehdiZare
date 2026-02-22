@@ -1,0 +1,63 @@
+{
+  "kind": "singleType",
+  "collectionName": "home_pages",
+  "info": {
+    "singularName": "home-page",
+    "pluralName": "home-pages",
+    "displayName": "Home Page"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "heroHeadline": {
+      "type": "string"
+    },
+    "heroSubheadline": {
+      "type": "text"
+    },
+    "heroPrimaryCtaLabel": {
+      "type": "string"
+    },
+    "heroPrimaryCtaHref": {
+      "type": "string"
+    },
+    "heroSecondaryCtaLabel": {
+      "type": "string"
+    },
+    "heroSecondaryCtaHref": {
+      "type": "string"
+    },
+    "heroImage": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "credibilityItems": {
+      "type": "component",
+      "repeatable": true,
+      "component": "home.credibility-item"
+    },
+    "featuredOnItems": {
+      "type": "component",
+      "repeatable": true,
+      "component": "home.featured-on-item"
+    },
+    "whatIDoCards": {
+      "type": "component",
+      "repeatable": true,
+      "component": "home.value-card"
+    },
+    "newsletterHeadline": {
+      "type": "string"
+    },
+    "newsletterCopy": {
+      "type": "text"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
+    }
+  }
+}

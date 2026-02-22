@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_home_value_cards",
+  "info": {
+    "displayName": "Value Card",
+    "icon": "apps",
+    "description": "What I do card"
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "ctaLabel": {
+      "type": "string"
+    },
+    "ctaHref": {
+      "type": "string"
+    }
+  }
+}

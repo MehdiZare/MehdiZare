@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_bina_steps",
+  "info": {
+    "displayName": "Bina Step",
+    "icon": "walk",
+    "description": "How Bina Print works"
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text",
+      "required": true
+    }
+  }
+}

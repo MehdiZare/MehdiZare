@@ -1,0 +1,27 @@
+{
+  "collectionName": "components_bina_movers",
+  "info": {
+    "displayName": "Top Mover",
+    "icon": "arrowUp",
+    "description": "Weekly Bina score mover"
+  },
+  "attributes": {
+    "ticker": {
+      "type": "string",
+      "required": true
+    },
+    "company": {
+      "type": "string",
+      "required": true
+    },
+    "score": {
+      "type": "decimal"
+    },
+    "scoreChange": {
+      "type": "decimal"
+    },
+    "analysisUrl": {
+      "type": "string"
+    }
+  }
+}

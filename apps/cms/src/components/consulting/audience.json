@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_consulting_audiences",
+  "info": {
+    "displayName": "Audience",
+    "icon": "users",
+    "description": "Ideal consulting audience"
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text",
+      "required": true
+    }
+  }
+}

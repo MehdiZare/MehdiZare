@@ -1,0 +1,56 @@
+{
+  "kind": "singleType",
+  "collectionName": "bina_print_pages",
+  "info": {
+    "singularName": "bina-print-page",
+    "pluralName": "bina-print-pages",
+    "displayName": "Bina Print Page"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "heroHeadline": {
+      "type": "string"
+    },
+    "heroSubheadline": {
+      "type": "text"
+    },
+    "searchPlaceholder": {
+      "type": "string"
+    },
+    "howItWorks": {
+      "type": "component",
+      "repeatable": true,
+      "component": "bina.step"
+    },
+    "topMovers": {
+      "type": "component",
+      "repeatable": true,
+      "component": "bina.mover"
+    },
+    "exampleTicker": {
+      "type": "string"
+    },
+    "exampleOverallScore": {
+      "type": "integer"
+    },
+    "exampleSubScores": {
+      "type": "json"
+    },
+    "methodologySummary": {
+      "type": "text"
+    },
+    "emailGateHeadline": {
+      "type": "string"
+    },
+    "emailGateCopy": {
+      "type": "text"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
+    }
+  }
+}
