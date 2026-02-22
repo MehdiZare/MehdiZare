@@ -1,0 +1,33 @@
+{
+  "kind": "singleType",
+  "collectionName": "consulting_pages",
+  "info": {
+    "singularName": "consulting-page",
+    "pluralName": "consulting-pages",
+    "displayName": "Consulting Page"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "headline": {
+      "type": "string"
+    },
+    "intro": {
+      "type": "text"
+    },
+    "tiers": {
+      "type": "component",
+      "repeatable": true,
+      "component": "consulting.tier"
+    },
+    "calendlyUrl": {
+      "type": "string"
+    },
+    "faq": {
+      "type": "component",
+      "repeatable": true,
+      "component": "consulting.faq"
+    }
+  }
+}

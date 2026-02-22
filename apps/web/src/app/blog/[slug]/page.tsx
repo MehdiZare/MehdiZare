@@ -1,0 +1,250 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getArticles, getArticleBySlug } from "@/lib/strapi";
+import { StrapiImage } from "@/components/shared/StrapiImage";
+import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
+import { TableOfContents } from "@/components/blog/TableOfContents";
+import { TagBadge } from "@/components/blog/TagBadge";
+
+interface BlogPostPageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export async function generateStaticParams() {
+  try {
+    const res = await getArticles({
+      pagination: { pageSize: 100, withCount: false },
+    });
+    return res.data.map((article) => ({
+      slug: article.slug,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: BlogPostPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const res = await getArticleBySlug(slug);
+  const article = res.data[0];
+
+  if (!article) {
+    return { title: "Post Not Found | Mehdi Zare" };
+  }
+
+  const seo = article.seo;
+  return {
+    title: seo?.metaTitle ?? `${article.title} | Mehdi Zare`,
+    description:
+      seo?.metaDescription ?? article.excerpt ?? "",
+    keywords: seo?.keywords,
+    robots: seo?.metaRobots,
+    alternates: seo?.canonicalURL
+      ? { canonical: seo.canonicalURL }
+      : undefined,
+    openGraph: {
+      title: seo?.metaTitle ?? article.title,
+      description: seo?.metaDescription ?? article.excerpt ?? "",
+      type: "article",
+      publishedTime: article.publishedDate ?? article.publishedAt,
+      images: seo?.metaImage
+        ? [
+            {
+              url: seo.metaImage.url,
+              width: seo.metaImage.width,
+              height: seo.metaImage.height,
+              alt: seo.metaImage.alternativeText ?? article.title,
+            },
+          ]
+        : article.featuredImage
+          ? [
+              {
+                url: article.featuredImage.url,
+                width: article.featuredImage.width,
+                height: article.featuredImage.height,
+                alt:
+                  article.featuredImage.alternativeText ?? article.title,
+              },
+            ]
+          : undefined,
+    },
+  };
+}
+
+function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  const { slug } = await params;
+  const res = await getArticleBySlug(slug);
+  const article = res.data[0];
+
+  if (!article) {
+    notFound();
+  }
+
+  // Fetch all articles to determine previous/next
+  let previousArticle = null;
+  let nextArticle = null;
+
+  try {
+    const allArticlesRes = await getArticles({
+      sort: "publishedDate:desc",
+      pagination: { pageSize: 100, withCount: false },
+    });
+    const allArticles = allArticlesRes.data;
+    const currentIndex = allArticles.findIndex(
+      (a) => a.slug === article.slug
+    );
+
+    if (currentIndex > 0) {
+      nextArticle = allArticles[currentIndex - 1]; // newer article
+    }
+    if (currentIndex < allArticles.length - 1) {
+      previousArticle = allArticles[currentIndex + 1]; // older article
+    }
+  } catch {
+    // Silently fail -- prev/next navigation is optional
+  }
+
+  const displayDate =
+    article.publishedDate ?? article.publishedAt;
+
+  return (
+    <section className="bg-gray-50 py-16 sm:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
+          {/* Main Content */}
+          <article className="lg:col-span-8">
+            {/* Meta row */}
+            <div className="mb-6 flex flex-wrap items-center gap-3 text-sm">
+              {article.category && (
+                <Link
+                  href={`/blog?category=${article.category.slug}`}
+                  className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition hover:bg-primary/20"
+                >
+                  {article.category.name}
+                </Link>
+              )}
+              {displayDate && (
+                <time
+                  dateTime={displayDate}
+                  className="text-gray-500"
+                >
+                  {formatDate(displayDate)}
+                </time>
+              )}
+              {article.readingTime && (
+                <span className="text-gray-400">
+                  {article.readingTime} min read
+                </span>
+              )}
+            </div>
+
+            {/* Title */}
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 lg:text-4xl">
+              {article.title}
+            </h1>
+
+            {/* Featured Image */}
+            {article.featuredImage && (
+              <div className="mt-8 aspect-video overflow-hidden rounded-xl relative">
+                <StrapiImage
+                  image={article.featuredImage}
+                  fill
+                  priority
+                  className="object-cover"
+                />
+              </div>
+            )}
+
+            {/* Article Body */}
+            <div className="mt-10">
+              <BlocksRenderer content={article.content} />
+            </div>
+
+            {/* Tags */}
+            {article.tags && article.tags.length > 0 && (
+              <div className="mt-10 flex flex-wrap gap-2 border-t border-gray-200 pt-6">
+                {article.tags.map((tag) => (
+                  <TagBadge key={tag.id} tag={tag} />
+                ))}
+              </div>
+            )}
+
+            {/* Author Card */}
+            <div className="mt-10 rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
+                  MZ
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Mehdi Zare, CFA
+                  </h3>
+                  <p className="text-sm text-primary font-medium">
+                    Principal AI Engineer
+                  </p>
+                  <p className="mt-2 text-sm text-gray-600 leading-relaxed">
+                    Bridging the worlds of artificial intelligence and finance.
+                    Passionate about building intelligent systems, quantitative
+                    strategies, and the intersection of AI with fintech.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Previous / Next Navigation */}
+            {(previousArticle || nextArticle) && (
+              <nav className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {previousArticle ? (
+                  <Link
+                    href={`/blog/${previousArticle.slug}`}
+                    className="group rounded-xl border border-gray-200 bg-white p-5 transition hover:border-primary/30 hover:shadow-sm"
+                  >
+                    <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                      Previous
+                    </span>
+                    <p className="mt-1 text-sm font-semibold text-gray-900 group-hover:text-primary transition">
+                      {previousArticle.title}
+                    </p>
+                  </Link>
+                ) : (
+                  <div />
+                )}
+                {nextArticle ? (
+                  <Link
+                    href={`/blog/${nextArticle.slug}`}
+                    className="group rounded-xl border border-gray-200 bg-white p-5 text-right transition hover:border-primary/30 hover:shadow-sm"
+                  >
+                    <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                      Next
+                    </span>
+                    <p className="mt-1 text-sm font-semibold text-gray-900 group-hover:text-primary transition">
+                      {nextArticle.title}
+                    </p>
+                  </Link>
+                ) : (
+                  <div />
+                )}
+              </nav>
+            )}
+          </article>
+
+          {/* Sidebar */}
+          <aside className="hidden lg:col-span-4 lg:block">
+            <TableOfContents content={article.content} />
+          </aside>
+        </div>
+      </div>
+    </section>
+  );
+}

@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_shared_experiences",
+  "info": {
+    "displayName": "Experience",
+    "icon": "briefcase",
+    "description": "Work experience entry"
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "company": {
+      "type": "string",
+      "required": true
+    },
+    "period": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    }
+  }
+}

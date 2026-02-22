@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_shared_educations",
+  "info": {
+    "displayName": "Education",
+    "icon": "graduation-cap",
+    "description": "Education entry"
+  },
+  "attributes": {
+    "degree": {
+      "type": "string",
+      "required": true
+    },
+    "institution": {
+      "type": "string",
+      "required": true
+    },
+    "year": {
+      "type": "string"
+    }
+  }
+}

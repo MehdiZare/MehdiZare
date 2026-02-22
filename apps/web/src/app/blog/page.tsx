@@ -1,0 +1,142 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { getArticles, getCategories } from "@/lib/strapi";
+import { CategoryFilter } from "@/components/blog/CategoryFilter";
+import { PostCard } from "@/components/blog/PostCard";
+
+export const metadata: Metadata = {
+  title: "Blog | Mehdi Zare",
+  description:
+    "Insights on AI, finance, and technology. Read articles about artificial intelligence engineering, quantitative strategies, and the future of fintech.",
+};
+
+interface BlogPageProps {
+  searchParams: Promise<{
+    page?: string;
+    category?: string;
+    tag?: string;
+  }>;
+}
+
+export default async function BlogPage({ searchParams }: BlogPageProps) {
+  const params = await searchParams;
+  const currentPage = Number(params.page) || 1;
+  const categorySlug = params.category ?? null;
+  const tagSlug = params.tag ?? null;
+
+  // Build filters based on search params
+  const filters: Record<string, unknown> = {};
+  if (categorySlug) {
+    filters.category = { slug: { $eq: categorySlug } };
+  }
+  if (tagSlug) {
+    filters.tags = { slug: { $eq: tagSlug } };
+  }
+
+  const [articlesRes, categoriesRes] = await Promise.all([
+    getArticles({
+      filters: Object.keys(filters).length > 0 ? filters : undefined,
+      sort: "publishedDate:desc",
+      pagination: {
+        page: currentPage,
+        pageSize: 9,
+        withCount: true,
+      },
+    }),
+    getCategories(),
+  ]);
+
+  const articles = articlesRes.data;
+  const pagination = articlesRes.meta.pagination;
+  const categories = categoriesRes.data;
+
+  const hasNextPage = pagination
+    ? currentPage < pagination.pageCount
+    : false;
+  const hasPrevPage = currentPage > 1;
+
+  // Build pagination search params
+  function buildPageUrl(page: number): string {
+    const sp = new URLSearchParams();
+    if (page > 1) sp.set("page", String(page));
+    if (categorySlug) sp.set("category", categorySlug);
+    if (tagSlug) sp.set("tag", tagSlug);
+    const qs = sp.toString();
+    return qs ? `/blog?${qs}` : "/blog";
+  }
+
+  return (
+    <section className="bg-gray-50 py-16 sm:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Page Header */}
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+            Blog
+          </h1>
+          <p className="mt-4 text-lg text-gray-600">
+            Insights on AI, finance, and technology
+          </p>
+        </div>
+
+        {/* Category Filter */}
+        <div className="mb-10">
+          <CategoryFilter
+            categories={categories}
+            activeSlug={categorySlug}
+          />
+        </div>
+
+        {/* Articles Grid */}
+        {articles.length > 0 ? (
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {articles.map((article) => (
+              <PostCard key={article.id} article={article} />
+            ))}
+          </div>
+        ) : (
+          <div className="py-20 text-center">
+            <p className="text-lg text-gray-500">No posts yet.</p>
+            <p className="mt-2 text-sm text-gray-400">
+              Check back soon for new content.
+            </p>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {pagination && pagination.pageCount > 1 && (
+          <div className="mt-12 flex items-center justify-center gap-4">
+            {hasPrevPage ? (
+              <Link
+                href={buildPageUrl(currentPage - 1)}
+                className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                Previous
+              </Link>
+            ) : (
+              <span className="rounded-lg border border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-medium text-gray-400 cursor-not-allowed">
+                Previous
+              </span>
+            )}
+
+            <span className="text-sm text-gray-600">
+              Page {currentPage} of {pagination.pageCount}
+            </span>
+
+            {hasNextPage ? (
+              <Link
+                href={buildPageUrl(currentPage + 1)}
+                className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                Next
+              </Link>
+            ) : (
+              <span className="rounded-lg border border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-medium text-gray-400 cursor-not-allowed">
+                Next
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
