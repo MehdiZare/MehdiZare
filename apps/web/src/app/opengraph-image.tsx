@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 
 export const runtime = "edge";
 export const size = {
@@ -7,7 +8,7 @@ export const size = {
 };
 export const contentType = "image/png";
 export const alt =
-  "Mehdi Zare - Principal AI Engineer shipping production systems from prototype to production.";
+  `${DEFAULT_SITE_PROFILE.siteName} - ${DEFAULT_SITE_PROFILE.authorRole} shipping production systems from prototype to production.`;
 
 export default function OpenGraphImage() {
   return new ImageResponse(
@@ -33,7 +34,7 @@ export default function OpenGraphImage() {
             color: "#8d6f3f",
           }}
         >
-          Mehdi Zare
+          {DEFAULT_SITE_PROFILE.siteName}
         </div>
 
         <div
@@ -45,11 +46,10 @@ export default function OpenGraphImage() {
           }}
         >
           <div style={{ fontSize: 68, lineHeight: 1.05, fontWeight: 700 }}>
-            I take AI from prototype to production.
+            {DEFAULT_SITE_PROFILE.positioningHeadline}
           </div>
           <div style={{ fontSize: 30, lineHeight: 1.25, color: "#374151" }}>
-            Principal AI Engineer shipping reliable systems across finance,
-            defense, healthcare, and enterprise.
+            {DEFAULT_SITE_PROFILE.siteDescription}
           </div>
         </div>
 

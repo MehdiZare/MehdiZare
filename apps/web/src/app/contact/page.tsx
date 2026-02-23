@@ -9,17 +9,19 @@ import {
   buildWebPageJsonLd,
   getSiteUrl,
 } from "@/lib/seo";
+import { getSiteProfile } from "@/lib/site-profile";
 
 // ---------------------------------------------------------------------------
 // Metadata
 // ---------------------------------------------------------------------------
 
-export function generateMetadata(): Metadata {
+export async function generateMetadata(): Promise<Metadata> {
+  const siteProfile = await getSiteProfile();
+
   return buildPageMetadata({
     pathname: "/contact",
     title: "Contact",
-    description:
-      "Get in touch with Mehdi Zare about AI consulting, production delivery, partnerships, and speaking.",
+    description: siteProfile.contactPrompt,
     type: "website",
     keywords: [
       "AI consulting contact",
@@ -67,13 +69,8 @@ function SocialIcon({ platform }: { platform: string }) {
 // Page component
 // ---------------------------------------------------------------------------
 
-const socialLinks = [
-  { platform: "LinkedIn", url: "https://linkedin.com/in/mehdizare" },
-  { platform: "Medium", url: "https://medium.com/@mehdi-zare" },
-  { platform: "GitHub", url: "https://github.com/mehdizare" },
-];
-
-export default function ContactPage() {
+export default async function ContactPage() {
+  const siteProfile = await getSiteProfile();
   const siteUrl = getSiteUrl();
   const contactPointJsonLd = {
     "@context": "https://schema.org",
@@ -92,8 +89,7 @@ export default function ContactPage() {
         data={buildWebPageJsonLd({
           pathname: "/contact",
           title: "Get in Touch",
-          description:
-            "Contact Mehdi Zare to discuss moving AI from pilot to production in high-stakes environments.",
+          description: siteProfile.contactPrompt,
           type: "ContactPage",
         })}
       />
@@ -113,9 +109,7 @@ export default function ContactPage() {
             <h1 className="mt-4 font-serif text-4xl leading-tight text-ink sm:text-5xl">
               Get in Touch
             </h1>
-            <p className="mt-4 text-xl text-mid-gray">
-              Working on an AI initiative that needs to ship?
-            </p>
+            <p className="mt-4 text-xl text-mid-gray">{siteProfile.contactPrompt}</p>
           </AnimatedSection>
         </div>
       </section>
@@ -144,9 +138,9 @@ export default function ContactPage() {
                     Social
                   </h3>
                   <div className="mt-3 flex flex-col gap-3">
-                    {socialLinks.map((link) => (
+                    {siteProfile.socialLinks.map((link) => (
                       <a
-                        key={link.platform}
+                        key={`${link.id}-${link.url}`}
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"

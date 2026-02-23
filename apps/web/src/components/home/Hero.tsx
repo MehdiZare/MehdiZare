@@ -7,6 +7,8 @@ import { Label } from "@/components/shared/Label";
 import { HeroStats } from "@/components/home/HeroStats";
 
 interface HeroProps {
+  credentialLine: string;
+  highlightPhrase: string;
   headline: string;
   subheadline: string;
   primaryCtaLabel: string;
@@ -35,6 +37,8 @@ const childVariants = {
 };
 
 export function Hero({
+  credentialLine,
+  highlightPhrase,
   headline,
   subheadline,
   primaryCtaLabel,
@@ -42,13 +46,12 @@ export function Hero({
   secondaryCtaLabel,
   secondaryCtaHref,
 }: HeroProps) {
-  const emphasisPhrase = "because I learn your domain before I write a line of code.";
-  const hasEmphasisPhrase = subheadline.includes(emphasisPhrase);
+  const hasEmphasisPhrase = subheadline.includes(highlightPhrase);
   const leadSubheadline = hasEmphasisPhrase
     ? subheadline
-        .replace(` — ${emphasisPhrase}`, "")
-        .replace(` - ${emphasisPhrase}`, "")
-        .replace(emphasisPhrase, "")
+        .replace(` — ${highlightPhrase}`, "")
+        .replace(` - ${highlightPhrase}`, "")
+        .replace(highlightPhrase, "")
         .trim()
     : subheadline;
 
@@ -62,7 +65,7 @@ export function Hero({
           className="lg:col-span-7"
         >
           <motion.div variants={childVariants}>
-            <Label>Principal AI Engineer &middot; CFA Charterholder</Label>
+            <Label>{credentialLine}</Label>
           </motion.div>
 
           <motion.h1
@@ -86,7 +89,7 @@ export function Hero({
           >
             {leadSubheadline}
             {hasEmphasisPhrase && (
-              <span className="mt-4 block text-ink">{emphasisPhrase}</span>
+              <span className="mt-4 block text-ink">{highlightPhrase}</span>
             )}
           </motion.p>
 

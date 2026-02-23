@@ -11,6 +11,10 @@ interface ServiceCard {
   href: string;
 }
 
+interface ServicesGridProps {
+  positioningHeadline: string;
+}
+
 const services: ServiceCard[] = [
   {
     number: "01",
@@ -42,14 +46,14 @@ const services: ServiceCard[] = [
   },
 ];
 
-export function ServicesGrid() {
+export function ServicesGrid({ positioningHeadline }: ServicesGridProps) {
   return (
     <section id="services" className="bg-ink py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <Label className="text-mid-gray">02 &mdash; What I Do</Label>
 
         <h2 className="mt-6 font-serif text-4xl font-bold leading-tight text-paper sm:text-5xl">
-          From prototype to production. End to end.
+          {positioningHeadline} End to end.
         </h2>
 
         <div className="mt-12 grid gap-px bg-white/10 sm:grid-cols-2">

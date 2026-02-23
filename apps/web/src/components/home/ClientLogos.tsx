@@ -2,7 +2,10 @@
 
 import { motion } from "framer-motion";
 
-const clients = ["US Government", "Capital One", "Booz Allen"];
+interface ClientLogosProps {
+  items: string[];
+  introText?: string;
+}
 
 const containerVariants = {
   hidden: {},
@@ -23,7 +26,7 @@ const itemVariants = {
   },
 };
 
-export function ClientLogos() {
+export function ClientLogos({ items, introText = "Trusted by teams in" }: ClientLogosProps) {
   return (
     <section className="border-b border-warm-gray bg-paper py-8">
       <motion.div
@@ -37,12 +40,12 @@ export function ClientLogos() {
           variants={itemVariants}
           className="text-sm text-mid-gray"
         >
-          Trusted by teams in
+          {introText}
         </motion.span>
-        {clients.map((name, i) => (
+        {items.map((name, i) => (
           <motion.span key={name} variants={itemVariants} className="text-sm font-medium text-ink">
             {name}
-            {i < clients.length - 1 && (
+            {i < items.length - 1 && (
               <span className="ml-2 text-mid-gray/40">&middot;</span>
             )}
           </motion.span>

@@ -7,126 +7,19 @@ import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
+import { buildAboutFallback } from "@/content/fallbacks";
 import {
   buildBreadcrumbJsonLd,
   buildPageMetadata,
   buildWebPageJsonLd,
 } from "@/lib/seo";
+import { getSiteProfile } from "@/lib/site-profile";
 import { getAboutPage } from "@/lib/strapi";
-import type {
-  Credential,
-  Education,
-  Experience,
-  SocialLink,
-  StatItem,
-  BlocksContent,
-} from "@/types/strapi";
-
-const fallbackStory = [
-  "I started in physics in Tehran, where I learned to think in systems, uncertainty, and first principles. That analytical mindset later carried into finance through an MBA at the University of Maryland Smith School.",
-  "At Capital One, I worked across quantitative analysis and investment workflows where decisions had to be both data-driven and execution-ready. That period made one thing clear: AI in finance fails when domain and engineering stay siloed.",
-  "I moved deeper into production AI delivery through roles at Booz Allen Hamilton, JotPsych, and Sev1Tech supporting mission-critical systems. Across defense, healthcare, and enterprise programs, I focused on turning prototypes into reliable systems teams could trust.",
-  "Today I am building Bina Capital and Bina Print with a simple thesis: financial AI should think like an analyst and ship like mature software.",
-];
-
-const fallbackStats: StatItem[] = [
-  { id: 1, value: "12+", label: "Years building software and AI systems" },
-  { id: 2, value: "10+", label: "AI systems shipped to production" },
-  { id: 3, value: "6+", label: "Products built and shipped end-to-end" },
-  { id: 4, value: "4", label: "Regulated industries shipped in" },
-  { id: 5, value: "CFA", label: "Charterholder" },
-  { id: 6, value: "Secret", label: "Active clearance" },
-];
-
-const fallbackCredentials: Credential[] = [
-  { id: 1, title: "CFA Charterholder", issuer: "CFA Institute" },
-  {
-    id: 2,
-    title: "AWS Certified Solutions Architect - Associate",
-    issuer: "Amazon Web Services",
-  },
-  { id: 3, title: "Secret Security Clearance", issuer: "U.S. Government" },
-];
-
-const fallbackExperiences: Experience[] = [
-  {
-    id: 1,
-    title: "AI SME / Principal Cloud Architect",
-    company: "Sev1Tech",
-    startDate: "2025",
-    current: true,
-    description: "Leading AI architecture and delivery for high-impact federal programs.",
-  },
-  {
-    id: 2,
-    title: "Principal AI Engineer",
-    company: "JotPsych",
-    startDate: "2025",
-    endDate: "2025",
-    description: "Built production GenAI workflows in healthcare settings.",
-  },
-  {
-    id: 3,
-    title: "Lead Generative AI Engineer",
-    company: "Booz Allen Hamilton",
-    startDate: "2024",
-    endDate: "2025",
-    description: "Designed and deployed enterprise-grade GenAI solutions.",
-  },
-  {
-    id: 4,
-    title: "Quantitative Analysis Manager / Investment Analyst",
-    company: "Capital One",
-    startDate: "2020",
-    endDate: "2024",
-    description: "Applied quant and ML methods to high-stakes financial decisions.",
-  },
-  {
-    id: 5,
-    title: "Equity Research Analyst",
-    company: "Seeking Alpha",
-    startDate: "2017",
-    endDate: "2018",
-    description: "Published equity research for a large retail investor audience.",
-  },
-  {
-    id: 6,
-    title: "Founder & CEO",
-    company: "Fardabook.com",
-    startDate: "2011",
-    endDate: "2014",
-    description: "Built and operated a digital product business from the ground up.",
-  },
-];
-
-const fallbackEducation: Education[] = [
-  {
-    id: 1,
-    degree: "MBA",
-    field: "Finance",
-    institution: "University of Maryland, Smith School of Business",
-  },
-  {
-    id: 2,
-    degree: "B.S.",
-    field: "Physics",
-    institution: "University of Tehran",
-  },
-];
-
-const fallbackLinks: SocialLink[] = [
-  { id: 1, platform: "Seeking Alpha", url: "https://seekingalpha.com/author/mehdi-zare" },
-  { id: 2, platform: "Medium", url: "https://medium.com/@mehdi-zare" },
-  { id: 3, platform: "LinkedIn", url: "https://linkedin.com/in/mehdizare" },
-  { id: 4, platform: "GitHub", url: "https://github.com/mehdizare" },
-];
 
 const aboutMetadataTitle = "About";
-const aboutMetadataDescription =
-  "The story behind Mehdi Zare - principal AI engineer delivering production AI systems across finance, defense, healthcare, and enterprise.";
-const consultingCallHref = "/consulting#calendly";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const siteProfile = await getSiteProfile();
   const aboutKeywords = [
     "principal AI engineer",
     "production AI systems",
@@ -141,8 +34,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
     return buildPageMetadata({
       pathname: "/about",
-      title: cmsData?.title || aboutMetadataTitle,
-      description: cmsData?.positioningStatement || aboutMetadataDescription,
+      title: aboutMetadataTitle,
+      description: siteProfile.positioningSubheadline,
       seo: cmsData?.seo,
       type: "website",
       keywords: aboutKeywords,
@@ -151,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildPageMetadata({
       pathname: "/about",
       title: aboutMetadataTitle,
-      description: aboutMetadataDescription,
+      description: siteProfile.positioningSubheadline,
       type: "website",
       keywords: aboutKeywords,
     });
@@ -159,18 +52,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AboutPage() {
-  const fallbackData = {
-    title: "The CFA Who Codes",
-    positioningStatement:
-      "I help high-stakes teams move AI from pilot to production with domain rigor, engineering execution, and business context.",
-    story: fallbackStory,
-    storyBlocks: undefined as BlocksContent | undefined,
-    stats: fallbackStats,
-    credentials: fallbackCredentials,
-    experiences: fallbackExperiences,
-    education: fallbackEducation,
-    socialLinks: fallbackLinks,
-  };
+  const siteProfile = await getSiteProfile();
+  const consultingCallHref = siteProfile.bookCallHref;
+  const fallbackData = buildAboutFallback(siteProfile);
 
   let data = fallbackData;
   let cmsStructuredData: unknown;
@@ -187,11 +71,10 @@ export default async function AboutPage() {
           : fallbackData.experiences;
 
       data = {
-        title: cmsData.title || fallbackData.title,
-        positioningStatement:
-          cmsData.positioningStatement || fallbackData.positioningStatement,
+        title: fallbackData.title,
+        positioningStatement: fallbackData.positioningStatement,
         story: fallbackData.story,
-        storyBlocks: cmsData.bio,
+        storyBlocks: fallbackData.storyBlocks,
         stats: cmsData.stats && cmsData.stats.length > 0 ? cmsData.stats : fallbackData.stats,
         credentials:
           cmsData.credentials && cmsData.credentials.length > 0
@@ -249,7 +132,10 @@ export default async function AboutPage() {
       <section className="py-14">
         <div className="mx-auto max-w-6xl px-6">
           <AnimatedSection>
-            <SectionHeading title="The Story" subtitle="From quant foundations to production AI leadership" />
+            <SectionHeading
+              title="The Story"
+              subtitle={siteProfile.positioningHeadline}
+            />
           </AnimatedSection>
           <AnimatedSection delay={0.15} className="mt-8">
             {data.storyBlocks && data.storyBlocks.length > 0 ? (

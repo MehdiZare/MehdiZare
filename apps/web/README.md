@@ -20,6 +20,7 @@ Next.js App Router frontend for the public portfolio.
 
 - `NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS` (comma-separated hostnames)
 - `REQUIRE_STRAPI_API_TOKEN` (`true` to hard-fail startup when token is missing)
+- `DISABLE_STRAPI_CMS` (defaults to `true`; set to `false` to enable Strapi content)
 - `NEXT_PUBLIC_POSTHOG_KEY`
 - `NEXT_PUBLIC_POSTHOG_HOST`
 - `NEXT_PUBLIC_BEEHIIV_EMBED_URL`

@@ -3,35 +3,19 @@ import Link from "next/link";
 import { BeehiivEmbed } from "@/components/newsletter/BeehiivEmbed";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { buildNewsletterFallback, normalizeBenefits } from "@/content/fallbacks";
 import {
   buildBreadcrumbJsonLd,
   buildPageMetadata,
   buildWebPageJsonLd,
 } from "@/lib/seo";
+import { getSiteProfile } from "@/lib/site-profile";
 import { getNewsletterPage } from "@/lib/strapi";
-import type { NavItem } from "@/types/strapi";
-
-function normalizeBenefits(input: unknown, fallback: string[]): string[] {
-  if (!Array.isArray(input)) return fallback;
-  const values = input.filter((item): item is string => typeof item === "string");
-  return values.length > 0 ? values : fallback;
-}
-
-const fallbackBenefits = [
-  "1 production AI teardown",
-  "1 domain lesson from a high-stakes team",
-  "1 actionable framework",
-];
-
-const fallbackArchiveLinks: NavItem[] = [
-  { id: 1, label: "Archive coming soon", href: "/newsletter" },
-];
 
 const newsletterMetadataTitle = "Newsletter";
-const newsletterMetadataDescription =
-  "Subscribe to the weekly briefing on shipping AI systems in the real world, from strategy through production.";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const siteProfile = await getSiteProfile();
   const newsletterKeywords = [
     "AI newsletter",
     "production AI insights",
@@ -47,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildPageMetadata({
       pathname: "/newsletter",
       title: newsletterMetadataTitle,
-      description: cmsData?.subheadline || newsletterMetadataDescription,
+      description: cmsData?.subheadline || siteProfile.newsletterOneLiner,
       seo: cmsData?.seo,
       type: "website",
       keywords: newsletterKeywords,
@@ -56,7 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildPageMetadata({
       pathname: "/newsletter",
       title: newsletterMetadataTitle,
-      description: newsletterMetadataDescription,
+      description: siteProfile.newsletterOneLiner,
       type: "website",
       keywords: newsletterKeywords,
     });
@@ -64,15 +48,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function NewsletterPage() {
-  const fallbackData = {
-    headline: "Get the weekly prototype-to-production briefing",
-    subheadline:
-      "Every week you get one production AI teardown, one domain lesson from a high-stakes team, and one framework you can apply immediately.",
-    socialProofText:
-      "Built for engineering leaders, operators, and AI teams shipping real systems.",
-    benefits: fallbackBenefits,
-    archiveLinks: fallbackArchiveLinks,
-  };
+  const siteProfile = await getSiteProfile();
+  const fallbackData = buildNewsletterFallback(siteProfile);
 
   let data = fallbackData;
   let cmsStructuredData: unknown;
@@ -169,7 +146,7 @@ export default async function NewsletterPage() {
           <BeehiivEmbed
             source="newsletter_page"
             title="Subscribe now"
-            description="Join readers who want practical insight on shipping AI systems that work in production."
+            description={siteProfile.newsletterOneLiner}
           />
         </div>
       </section>

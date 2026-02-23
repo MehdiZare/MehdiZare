@@ -47,6 +47,18 @@ tasks:
     desc: Run web test suite
     cmd: pnpm --filter=web test
 
+  pre-push:
+    desc: Run required checks before pushing changes
+    cmds:
+      - pnpm --filter=web lint
+      - pnpm --filter=web exec tsc --noEmit
+      - pnpm --filter=web test
+      - pnpm --filter=web build
+
+  prepush:
+    desc: Alias for pre-push
+    cmd: task pre-push
+
   security:audit:
     desc: Run dependency vulnerability audit (requires network access)
     cmd: pnpm audit --audit-level high

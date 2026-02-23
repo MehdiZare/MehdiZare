@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface AnimatedSectionProps {
@@ -45,6 +45,12 @@ export function AnimatedSection({
   delay = 0,
   stagger = false,
 }: AnimatedSectionProps) {
+  const shouldReduceMotion = useReducedMotion();
+
+  if (shouldReduceMotion) {
+    return <div className={cn(className)}>{children}</div>;
+  }
+
   if (stagger) {
     return (
       <motion.div

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getArticles, getCategories } from "@/lib/strapi";
+import { getSiteProfile } from "@/lib/site-profile";
 import {
   buildBlogJsonLd,
   buildBreadcrumbJsonLd,
@@ -11,9 +12,6 @@ import {
 } from "@/lib/seo";
 import { CategoryFilter } from "@/components/blog/CategoryFilter";
 import { PostCard } from "@/components/blog/PostCard";
-
-const blogMetadataDescription =
-  "Field notes on shipping AI systems in production: architecture, reliability, and domain-aware engineering decisions.";
 
 interface BlogSearchParams {
   page?: string;
@@ -46,6 +44,7 @@ interface BlogPageProps {
 }
 
 export async function generateMetadata({ searchParams }: BlogPageProps): Promise<Metadata> {
+  const siteProfile = await getSiteProfile();
   const params = await searchParams;
   const currentPage = normalizePageParam(params.page);
   const categorySlug = normalizeSlugParam(params.category);
@@ -55,7 +54,7 @@ export async function generateMetadata({ searchParams }: BlogPageProps): Promise
   const metadata = buildPageMetadata({
     pathname: "/blog",
     title: "Blog",
-    description: blogMetadataDescription,
+    description: siteProfile.newsletterOneLiner,
     type: "website",
     keywords: [
       "production AI engineering",
@@ -77,6 +76,7 @@ export async function generateMetadata({ searchParams }: BlogPageProps): Promise
 }
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {
+  const siteProfile = await getSiteProfile();
   const params = await searchParams;
   const currentPage = normalizePageParam(params.page);
   const categorySlug = normalizeSlugParam(params.category);
@@ -129,11 +129,11 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
 
   const pageTitle = "Blog";
   const pageDescription =
-    "Practical writing on shipping AI systems that work in production.";
+    siteProfile.newsletterOneLiner;
   const blogJsonLd = buildBlogJsonLd({
     pathname: canonicalPath,
     title: pageTitle,
-    description: blogMetadataDescription,
+    description: siteProfile.newsletterOneLiner,
     posts: articles.map((article) => ({
       title: article.title,
       path: `/blog/${article.slug}`,

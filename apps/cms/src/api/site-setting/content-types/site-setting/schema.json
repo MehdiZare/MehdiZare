@@ -16,6 +16,54 @@
     "siteDescription": {
       "type": "text"
     },
+    "positioningHeadline": {
+      "type": "string"
+    },
+    "positioningSubheadline": {
+      "type": "text"
+    },
+    "positioningHighlight": {
+      "type": "string"
+    },
+    "credentialLine": {
+      "type": "string"
+    },
+    "industriesLine": {
+      "type": "string"
+    },
+    "locationLine": {
+      "type": "string"
+    },
+    "primaryCtaLabel": {
+      "type": "string"
+    },
+    "primaryCtaHref": {
+      "type": "string"
+    },
+    "secondaryCtaLabel": {
+      "type": "string"
+    },
+    "secondaryCtaHref": {
+      "type": "string"
+    },
+    "newsletterTitle": {
+      "type": "string"
+    },
+    "newsletterOneLiner": {
+      "type": "text"
+    },
+    "contactPrompt": {
+      "type": "string"
+    },
+    "authorName": {
+      "type": "string"
+    },
+    "authorRole": {
+      "type": "string"
+    },
+    "authorBioShort": {
+      "type": "text"
+    },
     "footerText": {
       "type": "text"
     },

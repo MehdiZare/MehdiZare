@@ -9,6 +9,7 @@ import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
 import { TableOfContents } from "@/components/blog/TableOfContents";
 import { TagBadge } from "@/components/blog/TagBadge";
 import { BeehiivEmbed } from "@/components/newsletter/BeehiivEmbed";
+import { getSiteProfile } from "@/lib/site-profile";
 import {
   buildBlogPostingJsonLd,
   buildBreadcrumbJsonLd,
@@ -62,6 +63,8 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: BlogPostPageProps): Promise<Metadata> {
+  const siteProfile = await getSiteProfile();
+
   try {
     const { slug } = await params;
     const res = await getArticleBySlug(slug);
@@ -81,7 +84,7 @@ export async function generateMetadata({
       pathname: `/blog/${slug}`,
       title: article.title,
       description:
-        article.excerpt || "Insights on AI engineering, architecture, and production systems.",
+        article.excerpt || siteProfile.newsletterOneLiner,
       seo: article.seo,
       image: article.featuredImage,
       type: "article",
@@ -118,6 +121,7 @@ function formatDate(dateString: string): string {
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  const siteProfile = await getSiteProfile();
   const { slug } = await params;
 
   let article;
@@ -156,7 +160,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     article.publishedDate ?? article.publishedAt;
   const articlePath = `/blog/${article.slug}`;
   const articleDescription =
-    article.excerpt || "Insights on AI engineering, architecture, and production systems.";
+    article.excerpt || siteProfile.newsletterOneLiner;
   const primaryImage =
     toAbsoluteMediaUrl(article.seo?.metaImage?.url) ??
     toAbsoluteMediaUrl(article.featuredImage?.url);
@@ -268,21 +272,20 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   </div>
                   <div>
                     <h3 className="font-serif text-lg text-ink">
-                      Mehdi Zare, CFA
+                      {siteProfile.authorName}
                     </h3>
                     <p className="font-mono text-xs text-accent-warm">
-                      Principal AI Engineer
+                      {siteProfile.authorRole}
                     </p>
                     <p className="mt-2 text-sm text-mid-gray leading-relaxed">
-                      Principal AI engineer shipping production systems across
-                      finance, defense, healthcare, and enterprise.
+                      {siteProfile.authorBioShort}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-3">
                       <Link
                         href="/consulting"
                         className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
                       >
-                        Work together
+                        {siteProfile.primaryCtaLabel}
                       </Link>
                       <Link
                         href="/contact"
@@ -334,8 +337,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <div className="mt-12 border-t border-warm-gray pt-10">
                 <BeehiivEmbed
                   source="blog_post_footer"
-                  title="Get the weekly prototype-to-production briefing"
-                  description="One production AI teardown, one domain lesson, and one actionable framework each week."
+                  title={siteProfile.newsletterTitle}
+                  description={siteProfile.newsletterOneLiner}
                 />
               </div>
             </article>

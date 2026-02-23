@@ -3,48 +3,20 @@ import { BeehiivEmbed } from "@/components/newsletter/BeehiivEmbed";
 import { TickerLookup } from "@/components/bina/TickerLookup";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { fallbackBinaPrintData } from "@/content/fallbacks";
 import {
   buildBreadcrumbJsonLd,
   buildPageMetadata,
   buildWebPageJsonLd,
 } from "@/lib/seo";
+import { getSiteProfile } from "@/lib/site-profile";
 import { getBinaPrintPage } from "@/lib/strapi";
-import type { BinaMover, BinaStep } from "@/types/strapi";
-
-const fallbackSteps: BinaStep[] = [
-  {
-    id: 1,
-    title: "We analyze fundamentals",
-    description:
-      "AI agents process financial statements, earnings calls, and SEC filings into structured signals.",
-  },
-  {
-    id: 2,
-    title: "We score companies 0-100",
-    description:
-      "The Bina Score summarizes investment quality with explainable sub-score components.",
-  },
-  {
-    id: 3,
-    title: "We match to your profile",
-    description:
-      "Scores are interpreted by risk tolerance, sector preference, and time horizon.",
-  },
-];
-
-const fallbackMovers: BinaMover[] = [
-  { id: 1, ticker: "MSFT", company: "Microsoft", score: 88, scoreChange: 4.2 },
-  { id: 2, ticker: "NVDA", company: "NVIDIA", score: 91, scoreChange: 3.7 },
-  { id: 3, ticker: "AMZN", company: "Amazon", score: 82, scoreChange: 2.9 },
-  { id: 4, ticker: "JPM", company: "JPMorgan", score: 79, scoreChange: 2.5 },
-  { id: 5, ticker: "AAPL", company: "Apple", score: 84, scoreChange: 2.1 },
-];
 
 const binaPrintMetadataTitle = "Bina Print";
-const binaPrintMetadataDescription =
-  "Bina Print is an AI-powered company scoring system built end-to-end as proof of production AI engineering rigor.";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const siteProfile = await getSiteProfile();
+
   try {
     const response = await getBinaPrintPage();
     const cmsData = response.data;
@@ -52,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildPageMetadata({
       pathname: "/bina-print",
       title: binaPrintMetadataTitle,
-      description: cmsData?.heroSubheadline || binaPrintMetadataDescription,
+      description: cmsData?.heroSubheadline || siteProfile.siteDescription,
       seo: cmsData?.seo,
       type: "website",
       keywords: [
@@ -66,7 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildPageMetadata({
       pathname: "/bina-print",
       title: binaPrintMetadataTitle,
-      description: binaPrintMetadataDescription,
+      description: siteProfile.siteDescription,
       type: "website",
       keywords: [
         "AI scoring system",
@@ -79,27 +51,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function BinaPrintPage() {
-  const fallbackData = {
-    heroHeadline: "Bina Print - A Zestimate for Stocks",
-    heroSubheadline:
-      "AI-powered company scoring that helps match investment opportunities to your profile.",
-    searchPlaceholder: "Look up any company ticker (e.g., MSFT)",
-    howItWorks: fallbackSteps,
-    topMovers: fallbackMovers,
-    exampleTicker: "MSFT",
-    exampleOverallScore: 88,
-    exampleSubScores: {
-      fundamentals: 90,
-      sentiment: 83,
-      momentum: 86,
-      risk: 81,
-    } as Record<string, number>,
-    methodologySummary:
-      "Bina Print combines structured financial analysis with production-tested AI workflows to produce transparent scores. Methodology prioritizes explainability over black-box outputs.",
-    emailGateHeadline: "Get your free personalized Bina Score report",
-    emailGateCopy:
-      "Join the list to receive new score updates, methodology notes, and product access invites.",
-  };
+  const siteProfile = await getSiteProfile();
+  const fallbackData = fallbackBinaPrintData;
 
   let data: typeof fallbackData = fallbackData;
   let cmsStructuredData: unknown;
@@ -243,7 +196,7 @@ export default async function BinaPrintPage() {
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray">Methodology Overview</p>
             <p className="mt-4 text-sm leading-relaxed text-mid-gray">{data.methodologySummary}</p>
             <p className="mt-5 text-sm font-medium text-ink">
-              Built by a CFA Charterholder using production AI systems.
+              Built by {siteProfile.credentialLine} using production AI systems.
             </p>
             <a
               href="/consulting"

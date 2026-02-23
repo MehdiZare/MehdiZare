@@ -1,4 +1,5 @@
 import OpenGraphImage from "./opengraph-image";
+import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 
 export const runtime = "edge";
 export const size = {
@@ -7,6 +8,6 @@ export const size = {
 };
 export const contentType = "image/png";
 export const alt =
-  "Mehdi Zare - Principal AI Engineer shipping production systems from prototype to production.";
+  `${DEFAULT_SITE_PROFILE.siteName} - ${DEFAULT_SITE_PROFILE.authorRole} shipping production systems from prototype to production.`;
 
 export default OpenGraphImage;

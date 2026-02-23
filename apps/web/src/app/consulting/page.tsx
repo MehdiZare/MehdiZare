@@ -6,6 +6,7 @@ import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
+import { buildConsultingFallback } from "@/content/fallbacks";
 import {
   buildBreadcrumbJsonLd,
   buildFAQJsonLd,
@@ -13,79 +14,15 @@ import {
   buildWebPageJsonLd,
   getSiteUrl,
 } from "@/lib/seo";
+import { getSiteProfile } from "@/lib/site-profile";
 import { getConsultingPage } from "@/lib/strapi";
-import type { ConsultingAudience, FAQ as FAQType } from "@/types/strapi";
-
-const fallbackAudiences: ConsultingAudience[] = [
-  {
-    id: 1,
-    title: "Financial Services Teams",
-    description:
-      "Production-ready AI systems for research, risk, operations, and decision support in regulated financial environments.",
-  },
-  {
-    id: 2,
-    title: "Healthcare and Life Sciences",
-    description: "Deploy AI workflows where reliability, explainability, and operational safety are requirements, not nice-to-haves.",
-  },
-  {
-    id: 3,
-    title: "Enterprise AI Teams",
-    description: "Move AI initiatives from pilot experiments to robust production systems with clear ownership and observability.",
-  },
-  {
-    id: 4,
-    title: "Government / Defense",
-    description: "AI-powered threat and intelligence workflows under strict constraints.",
-  },
-];
-
-const fallbackServices = [
-  {
-    id: 1,
-    name: "Advisory",
-    scope: "AI strategy, architecture review, and vendor evaluation.",
-  },
-  {
-    id: 2,
-    name: "Hands-On Implementation",
-    scope: "Hands-on development with strategic leadership and team mentoring.",
-  },
-  {
-    id: 3,
-    name: "Fractional AI Lead",
-    scope: "Embedded AI leadership for mission-critical programs with delivery ownership.",
-  },
-];
-
-const fallbackFaqs: FAQType[] = [
-  {
-    id: 1,
-    question: "What types of organizations do you work with?",
-    answer:
-      "Most engagements are with regulated or high-stakes teams in finance, healthcare, government, and enterprise settings that need AI outcomes they can defend to stakeholders.",
-  },
-  {
-    id: 2,
-    question: "How does an engagement begin?",
-    answer:
-      "We start with a 20-minute discovery call, align on target outcomes, and move into a scoped proposal.",
-  },
-  {
-    id: 3,
-    question: "Can you work with our existing team?",
-    answer:
-      "Yes. I typically embed into existing engineering and product teams while transferring delivery practices.",
-  },
-];
 
 const consultingMetadataTitle = "Consulting";
-const consultingMetadataDescription =
-  "AI consulting for high-stakes teams, from strategy through production delivery.";
 const schedulerSectionId = "calendly";
 const schedulerAnchorHref = `#${schedulerSectionId}`;
 
 export async function generateMetadata(): Promise<Metadata> {
+  const siteProfile = await getSiteProfile();
   const consultingKeywords = [
     "AI consulting",
     "production AI systems",
@@ -101,7 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildPageMetadata({
       pathname: "/consulting",
       title: cmsData?.title || consultingMetadataTitle,
-      description: cmsData?.subtitle || consultingMetadataDescription,
+      description: cmsData?.subtitle || siteProfile.positioningSubheadline,
       seo: cmsData?.seo,
       type: "website",
       keywords: consultingKeywords,
@@ -110,7 +47,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildPageMetadata({
       pathname: "/consulting",
       title: consultingMetadataTitle,
-      description: consultingMetadataDescription,
+      description: siteProfile.positioningSubheadline,
       type: "website",
       keywords: consultingKeywords,
     });
@@ -118,15 +55,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ConsultingPage() {
+  const siteProfile = await getSiteProfile();
   const siteUrl = getSiteUrl();
-  const fallbackData = {
-    title: "AI Consulting for High-Stakes Teams",
-    subtitle:
-      "From strategy to production with an engineer who learns your domain before writing code.",
-    audiences: fallbackAudiences,
-    services: fallbackServices,
-    faq: fallbackFaqs,
-  };
+  const fallbackData = buildConsultingFallback(siteProfile);
 
   let data = fallbackData;
   let cmsStructuredData: unknown;
@@ -164,7 +95,7 @@ export default async function ConsultingPage() {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
     "@id": `${siteUrl}/consulting#service`,
-    name: "Mehdi Zare AI Consulting",
+    name: `${siteProfile.siteName} AI Consulting`,
     url: `${siteUrl}/consulting`,
     description: data.subtitle,
     provider: {
@@ -253,7 +184,7 @@ export default async function ConsultingPage() {
               href={schedulerAnchorHref}
               className="inline-flex bg-ink px-8 py-3 text-sm font-medium text-paper transition hover:bg-ink/85"
             >
-              Book a Free Discovery Call
+              {siteProfile.primaryCtaLabel}
             </a>
             <p className="mt-3 text-sm text-mid-gray">
               Prefer email?{" "}

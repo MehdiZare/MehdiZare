@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import type { SEO, StrapiImage } from "@/types/strapi";
-import { publicEnv } from "@/lib/public-env";
+import type { SEO, StrapiImage } from "../types/strapi";
+import { publicEnv } from "./public-env";
+import { DEFAULT_SITE_PROFILE } from "./site-profile-defaults";
 
 const DEFAULT_SITE_URL = "https://mehdi-zare.com";
 const DEFAULT_STRAPI_URL = "http://localhost:1337";
 
-export const SITE_NAME = "Mehdi Zare";
-export const PERSON_NAME = "Mehdi Zare";
-export const PERSON_TITLE = "Principal AI Engineer and CFA Charterholder";
-export const DEFAULT_SITE_DESCRIPTION =
-  "Principal AI Engineer who ships production AI systems across finance, defense, healthcare, and enterprise. From prototype to production.";
+export const SITE_NAME = DEFAULT_SITE_PROFILE.siteName;
+export const PERSON_NAME = DEFAULT_SITE_PROFILE.siteName;
+export const PERSON_TITLE = DEFAULT_SITE_PROFILE.credentialLine;
+export const DEFAULT_SITE_DESCRIPTION = DEFAULT_SITE_PROFILE.siteDescription;
 
 export const PERSON_SAME_AS = [
   "https://linkedin.com/in/mehdizare",
@@ -73,6 +73,18 @@ interface BlogJsonLdOptions {
 interface FAQJsonLdItem {
   question: string;
   answer: string;
+}
+
+interface WebsiteJsonLdOptions {
+  name?: string;
+  description?: string;
+}
+
+interface PersonJsonLdOptions {
+  name?: string;
+  title?: string;
+  description?: string;
+  sameAs?: string[];
 }
 
 function normalizeOrigin(value: string, fallback: string): string {
@@ -260,16 +272,18 @@ export function buildPageMetadata({
   return metadata;
 }
 
-export function buildWebsiteJsonLd(): Record<string, unknown> {
+export function buildWebsiteJsonLd(options: WebsiteJsonLdOptions = {}): Record<string, unknown> {
   const siteUrl = getSiteUrl();
+  const name = options.name ?? SITE_NAME;
+  const description = options.description ?? DEFAULT_SITE_DESCRIPTION;
 
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "@id": `${siteUrl}/#website`,
     url: siteUrl,
-    name: SITE_NAME,
-    description: DEFAULT_SITE_DESCRIPTION,
+    name,
+    description,
     inLanguage: "en-US",
     publisher: {
       "@id": `${siteUrl}/#person`,
@@ -277,18 +291,22 @@ export function buildWebsiteJsonLd(): Record<string, unknown> {
   };
 }
 
-export function buildPersonJsonLd(): Record<string, unknown> {
+export function buildPersonJsonLd(options: PersonJsonLdOptions = {}): Record<string, unknown> {
   const siteUrl = getSiteUrl();
+  const name = options.name ?? PERSON_NAME;
+  const title = options.title ?? PERSON_TITLE;
+  const description = options.description ?? DEFAULT_SITE_DESCRIPTION;
+  const sameAs = options.sameAs ?? PERSON_SAME_AS;
 
   return {
     "@context": "https://schema.org",
     "@type": "Person",
     "@id": `${siteUrl}/#person`,
-    name: PERSON_NAME,
+    name,
     url: siteUrl,
-    jobTitle: PERSON_TITLE,
-    description: DEFAULT_SITE_DESCRIPTION,
-    sameAs: PERSON_SAME_AS,
+    jobTitle: title,
+    description,
+    sameAs,
     knowsAbout: [
       "Artificial Intelligence",
       "Machine Learning",

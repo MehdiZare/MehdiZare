@@ -3,71 +3,76 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PostHogScripts } from "@/components/analytics/PostHogScripts";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { MotionProvider } from "@/components/shared/MotionProvider";
 import {
   buildPersonJsonLd,
   buildWebsiteJsonLd,
-  DEFAULT_SITE_DESCRIPTION,
   getSiteUrl,
-  SITE_NAME,
 } from "@/lib/seo";
+import { getSiteProfile } from "@/lib/site-profile";
 import "./globals.css";
 
 const siteUrl = getSiteUrl();
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: `${SITE_NAME} | Principal AI Engineer`,
-    template: "%s | Mehdi Zare",
-  },
-  description: DEFAULT_SITE_DESCRIPTION,
-  keywords: [
-    "AI engineering",
-    "production AI systems",
-    "LLM systems",
-    "AI consulting",
-    "domain-driven AI",
-  ],
-  alternates: {
-    canonical: "/",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-  authors: [{ name: SITE_NAME, url: siteUrl }],
-  creator: SITE_NAME,
-  publisher: SITE_NAME,
-  openGraph: {
-    title: `${SITE_NAME} | Principal AI Engineer`,
-    description:
-      "Principal AI Engineer shipping production AI systems across finance, defense, healthcare, and enterprise. CFA Charterholder.",
-    url: siteUrl,
-    siteName: SITE_NAME,
-    type: "website",
-    images: [
-      {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "Mehdi Zare - Principal AI Engineer",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${SITE_NAME} | Principal AI Engineer`,
-    description:
-      "Principal AI Engineer shipping production AI systems across finance, defense, healthcare, and enterprise. CFA Charterholder.",
-    images: ["/twitter-image"],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const siteProfile = await getSiteProfile();
+  const titleDefault = `${siteProfile.siteName} | ${siteProfile.authorRole}`;
 
-export default function RootLayout({
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: titleDefault,
+      template: `%s | ${siteProfile.siteName}`,
+    },
+    description: siteProfile.siteDescription,
+    keywords: [
+      "AI engineering",
+      "production AI systems",
+      "LLM systems",
+      "AI consulting",
+      "domain-driven AI",
+    ],
+    alternates: {
+      canonical: "/",
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+    authors: [{ name: siteProfile.siteName, url: siteUrl }],
+    creator: siteProfile.siteName,
+    publisher: siteProfile.siteName,
+    openGraph: {
+      title: titleDefault,
+      description: siteProfile.siteDescription,
+      url: siteUrl,
+      siteName: siteProfile.siteName,
+      type: "website",
+      images: [
+        {
+          url: "/opengraph-image",
+          width: 1200,
+          height: 630,
+          alt: `${siteProfile.siteName} - ${siteProfile.authorRole}`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: titleDefault,
+      description: siteProfile.siteDescription,
+      images: ["/twitter-image"],
+    },
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const siteProfile = await getSiteProfile();
+
   return (
     <html lang="en">
       <body className="font-sans antialiased">
@@ -77,12 +82,41 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <JsonLd id="website-jsonld" data={buildWebsiteJsonLd()} />
-        <JsonLd id="person-jsonld" data={buildPersonJsonLd()} />
-        <PostHogScripts />
-        <Navbar />
-        <main id="main-content" className="min-h-screen pt-20">{children}</main>
-        <Footer />
+        <MotionProvider>
+          <JsonLd
+            id="website-jsonld"
+            data={buildWebsiteJsonLd({
+              name: siteProfile.siteName,
+              description: siteProfile.siteDescription,
+            })}
+          />
+          <JsonLd
+            id="person-jsonld"
+            data={buildPersonJsonLd({
+              name: siteProfile.siteName,
+              title: siteProfile.authorRole,
+              description: siteProfile.siteDescription,
+              sameAs: siteProfile.socialLinks.map((socialLink) => socialLink.url),
+            })}
+          />
+          <PostHogScripts />
+          <Navbar
+            siteName={siteProfile.siteName}
+            navLinks={siteProfile.navItems}
+            ctaLabel={siteProfile.primaryCtaLabel}
+            ctaHref={siteProfile.primaryCtaHref}
+          />
+          <main id="main-content" className="min-h-screen pt-20">
+            {children}
+          </main>
+          <Footer
+            siteName={siteProfile.siteName}
+            credentialLine={siteProfile.credentialLine}
+            locationLine={siteProfile.locationLine}
+            socialLinks={siteProfile.socialLinks}
+            footerText={siteProfile.footerText}
+          />
+        </MotionProvider>
       </body>
     </html>
   );

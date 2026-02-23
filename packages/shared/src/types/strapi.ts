@@ -151,6 +151,24 @@ export interface NavItem {
 export interface SiteSettings {
   siteName: string;
   siteDescription: string | null;
+  positioningHeadline: string | null;
+  positioningSubheadline: string | null;
+  positioningHighlight: string | null;
+  credentialLine: string | null;
+  industriesLine: string | null;
+  locationLine: string | null;
+  primaryCtaLabel: string | null;
+  primaryCtaHref: string | null;
+  secondaryCtaLabel: string | null;
+  secondaryCtaHref: string | null;
+  newsletterTitle: string | null;
+  newsletterOneLiner: string | null;
+  contactPrompt: string | null;
+  authorName: string | null;
+  authorRole: string | null;
+  authorBioShort: string | null;
+  footerText: string | null;
+  bookCallHref: string | null;
   socialLinks: SocialLink[];
   navItems: NavItem[];
 }

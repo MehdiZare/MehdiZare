@@ -1,6 +1,14 @@
 import { Label } from "@/components/shared/Label";
 
-export function NarrativeSection() {
+interface NarrativeSectionProps {
+  industriesLine: string;
+  highlightPhrase: string;
+}
+
+export function NarrativeSection({
+  industriesLine,
+  highlightPhrase,
+}: NarrativeSectionProps) {
   return (
     <section id="the-problem" className="bg-paper py-24">
       <div className="mx-auto max-w-[680px] px-6">
@@ -20,13 +28,10 @@ export function NarrativeSection() {
           </p>
           <p>
             I bridge that gap. I&rsquo;m a principal-level AI engineer who has shipped
-            production systems in{" "}
-            <strong className="text-ink">finance, cybersecurity, healthcare, and defense</strong>
+            production systems in <strong className="text-ink">{industriesLine}</strong>
             . I earned a CFA Charter to understand capital markets. I hold a Secret
             clearance to work in national security.{" "}
-            <strong className="text-ink">
-              I learn your domain before I touch your codebase.
-            </strong>
+            <strong className="text-ink">{highlightPhrase}</strong>
           </p>
         </div>
       </div>

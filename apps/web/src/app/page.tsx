@@ -11,29 +11,16 @@ import { NewsletterSection } from "@/components/home/NewsletterSection";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { buildHomeFallback, splitIndustries } from "@/content/fallbacks";
+import { getSiteProfile } from "@/lib/site-profile";
 import { getHomePage } from "@/lib/strapi";
 import { buildPageMetadata, buildWebPageJsonLd } from "@/lib/seo";
-import type { SEO, StrapiImage } from "@/types/strapi";
-
-const fallbackHome = {
-  heroHeadline: "I take AI from prototype to production.",
-  heroSubheadline:
-    "Most AI projects stall between demo and deployment. I'm the engineer who gets them across that gap — because I learn your domain before I write a line of code.",
-  heroPrimaryCtaLabel: "Let's Talk",
-  heroPrimaryCtaHref: "/consulting#calendly",
-  heroSecondaryCtaLabel: "How I work",
-  heroSecondaryCtaHref: "/about",
-  heroImage: undefined as StrapiImage | undefined,
-  newsletterHeadline: "The Prototype-to-Production Briefing",
-  newsletterCopy:
-    "One essay per week on shipping AI systems that work in the real world. Architecture decisions, production war stories, and lessons from the domains I work in. No hype.",
-};
-
-const homeMetadataTitle = "Principal AI Engineer · CFA Charterholder";
-const homeMetadataDescription =
-  "Principal AI Engineer who ships production AI systems across finance, defense, healthcare, and enterprise. From prototype to production.";
+import type { SEO } from "@/types/strapi";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const siteProfile = await getSiteProfile();
+  const homeMetadataTitle = `${siteProfile.authorRole} · CFA Charterholder`;
+
   try {
     const response = await getHomePage();
     const data = response.data;
@@ -41,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildPageMetadata({
       pathname: "/",
       title: homeMetadataTitle,
-      description: homeMetadataDescription,
+      description: siteProfile.siteDescription,
       seo: data?.seo,
       image: data?.heroImage,
       type: "website",
@@ -50,13 +37,15 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildPageMetadata({
       pathname: "/",
       title: homeMetadataTitle,
-      description: homeMetadataDescription,
+      description: siteProfile.siteDescription,
       type: "website",
     });
   }
 }
 
 export default async function Home() {
+  const siteProfile = await getSiteProfile();
+  const fallbackHome = buildHomeFallback(siteProfile);
   let homeData = fallbackHome;
   let pageSeo: SEO | undefined;
 
@@ -101,6 +90,8 @@ export default async function Home() {
         })}
       />
       <Hero
+        credentialLine={siteProfile.credentialLine}
+        highlightPhrase={siteProfile.positioningHighlight}
         headline={homeData.heroHeadline}
         subheadline={homeData.heroSubheadline}
         primaryCtaLabel={homeData.heroPrimaryCtaLabel}
@@ -109,18 +100,25 @@ export default async function Home() {
         secondaryCtaHref={homeData.heroSecondaryCtaHref}
       />
 
-      <ClientLogos />
+      <ClientLogos items={splitIndustries(siteProfile.industriesLine)} />
 
       <AnimatedSection>
-        <CredentialsStrip />
+        <CredentialsStrip
+          role={siteProfile.authorRole}
+          industriesLine={siteProfile.industriesLine}
+          credentialLine={siteProfile.credentialLine}
+        />
       </AnimatedSection>
 
       <AnimatedSection delay={0.1}>
-        <NarrativeSection />
+        <NarrativeSection
+          industriesLine={siteProfile.industriesLine}
+          highlightPhrase={siteProfile.positioningHighlight}
+        />
       </AnimatedSection>
 
       <AnimatedSection delay={0.1}>
-        <ServicesGrid />
+        <ServicesGrid positioningHeadline={siteProfile.positioningHeadline} />
       </AnimatedSection>
 
       <AnimatedSection delay={0.1}>

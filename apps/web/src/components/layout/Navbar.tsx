@@ -6,20 +6,21 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { trackEvent } from "@/lib/analytics";
+import type { NavItem } from "@/types/strapi";
 
-const navLinks = [
-  { label: "About", href: "/about" },
-  { label: "Writing", href: "/blog" },
-  { label: "Bina Print", href: "/bina-print" },
-];
+interface NavbarProps {
+  siteName: string;
+  navLinks: NavItem[];
+  ctaLabel: string;
+  ctaHref: string;
+}
 
-const ctaHref = "/consulting#calendly";
-
-export function Navbar() {
+export function Navbar({ siteName, navLinks, ctaLabel, ctaHref }: NavbarProps) {
   const pathname = usePathname();
   const [openMenuForPath, setOpenMenuForPath] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const mobileMenuOpen = openMenuForPath === pathname;
+  const mobileMenuId = "mobile-navigation-menu";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -38,27 +39,39 @@ export function Navbar() {
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
         <Link href="/" className="font-mono text-sm font-medium tracking-wide text-ink">
-          Mehdi Zare
+          {siteName}
         </Link>
 
         <ul className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => {
+            const isExternal = Boolean(link.external) || link.href.startsWith("http");
             const isActive =
-              link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+              !isExternal && (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href));
 
             return (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className={cn(
-                    "relative text-sm transition-colors",
-                    isActive
-                      ? "text-ink after:absolute after:-bottom-1 after:left-0 after:h-px after:w-full after:bg-ink"
-                      : "text-mid-gray hover:text-ink"
-                  )}
-                >
-                  {link.label}
-                </Link>
+              <li key={`${link.id}-${link.href}`}>
+                {isExternal ? (
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative text-sm text-mid-gray transition-colors hover:text-ink"
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    href={link.href}
+                    className={cn(
+                      "relative text-sm transition-colors",
+                      isActive
+                        ? "text-ink after:absolute after:-bottom-1 after:left-0 after:h-px after:w-full after:bg-ink"
+                        : "text-mid-gray hover:text-ink"
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                )}
               </li>
             );
           })}
@@ -72,11 +85,11 @@ export function Navbar() {
               trackEvent("cta_work_with_me_clicked", {
                 page: "global",
                 section: "navbar",
-                cta_label: "Let's Talk",
+                cta_label: ctaLabel,
               });
             }}
           >
-            Let&rsquo;s Talk
+            {ctaLabel}
           </Link>
         </div>
 
@@ -88,6 +101,7 @@ export function Navbar() {
           }}
           aria-expanded={mobileMenuOpen}
           aria-label="Toggle navigation menu"
+          aria-controls={mobileMenuId}
         >
           {mobileMenuOpen ? (
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -108,25 +122,40 @@ export function Navbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
+            id={mobileMenuId}
             className="overflow-hidden border-t border-warm-gray/50 bg-paper/95 backdrop-blur-lg md:hidden"
           >
             <ul className="space-y-1 px-6 py-4">
               {navLinks.map((link) => {
+                const isExternal = Boolean(link.external) || link.href.startsWith("http");
                 const isActive =
-                  link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+                  !isExternal &&
+                  (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href));
 
                 return (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      onClick={() => setOpenMenuForPath(null)}
-                      className={cn(
-                        "block px-3 py-2 text-sm transition-colors",
-                        isActive ? "text-ink" : "text-mid-gray hover:text-ink"
-                      )}
-                    >
-                      {link.label}
-                    </Link>
+                  <li key={`${link.id}-${link.href}`}>
+                    {isExternal ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setOpenMenuForPath(null)}
+                        className="block px-3 py-2 text-sm text-mid-gray transition-colors hover:text-ink"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        onClick={() => setOpenMenuForPath(null)}
+                        className={cn(
+                          "block px-3 py-2 text-sm transition-colors",
+                          isActive ? "text-ink" : "text-mid-gray hover:text-ink"
+                        )}
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 );
               })}
@@ -138,12 +167,12 @@ export function Navbar() {
                     trackEvent("cta_work_with_me_clicked", {
                       page: "global",
                       section: "navbar_mobile",
-                      cta_label: "Let's Talk",
+                      cta_label: ctaLabel,
                     });
                   }}
                   className="block rounded-sm border border-ink px-3 py-2 text-center text-sm font-medium text-ink"
                 >
-                  Let&rsquo;s Talk
+                  {ctaLabel}
                 </Link>
               </li>
             </ul>

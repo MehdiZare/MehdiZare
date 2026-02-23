@@ -52,7 +52,7 @@ const entries: TrackRecordEntry[] = [
     role: "Quantitative Analysis Manager",
     dates: "2020 – 2022",
     description:
-      "Led ML-driven liquidity forecasting across finance, data engineering, and compliance teams; this is where I earned the CFA to deepen domain rigor.",
+      "Led ML-driven liquidity forecasting across finance, data engineering, and compliance teams, bridging quantitative analysis and enterprise decision-making.",
     category: "Finance",
     categoryColor: "bg-amber-500/10 text-amber-700",
   },
@@ -62,7 +62,7 @@ const entries: TrackRecordEntry[] = [
     role: "Senior Consultant",
     dates: "2019 – 2020",
     description:
-      "Contributed to financial data series work with the Office of Financial Research, translating policy and market context into usable analytical outputs.",
+      "Earned the CFA charter while contributing to financial data series work with the Office of Financial Research, translating policy and market context into usable analytical outputs.",
     category: "Finance",
     categoryColor: "bg-amber-500/10 text-amber-700",
   },

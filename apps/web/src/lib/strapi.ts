@@ -18,6 +18,7 @@ import { serverEnv } from "@/lib/server-env";
 const STRAPI_URL = publicEnv.strapiUrl;
 const STRAPI_API_TOKEN = serverEnv.strapiApiToken;
 const STRAPI_TIMEOUT_MS = 15_000;
+const STRAPI_DISABLED = (process.env.DISABLE_STRAPI_CMS ?? "true").toLowerCase() !== "false";
 
 interface FetchAPIParams {
   populate?: string | string[] | Record<string, unknown>;
@@ -103,6 +104,12 @@ function truncateForLogs(value: string): string {
 }
 
 async function fetchStrapi(input: URL, init: RequestInit & { path: string }): Promise<Response> {
+  if (STRAPI_DISABLED) {
+    throw new StrapiRequestError("Strapi CMS is disabled by configuration", {
+      path: init.path,
+    });
+  }
+
   let response: Response;
 
   try {

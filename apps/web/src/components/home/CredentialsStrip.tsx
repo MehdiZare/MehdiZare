@@ -8,13 +8,11 @@ interface CredentialItem {
   dot?: string;
 }
 
-const credentials: CredentialItem[] = [
-  { label: "Role", value: "Principal AI Engineer" },
-  { label: "Domains", value: "Finance · Defense · Health" },
-  { label: "Credential", value: "CFA Charterholder", dot: "bg-accent-warm" },
-  { label: "Clearance", value: "Active Secret", dot: "bg-green-500" },
-  { label: "Cloud", value: "AWS Solutions Architect" },
-];
+interface CredentialsStripProps {
+  role: string;
+  industriesLine: string;
+  credentialLine: string;
+}
 
 const containerVariants = {
   hidden: {},
@@ -35,7 +33,19 @@ const itemVariants = {
   },
 };
 
-export function CredentialsStrip() {
+export function CredentialsStrip({
+  role,
+  industriesLine,
+  credentialLine,
+}: CredentialsStripProps) {
+  const credentials: CredentialItem[] = [
+    { label: "Role", value: role },
+    { label: "Domains", value: industriesLine },
+    { label: "Credential", value: credentialLine, dot: "bg-accent-warm" },
+    { label: "Clearance", value: "Active Secret", dot: "bg-green-500" },
+    { label: "Cloud", value: "AWS Solutions Architect" },
+  ];
+
   return (
     <section id="credentials" className="border-y border-warm-gray">
       <motion.div

@@ -130,7 +130,11 @@ export function ContactForm() {
 
   if (status === "success") {
     return (
-      <div className="border border-warm-gray bg-muted p-6 text-center">
+      <div
+        className="border border-warm-gray bg-muted p-6 text-center"
+        role="status"
+        aria-live="polite"
+      >
         <p className="font-medium text-ink">
           Thank you for your message! I will get back to you soon.
         </p>
@@ -164,6 +168,8 @@ export function ContactForm() {
           onChange={handleChange}
           autoComplete="name"
           maxLength={120}
+          aria-invalid={errors.name ? "true" : "false"}
+          aria-describedby={errors.name ? "name-error" : undefined}
           className={cn(
             "mt-1 w-full border px-4 py-3 text-ink outline-none transition",
             "focus:border-ink focus:ring-1 focus:ring-ink",
@@ -172,7 +178,9 @@ export function ContactForm() {
           placeholder="Your name"
         />
         {errors.name && (
-          <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+          <p id="name-error" className="mt-1 text-sm text-red-500">
+            {errors.name}
+          </p>
         )}
       </div>
 
@@ -189,6 +197,8 @@ export function ContactForm() {
           onChange={handleChange}
           autoComplete="email"
           maxLength={320}
+          aria-invalid={errors.email ? "true" : "false"}
+          aria-describedby={errors.email ? "email-error" : undefined}
           className={cn(
             "mt-1 w-full border px-4 py-3 text-ink outline-none transition",
             "focus:border-ink focus:ring-1 focus:ring-ink",
@@ -197,7 +207,9 @@ export function ContactForm() {
           placeholder="you@example.com"
         />
         {errors.email && (
-          <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+          <p id="email-error" className="mt-1 text-sm text-red-500">
+            {errors.email}
+          </p>
         )}
       </div>
 
@@ -233,6 +245,8 @@ export function ContactForm() {
           value={form.message}
           onChange={handleChange}
           maxLength={5000}
+          aria-invalid={errors.message ? "true" : "false"}
+          aria-describedby={errors.message ? "message-error" : undefined}
           className={cn(
             "mt-1 w-full resize-y border px-4 py-3 text-ink outline-none transition",
             "focus:border-ink focus:ring-1 focus:ring-ink",
@@ -241,7 +255,9 @@ export function ContactForm() {
           placeholder="Your message..."
         />
         {errors.message && (
-          <p className="mt-1 text-sm text-red-500">{errors.message}</p>
+          <p id="message-error" className="mt-1 text-sm text-red-500">
+            {errors.message}
+          </p>
         )}
       </div>
 
@@ -267,6 +283,7 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={status === "submitting"}
+        aria-busy={status === "submitting"}
         className={cn(
           "bg-ink px-8 py-3 font-medium text-paper transition",
           "hover:bg-ink/85 disabled:opacity-50"
