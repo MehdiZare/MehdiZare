@@ -34,6 +34,7 @@ export const fallbackCredentials: Credential[] = [
     issuer: "Amazon Web Services",
   },
   { id: 3, title: "Secret Security Clearance", issuer: "U.S. Government" },
+  { id: 4, title: "Founder Fellow (ODF21)", issuer: "On Deck" },
 ];
 
 export const fallbackExperiences: Experience[] = [
@@ -41,7 +42,7 @@ export const fallbackExperiences: Experience[] = [
     id: 1,
     title: "Principal AI Engineer / Cloud Architect",
     company: "Sev1Tech",
-    startDate: "2024",
+    startDate: "2025",
     current: true,
     description:
       "Built GenAI systems for CISA cybersecurity operations, focused on production observability and threat-informed monitoring in federal environments where reliability is non-negotiable.",
@@ -50,8 +51,8 @@ export const fallbackExperiences: Experience[] = [
     id: 2,
     title: "Senior AI/ML Engineer",
     company: "Booz Allen",
-    startDate: "2022",
-    endDate: "2023",
+    startDate: "2024",
+    endDate: "2025",
     description:
       "Delivered containerized GenAI solutions for government and enterprise teams that needed secure, scalable deployments rather than lab demos.",
   },
@@ -69,7 +70,7 @@ export const fallbackExperiences: Experience[] = [
     title: "Quantitative Analysis Manager",
     company: "Capital One",
     startDate: "2020",
-    endDate: "2022",
+    endDate: "2024",
     description:
       "Led ML-driven liquidity forecasting across finance, data engineering, and compliance teams, bridging quantitative analysis and enterprise decision-making.",
   },
@@ -86,8 +87,7 @@ export const fallbackExperiences: Experience[] = [
     id: 6,
     title: "Chief AI Scientist",
     company: "Effective World",
-    startDate: "2015",
-    endDate: "2019",
+    startDate: "2024",
     description:
       "Led AI and data science initiatives to improve audience intelligence and campaign optimization, connecting model outputs to operational marketing decisions.",
   },
@@ -95,7 +95,7 @@ export const fallbackExperiences: Experience[] = [
     id: 7,
     title: "Founder & CEO",
     company: "Fardabook.com",
-    startDate: "2012",
+    startDate: "2011",
     endDate: "2014",
     description:
       "Founded and scaled a textbook-focused online bookstore, owning product, operations, and go-to-market from zero to running business.",

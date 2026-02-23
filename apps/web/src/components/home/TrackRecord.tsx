@@ -19,7 +19,7 @@ const entries: TrackRecordEntry[] = [
     org: "Sev1Tech",
     monogram: "S1",
     role: "Principal AI Engineer / Cloud Architect",
-    dates: "2024 – Present",
+    dates: "2025 – Present",
     description:
       "Built GenAI systems for CISA cybersecurity operations, focused on production observability and threat-informed monitoring in federal environments where reliability is non-negotiable.",
     category: "Cybersecurity",
@@ -30,7 +30,7 @@ const entries: TrackRecordEntry[] = [
     org: "Booz Allen",
     monogram: "BA",
     role: "Senior AI/ML Engineer",
-    dates: "2022 – 2023",
+    dates: "2024 – 2025",
     description:
       "Delivered containerized GenAI solutions for government and enterprise teams that needed secure, scalable deployments rather than lab demos.",
     category: "Defense",
@@ -50,7 +50,7 @@ const entries: TrackRecordEntry[] = [
     org: "Capital One",
     monogram: "C1",
     role: "Quantitative Analysis Manager",
-    dates: "2020 – 2022",
+    dates: "2020 – 2024",
     description:
       "Led ML-driven liquidity forecasting across finance, data engineering, and compliance teams, bridging quantitative analysis and enterprise decision-making.",
     category: "Finance",
@@ -70,7 +70,7 @@ const entries: TrackRecordEntry[] = [
     org: "Effective World",
     monogram: "EW",
     role: "Chief AI Scientist",
-    dates: "2015 – 2019",
+    dates: "2024",
     description:
       "Led AI and data science initiatives to improve audience intelligence and campaign optimization, connecting model outputs to operational marketing decisions.",
     category: "Startup",
@@ -80,7 +80,7 @@ const entries: TrackRecordEntry[] = [
     org: "Fardabook.com",
     monogram: "FB",
     role: "Founder & CEO",
-    dates: "2012 – 2014",
+    dates: "2011 – 2014",
     description:
       "Founded and scaled a textbook-focused online bookstore, owning product, operations, and go-to-market from zero to running business.",
     category: "Startup",
