@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ContactForm } from "@/components/contact/ContactForm";
 import { CalComTrigger } from "@/components/scheduling/CalComTrigger";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
@@ -114,61 +113,51 @@ export default async function ContactPage() {
         </div>
       </section>
 
-      {/* Form + Info Section */}
+      {/* Social Links + Schedule Section */}
       <section className="pb-24 pt-4">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="grid gap-10 lg:grid-cols-12">
-            {/* Contact Form */}
-            <AnimatedSection className="lg:col-span-7">
-              <div className="border border-warm-gray bg-paper p-8">
-                <ContactForm />
-              </div>
-            </AnimatedSection>
+        <div className="mx-auto max-w-2xl px-6 lg:px-8">
+          <AnimatedSection>
+            <div className="border border-warm-gray bg-paper p-8">
+              <h2 className="font-serif text-2xl text-ink">
+                Let&apos;s Connect
+              </h2>
 
-            {/* Contact Info */}
-            <AnimatedSection delay={0.2} className="lg:col-span-5">
-              <div className="border border-warm-gray bg-paper p-8">
-                <h2 className="font-serif text-2xl text-ink">
-                  Let&apos;s Connect
-                </h2>
-
-                {/* Social Links */}
-                <div className="mt-8">
-                  <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray">
-                    Social
-                  </h3>
-                  <div className="mt-3 flex flex-col gap-3">
-                    {siteProfile.socialLinks.map((link) => (
-                      <a
-                        key={`${link.id}-${link.url}`}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 text-mid-gray transition hover:text-ink"
-                      >
-                        <SocialIcon platform={link.platform} />
-                        <span className="font-medium">{link.platform}</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-10 border border-warm-gray bg-muted p-5">
-                  <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray">
-                    Schedule
-                  </h3>
-                  <p className="mt-2 text-sm text-mid-gray">
-                    Prefer to talk live? Book a 20-minute call.
-                  </p>
-                  <CalComTrigger
-                    className="mt-4"
-                    page="contact"
-                    section="schedule_panel"
-                  />
+              {/* Social Links */}
+              <div className="mt-8">
+                <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray">
+                  Social
+                </h3>
+                <div className="mt-3 flex flex-col gap-3">
+                  {siteProfile.socialLinks.map((link) => (
+                    <a
+                      key={`${link.id}-${link.url}`}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-mid-gray transition hover:text-ink"
+                    >
+                      <SocialIcon platform={link.platform} />
+                      <span className="font-medium">{link.platform}</span>
+                    </a>
+                  ))}
                 </div>
               </div>
-            </AnimatedSection>
-          </div>
+
+              <div className="mt-10 border border-warm-gray bg-muted p-5">
+                <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-mid-gray">
+                  Schedule
+                </h3>
+                <p className="mt-2 text-sm text-mid-gray">
+                  Prefer to talk live? Book a 20-minute call.
+                </p>
+                <CalComTrigger
+                  className="mt-4"
+                  page="contact"
+                  section="schedule_panel"
+                />
+              </div>
+            </div>
+          </AnimatedSection>
         </div>
       </section>
     </div>
