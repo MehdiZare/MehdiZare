@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 
 const DEFAULT_SITE_URL = "https://mehdi-zare.com";
 const DEFAULT_STRAPI_URL = "http://localhost:1337";
-const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
+const DEFAULT_POSTHOG_HOST = "https://t.mehdi-zare.com";
 const DEFAULT_BEEHIIV_EMBED_ORIGIN = "https://embeds.beehiiv.com";
 const DEFAULT_CAL_ORIGIN = "https://cal.com";
 const DEFAULT_CAL_APP_ORIGIN = "https://app.cal.com";
