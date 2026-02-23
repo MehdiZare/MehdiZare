@@ -1,6 +1,3 @@
-import { existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 export async function resolve(specifier, context, nextResolve) {
   try {
     return await nextResolve(specifier, context);
