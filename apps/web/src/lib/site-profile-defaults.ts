@@ -3,7 +3,6 @@ import type { NavItem, SocialLink } from "../types/strapi";
 export const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: 1, label: "About", href: "/about", order: 1, external: false },
   { id: 2, label: "Writing", href: "/blog", order: 2, external: false },
-  { id: 3, label: "Bina Print", href: "/bina-print", order: 3, external: false },
 ];
 
 export const DEFAULT_SOCIAL_LINKS: SocialLink[] = [

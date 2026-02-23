@@ -7,6 +7,7 @@ import {
   getConsultingPage,
   getHomePage,
 } from "@/lib/strapi";
+import { isBinaPrintEnabled } from "@/lib/feature-flags";
 import { getSiteUrl, toAbsoluteMediaUrl } from "@/lib/seo";
 
 const SITE_URL = getSiteUrl();
@@ -48,6 +49,7 @@ async function getAllArticlesForSitemap(): Promise<Article[]> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const showBinaPrint = isBinaPrintEnabled();
   const pageTimestamps = {
     home: now,
     about: now,
@@ -57,18 +59,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   };
 
   try {
-    const [homeRes, aboutRes, binaPrintRes, consultingRes] =
+    const [homeRes, aboutRes, consultingRes] =
       await Promise.all([
         getHomePage(),
         getAboutPage(),
-        getBinaPrintPage(),
         getConsultingPage(),
       ]);
 
     pageTimestamps.home = safeDate(homeRes.data?.updatedAt, now);
     pageTimestamps.about = safeDate(aboutRes.data?.updatedAt, now);
-    pageTimestamps.binaPrint = safeDate(binaPrintRes.data?.updatedAt, now);
     pageTimestamps.consulting = safeDate(consultingRes.data?.updatedAt, now);
+
+    if (showBinaPrint) {
+      const binaPrintRes = await getBinaPrintPage();
+      pageTimestamps.binaPrint = safeDate(binaPrintRes.data?.updatedAt, now);
+    }
   } catch {
     // Keep build-time fallback dates when CMS is unavailable.
   }
@@ -84,12 +89,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE_URL}/about`,
       lastModified: pageTimestamps.about,
       changeFrequency: "monthly",
-      priority: 0.9,
-    },
-    {
-      url: `${SITE_URL}/bina-print`,
-      lastModified: pageTimestamps.binaPrint,
-      changeFrequency: "weekly",
       priority: 0.9,
     },
     {
@@ -111,6 +110,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     },
   ];
+
+  if (showBinaPrint) {
+    staticPages.splice(2, 0, {
+      url: `${SITE_URL}/bina-print`,
+      lastModified: pageTimestamps.binaPrint,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    });
+  }
 
   let articlePages: MetadataRoute.Sitemap = [];
 

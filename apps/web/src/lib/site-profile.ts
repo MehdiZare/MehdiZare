@@ -3,6 +3,7 @@ import {
   DEFAULT_NAV_ITEMS,
   DEFAULT_SOCIAL_LINKS,
 } from "./site-profile-defaults";
+import { isBinaPrintEnabled } from "./feature-flags";
 import type { NavItem, SEO, SiteSettings, SocialLink } from "../types/strapi";
 
 const REQUIRED_SITE_PROFILE_FIELDS = [
@@ -77,7 +78,7 @@ function normalizeString(value: unknown): string | undefined {
 
 function normalizeNavItems(items: SiteSettings["navItems"]): NavItem[] {
   if (!Array.isArray(items)) {
-    return DEFAULT_NAV_ITEMS;
+    return filterHiddenNavItems(DEFAULT_NAV_ITEMS);
   }
 
   const normalized: NavItem[] = [];
@@ -99,7 +100,20 @@ function normalizeNavItems(items: SiteSettings["navItems"]): NavItem[] {
 
   normalized.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
 
-  return normalized.length > 0 ? normalized : DEFAULT_NAV_ITEMS;
+  const visibleItems = filterHiddenNavItems(normalized);
+  if (visibleItems.length > 0) {
+    return visibleItems;
+  }
+
+  return filterHiddenNavItems(DEFAULT_NAV_ITEMS);
+}
+
+function filterHiddenNavItems(items: NavItem[]): NavItem[] {
+  if (isBinaPrintEnabled()) {
+    return items;
+  }
+
+  return items.filter((item) => !item.href.startsWith("/bina-print"));
 }
 
 function normalizeSocialLinks(items: SiteSettings["socialLinks"]): SocialLink[] {

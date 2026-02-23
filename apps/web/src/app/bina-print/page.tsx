@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { TickerLookup } from "@/components/bina/TickerLookup";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { fallbackBinaPrintData } from "@/content/fallbacks";
+import { isBinaPrintEnabled } from "@/lib/feature-flags";
 import {
   buildBreadcrumbJsonLd,
   buildPageMetadata,
@@ -50,6 +52,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function BinaPrintPage() {
+  if (!isBinaPrintEnabled()) {
+    notFound();
+  }
+
   const siteProfile = await getSiteProfile();
   const fallbackData = fallbackBinaPrintData;
 

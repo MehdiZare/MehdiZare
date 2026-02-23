@@ -11,6 +11,7 @@ import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildHomeFallback, splitIndustries } from "@/content/fallbacks";
+import { isBinaPrintEnabled } from "@/lib/feature-flags";
 import { getSiteProfile } from "@/lib/site-profile";
 import { getHomePage } from "@/lib/strapi";
 import { buildPageMetadata, buildWebPageJsonLd } from "@/lib/seo";
@@ -43,6 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
+  const showBinaPrint = isBinaPrintEnabled();
   const siteProfile = await getSiteProfile();
   const fallbackHome = buildHomeFallback(siteProfile);
   let homeData = fallbackHome;
@@ -121,9 +123,11 @@ export default async function Home() {
         <TrackRecord />
       </AnimatedSection>
 
-      <AnimatedSection delay={0.1}>
-        <ProofOfWork />
-      </AnimatedSection>
+      {showBinaPrint ? (
+        <AnimatedSection delay={0.1}>
+          <ProofOfWork />
+        </AnimatedSection>
+      ) : null}
 
       <AnimatedSection delay={0.1}>
         <WritingSection />
