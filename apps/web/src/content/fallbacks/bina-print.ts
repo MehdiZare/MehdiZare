@@ -46,7 +46,4 @@ export const fallbackBinaPrintData = {
   } as Record<string, number>,
   methodologySummary:
     "Bina Print combines structured financial analysis with production-tested AI workflows to produce transparent scores. Methodology prioritizes explainability over black-box outputs.",
-  emailGateHeadline: "Get your free personalized Bina Score report",
-  emailGateCopy:
-    "Join the list to receive new score updates, methodology notes, and product access invites.",
 };

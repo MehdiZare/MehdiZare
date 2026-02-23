@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { BeehiivEmbed } from "@/components/newsletter/BeehiivEmbed";
 import { TickerLookup } from "@/components/bina/TickerLookup";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -81,9 +80,6 @@ export default async function BinaPrintPage() {
         exampleSubScores: cmsData.exampleSubScores || fallbackData.exampleSubScores,
         methodologySummary:
           cmsData.methodologySummary || fallbackData.methodologySummary,
-        emailGateHeadline:
-          cmsData.emailGateHeadline || fallbackData.emailGateHeadline,
-        emailGateCopy: cmsData.emailGateCopy || fallbackData.emailGateCopy,
       };
     }
   } catch {
@@ -208,15 +204,6 @@ export default async function BinaPrintPage() {
         </div>
       </section>
 
-      <section className="pb-10 pt-6">
-        <div className="mx-auto max-w-4xl px-6">
-          <BeehiivEmbed
-            source="bina_print_email_gate"
-            title={data.emailGateHeadline}
-            description={data.emailGateCopy}
-          />
-        </div>
-      </section>
     </div>
   );
 }

@@ -6,7 +6,6 @@ import {
   getBinaPrintPage,
   getConsultingPage,
   getHomePage,
-  getNewsletterPage,
 } from "@/lib/strapi";
 import { getSiteUrl, toAbsoluteMediaUrl } from "@/lib/seo";
 
@@ -54,25 +53,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     about: now,
     binaPrint: now,
     consulting: now,
-    newsletter: now,
     blog: now,
   };
 
   try {
-    const [homeRes, aboutRes, binaPrintRes, consultingRes, newsletterRes] =
+    const [homeRes, aboutRes, binaPrintRes, consultingRes] =
       await Promise.all([
         getHomePage(),
         getAboutPage(),
         getBinaPrintPage(),
         getConsultingPage(),
-        getNewsletterPage(),
       ]);
 
     pageTimestamps.home = safeDate(homeRes.data?.updatedAt, now);
     pageTimestamps.about = safeDate(aboutRes.data?.updatedAt, now);
     pageTimestamps.binaPrint = safeDate(binaPrintRes.data?.updatedAt, now);
     pageTimestamps.consulting = safeDate(consultingRes.data?.updatedAt, now);
-    pageTimestamps.newsletter = safeDate(newsletterRes.data?.updatedAt, now);
   } catch {
     // Keep build-time fallback dates when CMS is unavailable.
   }
@@ -101,12 +97,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: pageTimestamps.consulting,
       changeFrequency: "monthly",
       priority: 0.9,
-    },
-    {
-      url: `${SITE_URL}/newsletter`,
-      lastModified: pageTimestamps.newsletter,
-      changeFrequency: "weekly",
-      priority: 0.8,
     },
     {
       url: `${SITE_URL}/blog`,

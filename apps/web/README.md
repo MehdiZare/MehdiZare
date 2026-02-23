@@ -23,7 +23,6 @@ Next.js App Router frontend for the public portfolio.
 - `DISABLE_STRAPI_CMS` (defaults to `true`; set to `false` to enable Strapi content)
 - `NEXT_PUBLIC_POSTHOG_KEY`
 - `NEXT_PUBLIC_POSTHOG_HOST`
-- `NEXT_PUBLIC_BEEHIIV_EMBED_URL`
 
 ## Security Notes
 

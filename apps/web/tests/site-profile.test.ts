@@ -10,7 +10,6 @@ test("Site Profile enforces a required field contract", () => {
   assert.match(source, /"positioningHeadline"/);
   assert.match(source, /"positioningSubheadline"/);
   assert.match(source, /"primaryCtaLabel"/);
-  assert.match(source, /"newsletterOneLiner"/);
   assert.match(source, /"authorBioShort"/);
 });
 

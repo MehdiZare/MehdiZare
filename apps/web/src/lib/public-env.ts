@@ -12,18 +12,6 @@ function parseUrl(name: string, value: string | undefined, fallback: string): UR
   }
 }
 
-function parseOptionalUrl(name: string, value: string | undefined): URL | null {
-  if (!value?.trim()) {
-    return null;
-  }
-
-  try {
-    return new URL(value.trim());
-  } catch {
-    throw new Error(`Invalid ${name} URL: ${value}`);
-  }
-}
-
 function parseCsvList(value: string | undefined): string[] {
   if (!value?.trim()) {
     return [];
@@ -60,27 +48,17 @@ const posthogHost = parseUrl(
   process.env.NEXT_PUBLIC_POSTHOG_HOST,
   DEFAULT_POSTHOG_HOST
 );
-const beehiivEmbedUrl = parseOptionalUrl(
-  "NEXT_PUBLIC_BEEHIIV_EMBED_URL",
-  process.env.NEXT_PUBLIC_BEEHIIV_EMBED_URL
-);
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim() || "";
 
 ensureHttpsInProduction("NEXT_PUBLIC_SITE_URL", siteUrl);
 ensureHttpsInProduction("NEXT_PUBLIC_STRAPI_URL", strapiUrl);
 ensureHttpsInProduction("NEXT_PUBLIC_POSTHOG_HOST", posthogHost);
 
-if (beehiivEmbedUrl) {
-  ensureHttpsInProduction("NEXT_PUBLIC_BEEHIIV_EMBED_URL", beehiivEmbedUrl);
-}
-
 export const publicEnv = {
   siteUrl: siteUrl.origin,
   strapiUrl: strapiUrl.origin,
   posthogHost: posthogHost.origin.replace(/\/$/, ""),
   posthogKey,
-  beehiivEmbedUrl: beehiivEmbedUrl?.toString() ?? "",
-  beehiivEmbedOrigin: beehiivEmbedUrl?.origin ?? "",
   allowedImageHosts: parseCsvList(process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS),
 } as const;
 

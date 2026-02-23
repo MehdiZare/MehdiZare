@@ -8,7 +8,6 @@ import { StrapiImage } from "@/components/shared/StrapiImage";
 import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
 import { TableOfContents } from "@/components/blog/TableOfContents";
 import { TagBadge } from "@/components/blog/TagBadge";
-import { BeehiivEmbed } from "@/components/newsletter/BeehiivEmbed";
 import { getSiteProfile } from "@/lib/site-profile";
 import {
   buildBlogPostingJsonLd,
@@ -84,7 +83,7 @@ export async function generateMetadata({
       pathname: `/blog/${slug}`,
       title: article.title,
       description:
-        article.excerpt || siteProfile.newsletterOneLiner,
+        article.excerpt || siteProfile.siteDescription,
       seo: article.seo,
       image: article.featuredImage,
       type: "article",
@@ -160,7 +159,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     article.publishedDate ?? article.publishedAt;
   const articlePath = `/blog/${article.slug}`;
   const articleDescription =
-    article.excerpt || siteProfile.newsletterOneLiner;
+    article.excerpt || siteProfile.siteDescription;
   const primaryImage =
     toAbsoluteMediaUrl(article.seo?.metaImage?.url) ??
     toAbsoluteMediaUrl(article.featuredImage?.url);
@@ -334,13 +333,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 </nav>
               )}
 
-              <div className="mt-12 border-t border-warm-gray pt-10">
-                <BeehiivEmbed
-                  source="blog_post_footer"
-                  title={siteProfile.newsletterTitle}
-                  description={siteProfile.newsletterOneLiner}
-                />
-              </div>
             </article>
 
             {/* Sidebar */}

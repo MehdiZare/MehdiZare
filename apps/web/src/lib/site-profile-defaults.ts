@@ -28,9 +28,6 @@ export const DEFAULT_SITE_PROFILE = {
   primaryCtaHref: "/consulting#calendly",
   secondaryCtaLabel: "How I work",
   secondaryCtaHref: "/about",
-  newsletterTitle: "The Prototype-to-Production Briefing",
-  newsletterOneLiner:
-    "One essay per week on shipping AI systems that work in the real world. Architecture decisions, production war stories, and lessons from the domains I work in. No hype.",
   contactPrompt: "Working on an AI initiative that needs to ship?",
   authorName: "Mehdi Zare, CFA",
   authorRole: "Principal AI Engineer",

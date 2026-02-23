@@ -6,7 +6,6 @@ import type {
   BinaPrintPage,
   ConsultingPage,
   HomePage,
-  NewsletterPage,
   SiteSettings,
   ContactSubmission,
   StrapiResponse,
@@ -263,15 +262,6 @@ export async function getConsultingPage(): Promise<StrapiResponse<ConsultingPage
       audiences: { populate: "*" },
       tiers: { populate: "*" },
       faq: { populate: "*" },
-      seo: { populate: { metaImage: { populate: "*" } } },
-    },
-  });
-}
-
-export async function getNewsletterPage(): Promise<StrapiResponse<NewsletterPage>> {
-  return fetchAPI<StrapiResponse<NewsletterPage>>("/newsletter-page", {
-    populate: {
-      archiveLinks: { populate: "*" },
       seo: { populate: { metaImage: { populate: "*" } } },
     },
   });

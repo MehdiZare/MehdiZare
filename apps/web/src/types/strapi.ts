@@ -195,8 +195,6 @@ export interface HomePage {
   credibilityItems?: HomeCredibilityItem[];
   featuredOnItems?: HomeFeaturedOnItem[];
   whatIDoCards?: HomeValueCard[];
-  newsletterHeadline?: string;
-  newsletterCopy?: string;
   seo?: SEO;
   createdAt: string;
   updatedAt: string;
@@ -251,8 +249,6 @@ export interface BinaPrintPage {
   exampleOverallScore?: number;
   exampleSubScores?: Record<string, number>;
   methodologySummary?: string;
-  emailGateHeadline?: string;
-  emailGateCopy?: string;
   seo?: SEO;
   createdAt: string;
   updatedAt: string;
@@ -299,23 +295,6 @@ export interface ConsultingPage {
   publishedAt: string;
 }
 
-// Newsletter page
-
-export interface NewsletterPage {
-  id: number;
-  documentId: string;
-  headline?: string;
-  subheadline?: string;
-  benefits?: string[];
-  archiveLinks?: NavItem[];
-  signupCtaLabel?: string;
-  socialProofText?: string;
-  seo?: SEO;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt: string;
-}
-
 // Site settings
 
 export interface SiteSettings {
@@ -333,8 +312,6 @@ export interface SiteSettings {
   primaryCtaHref?: string;
   secondaryCtaLabel?: string;
   secondaryCtaHref?: string;
-  newsletterTitle?: string;
-  newsletterOneLiner?: string;
   contactPrompt?: string;
   authorName?: string;
   authorRole?: string;

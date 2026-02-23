@@ -7,7 +7,6 @@ import { ServicesGrid } from "@/components/home/ServicesGrid";
 import { TrackRecord } from "@/components/home/TrackRecord";
 import { ProofOfWork } from "@/components/home/ProofOfWork";
 import { WritingSection } from "@/components/home/WritingSection";
-import { NewsletterSection } from "@/components/home/NewsletterSection";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -66,9 +65,6 @@ export default async function Home() {
         heroSecondaryCtaHref:
           data.heroSecondaryCtaHref || fallbackHome.heroSecondaryCtaHref,
         heroImage: data.heroImage,
-        newsletterHeadline:
-          data.newsletterHeadline || fallbackHome.newsletterHeadline,
-        newsletterCopy: data.newsletterCopy || fallbackHome.newsletterCopy,
       };
     }
   } catch {
@@ -131,13 +127,6 @@ export default async function Home() {
 
       <AnimatedSection delay={0.1}>
         <WritingSection />
-      </AnimatedSection>
-
-      <AnimatedSection delay={0.1}>
-        <NewsletterSection
-          headline={homeData.newsletterHeadline}
-          copy={homeData.newsletterCopy}
-        />
       </AnimatedSection>
     </>
   );

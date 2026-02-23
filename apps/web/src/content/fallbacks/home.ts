@@ -9,8 +9,6 @@ export interface HomeFallbackData {
   heroSecondaryCtaLabel: string;
   heroSecondaryCtaHref: string;
   heroImage: StrapiImage | undefined;
-  newsletterHeadline: string;
-  newsletterCopy: string;
 }
 
 export function buildHomeFallback(siteProfile: SiteProfile): HomeFallbackData {
@@ -22,8 +20,6 @@ export function buildHomeFallback(siteProfile: SiteProfile): HomeFallbackData {
     heroSecondaryCtaLabel: siteProfile.secondaryCtaLabel,
     heroSecondaryCtaHref: siteProfile.secondaryCtaHref,
     heroImage: undefined,
-    newsletterHeadline: siteProfile.newsletterTitle,
-    newsletterCopy: siteProfile.newsletterOneLiner,
   };
 }
 

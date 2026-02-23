@@ -18,8 +18,6 @@ const REQUIRED_SITE_PROFILE_FIELDS = [
   "primaryCtaHref",
   "secondaryCtaLabel",
   "secondaryCtaHref",
-  "newsletterTitle",
-  "newsletterOneLiner",
   "contactPrompt",
   "authorName",
   "authorRole",
@@ -43,8 +41,6 @@ export interface SiteProfile {
   primaryCtaHref: string;
   secondaryCtaLabel: string;
   secondaryCtaHref: string;
-  newsletterTitle: string;
-  newsletterOneLiner: string;
   contactPrompt: string;
   authorName: string;
   authorRole: string;
@@ -206,11 +202,6 @@ function mergeProfile(settings: SiteSettings | null | undefined): SiteProfile {
       normalizeString(settings?.secondaryCtaLabel) ?? DEFAULT_SITE_PROFILE.secondaryCtaLabel,
     secondaryCtaHref:
       normalizeString(settings?.secondaryCtaHref) ?? DEFAULT_SITE_PROFILE.secondaryCtaHref,
-    newsletterTitle:
-      normalizeString(settings?.newsletterTitle) ?? DEFAULT_SITE_PROFILE.newsletterTitle,
-    newsletterOneLiner:
-      normalizeString(settings?.newsletterOneLiner) ??
-      DEFAULT_SITE_PROFILE.newsletterOneLiner,
     contactPrompt:
       normalizeString(settings?.contactPrompt) ?? DEFAULT_SITE_PROFILE.contactPrompt,
     authorName: normalizeString(settings?.authorName) ?? DEFAULT_SITE_PROFILE.authorName,

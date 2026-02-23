@@ -54,7 +54,7 @@ export async function generateMetadata({ searchParams }: BlogPageProps): Promise
   const metadata = buildPageMetadata({
     pathname: "/blog",
     title: "Blog",
-    description: siteProfile.newsletterOneLiner,
+    description: siteProfile.siteDescription,
     type: "website",
     keywords: [
       "production AI engineering",
@@ -129,11 +129,11 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
 
   const pageTitle = "Blog";
   const pageDescription =
-    siteProfile.newsletterOneLiner;
+    siteProfile.siteDescription;
   const blogJsonLd = buildBlogJsonLd({
     pathname: canonicalPath,
     title: pageTitle,
-    description: siteProfile.newsletterOneLiner,
+    description: siteProfile.siteDescription,
     posts: articles.map((article) => ({
       title: article.title,
       path: `/blog/${article.slug}`,
@@ -192,15 +192,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
           ) : (
             <div className="py-20 text-center">
               <p className="text-lg text-mid-gray">No posts yet.</p>
-              <p className="mt-2 text-sm text-mid-gray/60">
-                Check back soon, or subscribe for new posts.
-              </p>
-              <Link
-                href="/newsletter"
-                className="mt-5 inline-block rounded-sm border border-ink/20 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
-              >
-                Join the newsletter
-              </Link>
+              <p className="mt-2 text-sm text-mid-gray/60">Check back soon for new posts.</p>
             </div>
           )}
 
