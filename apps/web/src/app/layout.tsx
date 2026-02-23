@@ -97,6 +97,7 @@ export default async function RootLayout({
               title: siteProfile.authorRole,
               description: siteProfile.siteDescription,
               sameAs: siteProfile.socialLinks.map((socialLink) => socialLink.url),
+              knowsAbout: siteProfile.knowsAbout,
             })}
           />
           <PostHogScripts />

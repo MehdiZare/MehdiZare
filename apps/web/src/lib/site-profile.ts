@@ -48,6 +48,7 @@ export interface SiteProfile {
   authorBioShort: string;
   footerText: string;
   bookCallHref: string;
+  knowsAbout: string[];
   navItems: NavItem[];
   socialLinks: SocialLink[];
   defaultSeo?: SEO;
@@ -225,6 +226,7 @@ function mergeProfile(settings: SiteSettings | null | undefined): SiteProfile {
     footerText: normalizeString(settings?.footerText) ?? DEFAULT_SITE_PROFILE.footerText,
     bookCallHref:
       normalizeString(settings?.bookCallHref) ?? DEFAULT_SITE_PROFILE.bookCallHref,
+    knowsAbout: [...DEFAULT_SITE_PROFILE.knowsAbout],
     navItems: normalizeNavItems(settings?.navItems),
     socialLinks: normalizeSocialLinks(settings?.socialLinks),
     defaultSeo: settings?.defaultSeo,
