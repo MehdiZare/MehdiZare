@@ -54,13 +54,14 @@ COPY --from=base /app/apps/cms/config ./apps/cms/config
 COPY --from=base /app/apps/cms/tsconfig.json ./apps/cms/tsconfig.json
 COPY --from=base /app/apps/cms/public ./apps/cms/public
 
-# Create uploads directory
-RUN mkdir -p /app/apps/cms/public/uploads
+# Symlink uploads to the persistent volume so media survives redeploys
+RUN mkdir -p /data/uploads \
+ && rm -rf /app/apps/cms/public/uploads \
+ && ln -s /data/uploads /app/apps/cms/public/uploads
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=1337
-RUN mkdir -p /data
 
 EXPOSE 1337
 
