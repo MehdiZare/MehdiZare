@@ -15,6 +15,7 @@ import { isBinaPrintEnabled } from "@/lib/feature-flags";
 import { getSiteProfile } from "@/lib/site-profile";
 import { getHomePage } from "@/lib/strapi";
 import { buildPageMetadata, buildWebPageJsonLd } from "@/lib/seo";
+import { DevCmsBanner } from "@/components/shared/DevCmsBanner";
 import type { SEO } from "@/types/strapi";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -49,6 +50,7 @@ export default async function Home() {
   const fallbackHome = buildHomeFallback(siteProfile);
   let homeData = fallbackHome;
   let pageSeo: SEO | undefined;
+  let cmsFailed = false;
 
   try {
     const response = await getHomePage();
@@ -70,11 +72,12 @@ export default async function Home() {
       };
     }
   } catch {
-    // Keep fallback copy when CMS is unavailable.
+    cmsFailed = true;
   }
 
   return (
     <>
+      {cmsFailed && <DevCmsBanner page="home-page" />}
       <CmsStructuredData
         idPrefix="home-cms-jsonld"
         data={pageSeo?.structuredData}

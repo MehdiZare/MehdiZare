@@ -115,7 +115,11 @@ async function fetchStrapi(input: URL, init: RequestInit & { path: string }): Pr
       ...init,
       signal: AbortSignal.timeout(STRAPI_TIMEOUT_MS),
     });
-  } catch {
+  } catch (err) {
+    console.warn(
+      `⚠ CMS unavailable — failed to reach Strapi at ${input.origin} (path: ${init.path}). Falling back to default content.`,
+      err instanceof Error ? err.message : err
+    );
     throw new StrapiRequestError("Failed to reach Strapi API", { path: init.path });
   }
 

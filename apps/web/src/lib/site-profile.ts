@@ -276,6 +276,10 @@ export async function getSiteProfile(options: SiteProfileOptions = {}): Promise<
       );
     }
 
+    console.warn(
+      "⚠ CMS unavailable — site profile falling back to default content.",
+      error instanceof Error ? error.message : error
+    );
     return mergeProfile(undefined);
   }
 }

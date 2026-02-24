@@ -32,11 +32,9 @@ async function putSingleType(
   payload: Record<string, unknown>,
   options: { publish?: boolean } = {}
 ): Promise<void> {
-  const url = `${STRAPI_URL}/api/${singularName}`;
+  const params = options.publish ? "?status=published" : "";
+  const url = `${STRAPI_URL}/api/${singularName}${params}`;
   const body: Record<string, unknown> = { data: payload };
-  if (options.publish) {
-    (body.data as Record<string, unknown>).status = "published";
-  }
 
   console.log(`PUT ${url}`);
   const response = await fetch(url, {

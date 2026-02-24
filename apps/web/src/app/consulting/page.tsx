@@ -6,6 +6,7 @@ import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
+import { DevCmsBanner } from "@/components/shared/DevCmsBanner";
 import { buildConsultingFallback } from "@/content/fallbacks";
 import {
   buildBreadcrumbJsonLd,
@@ -61,6 +62,7 @@ export default async function ConsultingPage() {
 
   let data = fallbackData;
   let cmsStructuredData: unknown;
+  let cmsFailed = false;
 
   try {
     const response = await getConsultingPage();
@@ -80,7 +82,7 @@ export default async function ConsultingPage() {
       };
     }
   } catch {
-    // Fallback copy is used if CMS is unavailable.
+    cmsFailed = true;
   }
 
   const faqJsonLd = buildFAQJsonLd(
@@ -114,6 +116,7 @@ export default async function ConsultingPage() {
 
   return (
     <div className="bg-paper pb-24">
+      {cmsFailed && <DevCmsBanner page="consulting-page" />}
       <CmsStructuredData
         idPrefix="consulting-cms-jsonld"
         data={cmsStructuredData}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { TickerLookup } from "@/components/bina/TickerLookup";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { DevCmsBanner } from "@/components/shared/DevCmsBanner";
 import { fallbackBinaPrintData } from "@/content/fallbacks";
 import { isBinaPrintEnabled } from "@/lib/feature-flags";
 import {
@@ -61,6 +62,7 @@ export default async function BinaPrintPage() {
 
   let data: typeof fallbackData = fallbackData;
   let cmsStructuredData: unknown;
+  let cmsFailed = false;
 
   try {
     const response = await getBinaPrintPage();
@@ -89,11 +91,12 @@ export default async function BinaPrintPage() {
       };
     }
   } catch {
-    // Keep fallback for local development without CMS.
+    cmsFailed = true;
   }
 
   return (
     <div className="bg-paper pb-20">
+      {cmsFailed && <DevCmsBanner page="bina-print-page" />}
       <CmsStructuredData
         idPrefix="bina-print-cms-jsonld"
         data={cmsStructuredData}
