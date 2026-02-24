@@ -9,10 +9,15 @@ overrides:
   minimatch: '>=10.2.1'
   tar: '>=7.5.8'
 
+packageExtensionsChecksum: sha256-GWb4LqCc8WIso37L5s+02FGCYKxvAJc5+2HXtvYwbS8=
+
 importers:
 
   .:
     devDependencies:
+      husky:
+        specifier: ^9.1.7
+        version: 9.1.7
       turbo:
         specifier: ^2.8.10
         version: 2.8.10
@@ -67,13 +72,13 @@ importers:
         version: 1.5.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@strapi/blocks-react-renderer':
         specifier: ^1.0.2
-        version: 1.0.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        version: 1.0.2(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
       framer-motion:
         specifier: ^12.34.3
-        version: 12.34.3(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        version: 12.34.3(@emotion/is-prop-valid@1.4.0)(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -2448,6 +2453,7 @@ packages:
   '@strapi/blocks-react-renderer@1.0.2':
     resolution: {integrity: sha512-pRV/WMreo5wyrLg7J0pw1DM9lg8U8m+QA7Bd8CPN3beUBTdDhYrFTTNZh3XveEdnURZNJu1X0aWXAg4SzVg7QA==}
     peerDependencies:
+      '@types/react': '*'
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
 
@@ -4740,6 +4746,7 @@ packages:
     resolution: {integrity: sha512-v81ecyZKYO/DfpTwHivqkxSUBzvceOpoI+wLfgCgoUIKxlFKEXdg0oR9imxwXumT4SFy8vRk9xzJ5l3/Du/55Q==}
     peerDependencies:
       '@emotion/is-prop-valid': '*'
+      '@types/react': '*'
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
     peerDependenciesMeta:
@@ -5081,6 +5088,11 @@ packages:
   human-signals@2.1.0:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
     engines: {node: '>=10.17.0'}
+
+  husky@9.1.7:
+    resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   iconv-lite@0.4.13:
     resolution: {integrity: sha512-QwVuTNQv7tXC5mMWFX5N5wGjmybjNBBD8P3BReTkPmipoxTUFgWM2gXNvldHQr6T14DH0Dh6qBVg98iJt7u4mQ==}
@@ -9084,6 +9096,18 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
+  '@formatjs/intl@2.10.0(typescript@5.4.4)':
+    dependencies:
+      '@formatjs/ecma402-abstract': 1.18.2
+      '@formatjs/fast-memoize': 2.2.0
+      '@formatjs/icu-messageformat-parser': 2.7.6
+      '@formatjs/intl-displaynames': 6.6.6
+      '@formatjs/intl-listformat': 7.5.5
+      intl-messageformat: 10.5.11
+      tslib: 2.8.1
+    optionalDependencies:
+      typescript: 5.4.4
+
   '@formatjs/intl@2.10.0(typescript@5.9.3)':
     dependencies:
       '@formatjs/ecma402-abstract': 1.18.2
@@ -10546,7 +10570,7 @@ snapshots:
       koa-static: 5.0.0
       koa2-ratelimit: 1.1.3
       lodash: 4.17.21
-      motion: 12.23.24(@emotion/is-prop-valid@1.4.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      motion: 12.23.24(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       ora: 5.4.1
       p-map: 4.0.0
       passport-local: 1.0.0
@@ -10605,8 +10629,9 @@ snapshots:
       - supports-color
       - tedious
 
-  '@strapi/blocks-react-renderer@1.0.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+  '@strapi/blocks-react-renderer@1.0.2(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
+      '@types/react': 19.2.14
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
 
@@ -13840,8 +13865,9 @@ snapshots:
 
   fractional-indexing@3.2.0: {}
 
-  framer-motion@12.34.3(@emotion/is-prop-valid@1.4.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  framer-motion@12.34.3(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
+      '@types/react': 18.3.28
       motion-dom: 12.34.3
       motion-utils: 12.29.2
       tslib: 2.8.1
@@ -13850,8 +13876,9 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  framer-motion@12.34.3(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+  framer-motion@12.34.3(@emotion/is-prop-valid@1.4.0)(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
+      '@types/react': 19.2.14
       motion-dom: 12.34.3
       motion-utils: 12.29.2
       tslib: 2.8.1
@@ -14281,6 +14308,8 @@ snapshots:
       resolve-alpn: 1.2.1
 
   human-signals@2.1.0: {}
+
+  husky@9.1.7: {}
 
   iconv-lite@0.4.13: {}
 
@@ -15476,14 +15505,16 @@ snapshots:
 
   motion-utils@12.29.2: {}
 
-  motion@12.23.24(@emotion/is-prop-valid@1.4.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  motion@12.23.24(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      framer-motion: 12.34.3(@emotion/is-prop-valid@1.4.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      framer-motion: 12.34.3(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       tslib: 2.8.1
     optionalDependencies:
       '@emotion/is-prop-valid': 1.4.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
 
   mrmime@2.0.1: {}
 
@@ -16250,7 +16281,7 @@ snapshots:
     dependencies:
       '@formatjs/ecma402-abstract': 1.18.2
       '@formatjs/icu-messageformat-parser': 2.7.6
-      '@formatjs/intl': 2.10.0(typescript@5.9.3)
+      '@formatjs/intl': 2.10.0(typescript@5.4.4)
       '@formatjs/intl-displaynames': 6.6.6
       '@formatjs/intl-listformat': 7.5.5
       '@types/hoist-non-react-statics': 3.3.7(@types/react@18.3.28)
