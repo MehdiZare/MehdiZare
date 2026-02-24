@@ -22,6 +22,11 @@ export function validateCmsEnv(env: EnvAccessor): void {
   }
 
   hasValidated = true;
+
+  // Skip validation during build — secrets aren't needed to compile the admin panel
+  const isBuild = process.argv.some((arg) => arg === "build");
+  if (isBuild) return;
+
   const nodeEnv = env("NODE_ENV", "development");
   if (nodeEnv !== "production") {
     return;
