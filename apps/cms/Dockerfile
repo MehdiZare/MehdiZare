@@ -62,6 +62,7 @@ RUN mkdir -p /data/uploads \
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=1337
+RUN mkdir -p /data
 
 EXPOSE 1337
 
