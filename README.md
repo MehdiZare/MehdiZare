@@ -1,110 +1,33 @@
-# Mehdi Zare Personal Website
+# Hey, I'm Mehdi 👋
 
-Monorepo for a personal site powered by Strapi CMS and Next.js.
+Principal AI Engineer · CFA Charterholder · Building AI products that ship.
 
-## Stack
+I work at the intersection of AI engineering and domain expertise — finance, cybersecurity, healthcare, and developer tools. By day I'm a Principal Cloud Architect & AI SME on federal cybersecurity missions. Nights and weekends, I build products.
 
-- Frontend: Next.js (`apps/web`)
-- Backend CMS: Strapi 5 (`apps/cms`)
-- Workspace tooling: pnpm + Turborepo + Taskfile
-- Deployment target:
-  - Frontend -> Vercel
-  - CMS -> Railway (Postgres)
+## What I'm building
 
-## Repository Layout
+🏗️ **[Bina Capital](https://bina.capital)** — AI-powered investing for beginners. A "Zestimate for Stocks" that scores companies and matches them to investor profiles. Next.js · FastAPI · Supabase · Modal
 
-- `apps/web`: public website (React/Next.js)
-- `apps/cms`: Strapi content API and admin panel
-- `packages/shared`: shared types/helpers used across apps
+✍️ **[RoboWrite.ai](https://robowrite.ai)** — Content operations platform for agencies. Paste a URL, extract brand voice, generate SEO-scored content, publish to CMS. Next.js · Python · LangChain · Temporal
 
-## Design System Direction
+🔧 **[Grounded.Codes](https://grounded.codes)** — Decision intelligence for AI coding agents. Not docs retrieval — *which library to use*, pinned to your lockfile. MCP server for Cursor, Claude Code, and Windsurf.
 
-We will use licensed UI assets with this rule:
+All three ship under [M Powered Ventures](https://mpowered.ventures).
 
-- Base components and structure: Untitled UI Pro
-- Advanced motion/visual sections: Aceternity UI
-- Integration pattern: wrap imported vendor components behind local components before using them in pages
+## Open source
 
-Recommended implementation locations:
+- **[fmp-data](https://github.com/MehdiZare/fmp-data)** — Python client for Financial Modeling Prep API ⭐ 12
+- **[langchain-fmp-data](https://github.com/MehdiZare/langchain-fmp-data)** — LangChain integration for fmp-data
+- **[pantstack](https://github.com/MehdiZare/pantstack)** — Pants + Pulumi AWS monorepo template (FastAPI, CI/CD, PR previews)
 
-- Base primitives and section building blocks: `apps/web/src/components/shared`
-- Brand tokens (colors, spacing, typography): `apps/web/src/app/globals.css`
-- Page-specific compositions: `apps/web/src/components/*`
+## Stack I reach for
 
-## Local Development
+`Python` `FastAPI` `Next.js` `React` `TypeScript` `LangChain` `LangGraph` `Supabase` `AWS Bedrock` `Databricks` `Modal` `Railway` `Vercel`
 
-1. Install dependencies:
+## Writing
 
-```bash
-task install
-```
+I write about AI + finance on [Seeking Alpha](https://seekingalpha.com/author/mehdi-zare) (536+ followers, 80K+ readers) and technical deep dives on [Medium](https://medium.com/@mehdi-zare).
 
-2. Configure CMS env:
+## Connect
 
-```bash
-cp apps/cms/.env.example apps/cms/.env
-```
-
-3. Configure frontend env:
-
-```bash
-cp apps/web/.env.example apps/web/.env.local
-```
-
-4. Start both apps:
-
-```bash
-task dev
-```
-
-Useful commands:
-
-- `task dev:web`: run Next.js only
-- `task dev:cms`: run Strapi only
-- `task build`: build all apps/packages
-- `task lint`: run workspace lint
-- `task typecheck`: run TypeScript type checks
-- `task test`: run web unit tests
-- `task security:audit`: run dependency vulnerability audit
-
-## Environment Variables
-
-### Frontend (`apps/web/.env.local`)
-
-- `NEXT_PUBLIC_STRAPI_URL`: Strapi base URL (local: `http://localhost:1337`)
-- `STRAPI_API_TOKEN`: Strapi API token used by server-side requests
-- `NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS`: optional comma-separated image host allowlist
-
-### CMS (`apps/cms/.env`)
-
-- `HOST`, `PORT`
-- `CORS_ORIGINS`
-- `APP_KEYS`
-- `API_TOKEN_SALT`
-- `ADMIN_JWT_SECRET`
-- `TRANSFER_TOKEN_SALT`
-- `JWT_SECRET`
-- `ENCRYPTION_KEY`
-- Database vars for production (`DATABASE_CLIENT=postgres`, `DATABASE_URL`)
-- Cloudflare R2 vars for media uploads (`R2_*`; see `apps/cms/R2_SETUP.md`)
-
-## Deployment
-
-### Frontend on Vercel
-
-- Set project root to `apps/web`
-- Build command: `pnpm turbo build --filter=web`
-- Add env vars:
-  - `NEXT_PUBLIC_STRAPI_URL` -> Railway CMS public URL
-  - `STRAPI_API_TOKEN` -> Strapi API token
-
-### CMS on Railway
-
-- `apps/cms/railway.yaml` is already configured for Docker deployment
-- Provision Postgres and keep `DATABASE_URL` connected
-- Set Strapi secrets (`APP_KEYS`, `ADMIN_JWT_SECRET`, etc.)
-- Expose service on port `1337`
-
-## Next Implementation Step
-
-Set up a dedicated design-system layer in `apps/web` so Untitled UI Pro and Aceternity are imported once, wrapped, and reused consistently across pages.
+[LinkedIn](https://linkedin.com/in/mehdizare) · [𝕏](https://twitter.com/mehdizarem) · [mehdi-zare.com](https://mehdi-zare.com)
