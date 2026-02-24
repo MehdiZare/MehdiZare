@@ -181,9 +181,17 @@ function collectMissingRequiredFields(settings: SiteSettings | null | undefined)
   return missing;
 }
 
+function isStrapiDisabled(): boolean {
+  return (process.env.DISABLE_STRAPI_CMS ?? "true").toLowerCase() !== "false";
+}
+
 function resolveStrictMode(explicit?: boolean): boolean {
   if (typeof explicit === "boolean") {
     return explicit;
+  }
+
+  if (isStrapiDisabled()) {
+    return false;
   }
 
   return process.env.CI === "true" || process.env.SITE_PROFILE_STRICT === "true";

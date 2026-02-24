@@ -5,7 +5,6 @@ import {
   type BlocksContent,
 } from "@strapi/blocks-react-renderer";
 import Image from "next/image";
-import { createElement } from "react";
 import { CodeBlock } from "./CodeBlock";
 import { toAbsoluteStrapiMediaUrl } from "@/lib/public-env";
 
@@ -57,8 +56,8 @@ export function BlocksRenderer({ content }: BlocksRendererProps) {
           heading: ({ children, level }) => {
             const text = extractText(children);
             const id = slugify(text);
-            const normalizedLevel = Math.min(6, Math.max(1, level));
-            const tagName = `h${normalizedLevel}`;
+            const normalizedLevel = Math.min(6, Math.max(1, level)) as 1 | 2 | 3 | 4 | 5 | 6;
+            const Tag = `h${normalizedLevel}` as const;
             const sizeClasses: Record<number, string> = {
               1: "font-serif text-4xl",
               2: "font-serif text-3xl",
@@ -67,15 +66,13 @@ export function BlocksRenderer({ content }: BlocksRendererProps) {
               5: "text-lg font-medium",
               6: "text-base font-medium",
             };
-            return createElement(
-              tagName,
-              {
-                id,
-                className: `${
-                  sizeClasses[normalizedLevel] || "text-base font-medium"
-                } text-ink mb-4`,
-              },
-              children
+            return (
+              <Tag
+                id={id}
+                className={`${sizeClasses[normalizedLevel] || "text-base font-medium"} text-ink mb-4`}
+              >
+                {children}
+              </Tag>
             );
           },
           list: ({ children, format }) => {
