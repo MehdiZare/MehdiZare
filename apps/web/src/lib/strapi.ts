@@ -11,13 +11,12 @@ import type {
   StrapiResponse,
   StrapiCollectionResponse,
 } from "@/types/strapi";
-import { publicEnv } from "@/lib/public-env";
 import { serverEnv } from "@/lib/server-env";
 
-const STRAPI_URL = publicEnv.strapiUrl;
+const STRAPI_URL = serverEnv.strapiUrl;
 const STRAPI_API_TOKEN = serverEnv.strapiApiToken;
 const STRAPI_TIMEOUT_MS = 15_000;
-const STRAPI_DISABLED = (process.env.DISABLE_STRAPI_CMS ?? "true").toLowerCase() !== "false";
+const STRAPI_DISABLED = (process.env.DISABLE_STRAPI_CMS ?? "false").toLowerCase() !== "false";
 
 interface FetchAPIParams {
   populate?: string | string[] | Record<string, unknown>;
@@ -143,7 +142,7 @@ export async function fetchAPI<T>(path: string, params?: FetchAPIParams): Promis
   const response = await fetchStrapi(url, {
     method: "GET",
     headers: buildHeaders(),
-    next: { revalidate: 60 },
+    next: { revalidate: 86_400 },
     path,
   });
 

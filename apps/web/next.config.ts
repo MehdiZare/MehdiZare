@@ -40,7 +40,7 @@ function parseHostList(value: string | undefined): string[] {
 }
 
 const siteUrl = parseOrigin(process.env.NEXT_PUBLIC_SITE_URL, DEFAULT_SITE_URL);
-const strapiUrl = parseOrigin(process.env.NEXT_PUBLIC_STRAPI_URL, DEFAULT_STRAPI_URL);
+const strapiUrl = parseOrigin(process.env.STRAPI_URL, DEFAULT_STRAPI_URL);
 const posthogUrl = parseOrigin(process.env.NEXT_PUBLIC_POSTHOG_HOST, DEFAULT_POSTHOG_HOST);
 const beehiivUrl =
   parseOptionalOrigin(process.env.NEXT_PUBLIC_BEEHIIV_EMBED_URL) ??
@@ -68,7 +68,6 @@ const imageRemotePatterns = imageHosts.flatMap((hostname) => {
 const cspConnectOrigins = Array.from(
   new Set([
     siteUrl.origin,
-    strapiUrl.origin,
     posthogUrl.origin,
     calUrl.origin,
     calAppUrl.origin,
@@ -78,7 +77,7 @@ const cspFrameOrigins = Array.from(
   new Set([beehiivUrl.origin, calUrl.origin, calAppUrl.origin])
 );
 const cspImageOrigins = Array.from(
-  new Set([siteUrl.origin, strapiUrl.origin, posthogUrl.origin])
+  new Set([siteUrl.origin, posthogUrl.origin])
 );
 
 const cspDirectives = [
@@ -137,6 +136,14 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     root: path.resolve(__dirname, "../.."),
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/cms-uploads/:path*",
+        destination: `${strapiUrl.origin}/uploads/:path*`,
+      },
+    ];
   },
   async headers() {
     return [

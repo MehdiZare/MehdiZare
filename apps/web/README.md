@@ -13,14 +13,14 @@ Next.js App Router frontend for the public portfolio.
 ## Required Environment Variables
 
 - `NEXT_PUBLIC_SITE_URL`
-- `NEXT_PUBLIC_STRAPI_URL`
+- `STRAPI_URL`
 - `STRAPI_API_TOKEN` (required only when private Strapi endpoints are used)
 
 ## Optional Environment Variables
 
 - `NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS` (comma-separated hostnames)
 - `REQUIRE_STRAPI_API_TOKEN` (`true` to hard-fail startup when token is missing)
-- `DISABLE_STRAPI_CMS` (defaults to `true`; set to `false` to enable Strapi content)
+- `DISABLE_STRAPI_CMS` (defaults to `false`; set to `true` to use fallback content only)
 - `ENABLE_BINA_PRINT` (`true` to expose `/bina-print` and related links)
 - `NEXT_PUBLIC_POSTHOG_KEY`
 - `NEXT_PUBLIC_POSTHOG_HOST`

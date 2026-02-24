@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import type { SEO, StrapiImage } from "../types/strapi";
-import { publicEnv } from "./public-env";
+import { publicEnv, toAbsoluteStrapiMediaUrl } from "./public-env";
 import { DEFAULT_SITE_PROFILE } from "./site-profile-defaults";
 
 const DEFAULT_SITE_URL = "https://mehdi-zare.com";
-const DEFAULT_STRAPI_URL = "http://localhost:1337";
 
 export const SITE_NAME = DEFAULT_SITE_PROFILE.siteName;
 export const PERSON_NAME = DEFAULT_SITE_PROFILE.siteName;
@@ -109,7 +108,7 @@ export function getSiteUrl(): string {
 }
 
 export function getStrapiUrl(): string {
-  return normalizeOrigin(publicEnv.strapiUrl ?? DEFAULT_STRAPI_URL, DEFAULT_STRAPI_URL);
+  return getSiteUrl();
 }
 
 export function toAbsoluteUrl(pathOrUrl: string, baseUrl = getSiteUrl()): string {
@@ -130,7 +129,8 @@ export function toAbsoluteMediaUrl(url?: string | null): string | undefined {
     return undefined;
   }
 
-  return toAbsoluteUrl(url, getStrapiUrl());
+  const proxyPath = toAbsoluteStrapiMediaUrl(url);
+  return toAbsoluteUrl(proxyPath, getSiteUrl());
 }
 
 export function resolveCanonicalUrl(pathname: string, canonicalUrl?: string): string {

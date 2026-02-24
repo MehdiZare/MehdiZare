@@ -182,7 +182,7 @@ function collectMissingRequiredFields(settings: SiteSettings | null | undefined)
 }
 
 function isStrapiDisabled(): boolean {
-  return (process.env.DISABLE_STRAPI_CMS ?? "true").toLowerCase() !== "false";
+  return (process.env.DISABLE_STRAPI_CMS ?? "false").toLowerCase() !== "false";
 }
 
 function resolveStrictMode(explicit?: boolean): boolean {
