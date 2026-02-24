@@ -20,6 +20,7 @@ export function PostHogScripts() {
 
       window.posthog.init(posthogKey, {
         api_host: posthogHost,
+        ui_host: "https://us.posthog.com",
         person_profiles: "identified_only",
         capture_pageview: true,
       });

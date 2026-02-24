@@ -34,6 +34,13 @@ export const DEFAULT_SITE_PROFILE = {
     "Principal AI engineer shipping production systems across finance, defense, healthcare, and enterprise.",
   footerText: "© Mehdi Zare",
   bookCallHref: "/consulting#calendly",
+  knowsAbout: [
+    "Artificial Intelligence",
+    "Machine Learning",
+    "Financial Analysis",
+    "Quantitative Finance",
+    "AI Engineering",
+  ],
   navItems: DEFAULT_NAV_ITEMS,
   socialLinks: DEFAULT_SOCIAL_LINKS,
 } as const;
