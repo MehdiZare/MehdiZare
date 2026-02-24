@@ -5,6 +5,7 @@ import { validateCmsEnv } from './env-validation';
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Database => {
   validateCmsEnv(env);
   const client = env('DATABASE_CLIENT', 'sqlite');
+  const dbFilename = env('DATABASE_FILENAME', '.tmp/data.db');
 
   const connections = {
     mysql: {
@@ -47,7 +48,9 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Database 
     },
     sqlite: {
       connection: {
-        filename: path.join(__dirname, '..', '..', env('DATABASE_FILENAME', '.tmp/data.db')),
+        filename: path.isAbsolute(dbFilename)
+          ? dbFilename
+          : path.join(__dirname, '..', '..', dbFilename),
       },
       useNullAsDefault: true,
     },

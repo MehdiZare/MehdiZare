@@ -60,7 +60,7 @@ RUN mkdir -p /app/apps/cms/public/uploads
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=1337
-ENV DATABASE_CLIENT=postgres
+RUN mkdir -p /data
 
 EXPOSE 1337
 

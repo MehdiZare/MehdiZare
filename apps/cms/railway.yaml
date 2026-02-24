@@ -12,8 +12,7 @@ services:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: 1337
-      DATABASE_CLIENT: postgres
-      DATABASE_URL: ${{Postgres.DATABASE_URL}}
+      DATABASE_FILENAME: /data/cms.db
       APP_KEYS: ${{shared.APP_KEYS}}
       API_TOKEN_SALT: ${{shared.API_TOKEN_SALT}}
       ADMIN_JWT_SECRET: ${{shared.ADMIN_JWT_SECRET}}
@@ -30,3 +29,6 @@ services:
       R2_ROOT_PATH: ${{shared.R2_ROOT_PATH}}
       R2_SIGNED_URL_EXPIRES: ${{shared.R2_SIGNED_URL_EXPIRES}}
       R2_ACL: ""
+    volumes:
+      cms-data:
+        mountPath: /data
