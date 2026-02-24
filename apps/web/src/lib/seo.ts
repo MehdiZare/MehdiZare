@@ -18,6 +18,14 @@ export const PERSON_SAME_AS = [
   "https://seekingalpha.com/author/mehdi-zare",
 ];
 
+export const DEFAULT_KNOWS_ABOUT = [
+  "Artificial Intelligence",
+  "Machine Learning",
+  "Financial Analysis",
+  "Quantitative Finance",
+  "AI Engineering",
+];
+
 export interface BreadcrumbItem {
   name: string;
   path: string;
@@ -85,6 +93,7 @@ interface PersonJsonLdOptions {
   title?: string;
   description?: string;
   sameAs?: string[];
+  knowsAbout?: string[];
 }
 
 function normalizeOrigin(value: string, fallback: string): string {
@@ -297,6 +306,7 @@ export function buildPersonJsonLd(options: PersonJsonLdOptions = {}): Record<str
   const title = options.title ?? PERSON_TITLE;
   const description = options.description ?? DEFAULT_SITE_DESCRIPTION;
   const sameAs = options.sameAs ?? PERSON_SAME_AS;
+  const knowsAbout = options.knowsAbout ?? DEFAULT_KNOWS_ABOUT;
 
   return {
     "@context": "https://schema.org",
@@ -307,13 +317,7 @@ export function buildPersonJsonLd(options: PersonJsonLdOptions = {}): Record<str
     jobTitle: title,
     description,
     sameAs,
-    knowsAbout: [
-      "Artificial Intelligence",
-      "Machine Learning",
-      "Financial Analysis",
-      "Quantitative Finance",
-      "AI Engineering",
-    ],
+    knowsAbout,
   };
 }
 

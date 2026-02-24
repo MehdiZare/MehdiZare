@@ -1,6 +1,6 @@
 const DEFAULT_SITE_URL = "https://mehdi-zare.com";
 const DEFAULT_STRAPI_URL = "http://localhost:1337";
-const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
+const DEFAULT_POSTHOG_HOST = "https://t.mehdi-zare.com";
 
 function parseUrl(name: string, value: string | undefined, fallback: string): URL {
   const candidate = value?.trim() || fallback;
