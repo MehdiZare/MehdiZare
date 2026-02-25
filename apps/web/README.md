@@ -12,8 +12,8 @@ Next.js App Router frontend for the public portfolio.
 
 ## Required Environment Variables
 
-- `NEXT_PUBLIC_SITE_URL`
-- `STRAPI_URL`
+- `NEXT_PUBLIC_SITE_URL` (`https://www.mehdi-zare.com` in production)
+- `STRAPI_URL` (`http://localhost:1337` for local dev)
 - `STRAPI_API_TOKEN` (required only when private Strapi endpoints are used)
 
 ## Optional Environment Variables
@@ -24,6 +24,7 @@ Next.js App Router frontend for the public portfolio.
 - `ENABLE_BINA_PRINT` (`true` to expose `/bina-print` and related links)
 - `NEXT_PUBLIC_POSTHOG_KEY`
 - `NEXT_PUBLIC_POSTHOG_HOST`
+- `NEXT_PUBLIC_BEEHIIV_EMBED_URL` (defaults to `https://embeds.beehiiv.com`)
 
 ## Security Notes
 

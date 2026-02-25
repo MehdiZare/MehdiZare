@@ -24,6 +24,20 @@
       "relation": "manyToMany",
       "target": "api::article.article",
       "mappedBy": "tags"
+    },
+    "description": {
+      "type": "text"
+    },
+    "headline": {
+      "type": "string"
+    },
+    "intro": {
+      "type": "text"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
     }
   }
 }

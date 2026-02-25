@@ -275,17 +275,65 @@ export async function getPrimaryAuthor(): Promise<Author | undefined> {
   return fallback.data[0];
 }
 
-export async function getCategories(): Promise<StrapiCollectionResponse<Category>> {
+export async function getCategories(
+  params?: FetchAPIParams
+): Promise<StrapiCollectionResponse<Category>> {
   return fetchAPI<StrapiCollectionResponse<Category>>("/categories", {
-    populate: "*",
-    sort: "name:asc",
+    populate: {
+      children: { populate: "*" },
+      parent: { populate: "*" },
+      seo: { populate: { metaImage: { populate: "*" } } },
+    },
+    sort: "order:asc",
+    ...params,
   });
 }
 
-export async function getTags(): Promise<StrapiCollectionResponse<Tag>> {
+export async function getTags(
+  params?: FetchAPIParams
+): Promise<StrapiCollectionResponse<Tag>> {
   return fetchAPI<StrapiCollectionResponse<Tag>>("/tags", {
-    populate: "*",
+    populate: {
+      seo: { populate: { metaImage: { populate: "*" } } },
+    },
     sort: "name:asc",
+    ...params,
+  });
+}
+
+export async function getCategoryBySlug(
+  slug: string
+): Promise<StrapiCollectionResponse<Category>> {
+  return fetchAPI<StrapiCollectionResponse<Category>>("/categories", {
+    populate: {
+      children: { populate: "*" },
+      parent: { populate: "*" },
+      seo: { populate: { metaImage: { populate: "*" } } },
+    },
+    filters: {
+      slug: { $eq: slug },
+    },
+    pagination: {
+      page: 1,
+      pageSize: 1,
+    },
+  });
+}
+
+export async function getTagBySlug(
+  slug: string
+): Promise<StrapiCollectionResponse<Tag>> {
+  return fetchAPI<StrapiCollectionResponse<Tag>>("/tags", {
+    populate: {
+      seo: { populate: { metaImage: { populate: "*" } } },
+    },
+    filters: {
+      slug: { $eq: slug },
+    },
+    pagination: {
+      page: 1,
+      pageSize: 1,
+    },
   });
 }
 

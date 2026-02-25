@@ -5,7 +5,9 @@ import { validateCmsEnv } from './env-validation';
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Database => {
   validateCmsEnv(env);
   const client = env('DATABASE_CLIENT', 'sqlite');
-  const dbFilename = env('DATABASE_FILENAME', '.tmp/data.db');
+  const defaultDbFilename =
+    env('NODE_ENV', 'development') === 'production' ? '/data/cms.db' : '.tmp/data.db';
+  const dbFilename = env('DATABASE_FILENAME', defaultDbFilename);
 
   const connections = {
     mysql: {

@@ -12,7 +12,11 @@ function splitCsv(value: string): string[] {
 }
 
 export function readAllowedCorsOrigins(env: EnvAccessor): string[] {
-  const configured = env("CORS_ORIGINS", "http://localhost:3000");
+  const defaultOrigins =
+    env("NODE_ENV", "development") === "production"
+      ? "https://www.mehdi-zare.com,https://mehdi-zare.com"
+      : "http://localhost:3000";
+  const configured = env("CORS_ORIGINS", defaultOrigins);
   return splitCsv(configured);
 }
 
