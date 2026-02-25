@@ -36,7 +36,7 @@ async function getAllArticlesForSitemap(): Promise<Article[]> {
   while (true) {
     const response = await getArticles({
       pagination: { page, pageSize, withCount: true },
-      sort: "publishedDate:desc",
+      sort: "publishedAt:desc",
     });
 
     articles.push(...response.data);

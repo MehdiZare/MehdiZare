@@ -14,8 +14,6 @@ interface BlogArchivePageProps {
   params: Promise<{ page: string }>;
 }
 
-export const revalidate = 86_400;
-
 export async function generateStaticParams(): Promise<Array<{ page: string }>> {
   try {
     const firstPage = await getArticles({
@@ -24,7 +22,7 @@ export async function generateStaticParams(): Promise<Array<{ page: string }>> {
         pageSize: BLOG_PAGE_SIZE,
         withCount: true,
       },
-      sort: "publishedDate:desc",
+      sort: "publishedAt:desc",
     });
 
     const pageCount = firstPage.meta.pagination?.pageCount ?? 1;

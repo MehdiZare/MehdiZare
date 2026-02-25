@@ -203,7 +203,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       filters: {
         category: { slug: { $eq: slug } },
       },
-      sort: "publishedDate:desc",
+      sort: "publishedAt:desc",
       pagination: {
         page: 1,
         pageSize: 12,
@@ -218,7 +218,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             filters: {
               category: { slug: { $eq: childSlug } },
             },
-            sort: "publishedDate:desc",
+            sort: "publishedAt:desc",
             pagination: {
               page: 1,
               pageSize: 12,

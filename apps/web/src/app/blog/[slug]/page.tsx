@@ -33,7 +33,7 @@ async function getAllArticles(): Promise<ArticleList> {
 
   while (true) {
     const res = await getArticles({
-      sort: "publishedDate:desc",
+      sort: "publishedAt:desc",
       pagination: { page, pageSize, withCount: true },
     });
 

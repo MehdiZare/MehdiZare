@@ -29,7 +29,7 @@ export async function getBlogListingData(currentPage: number): Promise<BlogListi
   try {
     const [articlesRes, categoriesRes] = await Promise.all([
       getArticles({
-        sort: "publishedDate:desc",
+        sort: "publishedAt:desc",
         pagination: {
           page: currentPage,
           pageSize: BLOG_PAGE_SIZE,

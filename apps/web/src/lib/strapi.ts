@@ -18,6 +18,19 @@ const STRAPI_URL = serverEnv.strapiUrl;
 const STRAPI_API_TOKEN = serverEnv.strapiApiToken;
 const STRAPI_TIMEOUT_MS = 15_000;
 const STRAPI_DISABLED = serverEnv.strapiDisabled;
+const DEFAULT_REVALIDATE_SECONDS = 600;
+
+function parseRevalidateSeconds(value: string | undefined): number {
+  const parsed = Number.parseInt((value ?? "").trim(), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_REVALIDATE_SECONDS;
+  }
+  return parsed;
+}
+
+export const STRAPI_FETCH_REVALIDATE_SECONDS = parseRevalidateSeconds(
+  process.env.STRAPI_FETCH_REVALIDATE_SECONDS
+);
 
 interface FetchAPIParams {
   populate?: string | string[] | Record<string, unknown>;
@@ -147,7 +160,10 @@ export async function fetchAPI<T>(path: string, params?: FetchAPIParams): Promis
   const response = await fetchStrapi(url, {
     method: "GET",
     headers: buildHeaders(),
-    next: { revalidate: 86_400 },
+    next: {
+      revalidate: STRAPI_FETCH_REVALIDATE_SECONDS,
+      tags: ["strapi"],
+    },
     path,
   });
 

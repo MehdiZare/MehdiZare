@@ -105,7 +105,7 @@ export default async function TagPage({ params }: TagPageProps) {
       filters: {
         tags: { slug: { $eq: slug } },
       },
-      sort: "publishedDate:desc",
+      sort: "publishedAt:desc",
       pagination: {
         page: 1,
         pageSize: 12,

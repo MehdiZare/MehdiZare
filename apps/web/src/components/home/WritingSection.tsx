@@ -43,7 +43,7 @@ export async function WritingSection() {
   try {
     const response = await getArticles({
       pagination: { pageSize: 3 },
-      sort: "publishedDate:desc",
+      sort: "publishedAt:desc",
     });
     articles = response.data;
   } catch {
