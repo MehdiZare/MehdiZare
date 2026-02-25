@@ -43,6 +43,8 @@ jobs:
 
       - name: Build
         run: pnpm build
+        env:
+          DISABLE_STRAPI_CMS: "true"
 
   security:
     name: Dependency Audit

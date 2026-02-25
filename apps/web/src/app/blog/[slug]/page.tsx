@@ -207,7 +207,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     articleSection: article.category?.name,
     readingTimeMinutes: article.readingTime,
     authorId: authorPersonId,
-    publisherId: authorPersonId,
+    publisherId: toPersonId(),
   });
 
   return (
