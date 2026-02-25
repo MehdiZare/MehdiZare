@@ -70,7 +70,7 @@ const siteSettings = {
   industriesLine: "Finance · Defense · Healthcare · Enterprise",
   locationLine: "Arlington, VA",
   primaryCtaLabel: "Let's Talk",
-  primaryCtaHref: "/consulting#calendly",
+  primaryCtaHref: "/consulting#book",
   secondaryCtaLabel: "How I work",
   secondaryCtaHref: "/about",
   contactPrompt: "Working on an AI initiative that needs to ship?",
@@ -79,7 +79,7 @@ const siteSettings = {
   authorBioShort:
     "Principal AI engineer shipping production systems across finance, defense, healthcare, and enterprise.",
   footerText: "© Mehdi Zare",
-  bookCallHref: "/consulting#calendly",
+  bookCallHref: "/consulting#book",
   navItems: [
     { label: "About", href: "/about" },
     { label: "Writing", href: "/blog" },
@@ -101,7 +101,7 @@ const homePage = {
   heroSubheadline:
     "Most AI projects stall between demo and deployment. I'm the engineer who gets them across that gap — because I learn your domain before I write a line of code.",
   heroPrimaryCtaLabel: "Let's Talk",
-  heroPrimaryCtaHref: "/consulting#calendly",
+  heroPrimaryCtaHref: "/consulting#book",
   heroSecondaryCtaLabel: "How I work",
   heroSecondaryCtaHref: "/about",
 };
@@ -199,6 +199,12 @@ const aboutPage = {
       field: "Physics",
       institution: "University of Tehran",
     },
+  ],
+  socialLinks: [
+    { platform: "LinkedIn", url: "https://linkedin.com/in/mehdizare" },
+    { platform: "GitHub", url: "https://github.com/mehdizare" },
+    { platform: "Medium", url: "https://medium.com/@mehdi-zare" },
+    { platform: "Seeking Alpha", url: "https://seekingalpha.com/author/mehdi-zare" },
   ],
 };
 

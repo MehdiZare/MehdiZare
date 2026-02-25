@@ -19,7 +19,7 @@ import { getSiteProfile } from "@/lib/site-profile";
 import { getConsultingPage } from "@/lib/strapi";
 
 const consultingMetadataTitle = "Consulting";
-const schedulerSectionId = "calendly";
+const schedulerSectionId = "book";
 const schedulerAnchorHref = `#${schedulerSectionId}`;
 
 export async function generateMetadata(): Promise<Metadata> {

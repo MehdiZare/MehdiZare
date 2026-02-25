@@ -24,7 +24,7 @@ export const DEFAULT_SITE_PROFILE = {
   industriesLine: "Finance · Defense · Healthcare · Enterprise",
   locationLine: "Arlington, VA",
   primaryCtaLabel: "Let's Talk",
-  primaryCtaHref: "/consulting#calendly",
+  primaryCtaHref: "/consulting#book",
   secondaryCtaLabel: "How I work",
   secondaryCtaHref: "/about",
   contactPrompt: "Working on an AI initiative that needs to ship?",
@@ -33,7 +33,7 @@ export const DEFAULT_SITE_PROFILE = {
   authorBioShort:
     "Principal AI engineer shipping production systems across finance, defense, healthcare, and enterprise.",
   footerText: "© Mehdi Zare",
-  bookCallHref: "/consulting#calendly",
+  bookCallHref: "/consulting#book",
   knowsAbout: [
     "Artificial Intelligence",
     "Machine Learning",
