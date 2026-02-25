@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { trackEvent } from "@/lib/analytics";
+import { captureEvent } from "@/lib/analytics";
 
 interface Tier {
   name: string;
@@ -17,6 +17,8 @@ interface TierCardProps {
   tier: Tier;
   highlighted?: boolean;
 }
+
+const BOOKING_ANCHOR_HREF = "/consulting#book";
 
 export function TierCard({ tier, highlighted = false }: TierCardProps) {
   return (
@@ -56,12 +58,14 @@ export function TierCard({ tier, highlighted = false }: TierCardProps) {
         </ul>
 
         <a
-          href="#book"
+          href={BOOKING_ANCHOR_HREF}
           onClick={() => {
-            trackEvent("scheduler_opened", {
-              page: "consulting",
+            captureEvent("funnel_scheduler_open", {
               section: "service_tiers",
-              tier: tier.name,
+              cta_label: tier.ctaText,
+              destination: BOOKING_ANCHOR_HREF,
+              interaction_type: "link_click",
+              provider: "cal_com",
             });
           }}
           className={cn(

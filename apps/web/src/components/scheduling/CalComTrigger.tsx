@@ -3,12 +3,11 @@
 import { useEffect } from "react";
 import { getCalApi } from "@calcom/embed-react";
 import { cn } from "@/lib/utils";
-import { trackEvent } from "@/lib/analytics";
+import { captureEvent } from "@/lib/analytics";
 
 interface CalComTriggerProps {
   label?: string;
   className?: string;
-  page?: string;
   section?: string;
 }
 
@@ -20,7 +19,6 @@ const CAL_CONFIG =
 export function CalComTrigger({
   label = "Book a 20-Min Call",
   className,
-  page = "unknown",
   section = "unknown",
 }: CalComTriggerProps) {
   useEffect(() => {
@@ -37,11 +35,12 @@ export function CalComTrigger({
       data-cal-link={CAL_LINK}
       data-cal-config={CAL_CONFIG}
       onClick={() => {
-        trackEvent("scheduler_opened", {
-          page,
+        captureEvent("funnel_scheduler_open", {
           section,
-          provider: "cal_com",
           cta_label: label,
+          destination: "cal_com_embed",
+          interaction_type: "button_click",
+          provider: "cal_com",
         });
       }}
       className={cn(

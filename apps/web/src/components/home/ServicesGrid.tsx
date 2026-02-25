@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { trackEvent } from "@/lib/analytics";
+import { captureEvent } from "@/lib/analytics";
 import { Label } from "@/components/shared/Label";
 
 interface ServiceCard {
@@ -75,10 +75,11 @@ export function ServicesGrid({ positioningHeadline }: ServicesGridProps) {
                 href={service.href}
                 className="group/link mt-6 inline-flex items-center gap-1 text-sm text-accent-warm transition-colors hover:text-white hover:underline"
                 onClick={() => {
-                  trackEvent("home_service_cta_clicked", {
-                    page: "home",
-                    section: "services",
+                  captureEvent("funnel_cta_click", {
+                    section: "services_grid",
                     cta_label: service.title,
+                    destination: service.href,
+                    interaction_type: "link_click",
                   });
                 }}
               >

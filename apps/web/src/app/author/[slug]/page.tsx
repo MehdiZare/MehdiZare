@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { StrapiImage } from "@/components/shared/StrapiImage";
@@ -11,9 +12,11 @@ import {
   buildPageMetadata,
   buildPersonJsonLd,
   buildProfilePageJsonLd,
+  getSiteUrl,
   toAbsoluteMediaUrl,
   toPersonId,
 } from "@/lib/seo";
+import { identityUrlKey, normalizeIdentityUrl } from "@/lib/url-normalization";
 
 interface AuthorPageProps {
   params: Promise<{ slug: string }>;
@@ -101,14 +104,20 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
   }
 }
 
-function dedupeUrls(urls: string[]): string[] {
+const CANONICAL_IDENTITY_ORIGIN = getSiteUrl();
+
+function dedupeUrls(urls: Array<string | null | undefined>): string[] {
   const seen = new Set<string>();
   const deduped: string[] = [];
 
   urls.forEach((url) => {
-    const normalized = url.trim();
-    const key = normalized.toLowerCase();
-    if (!normalized || seen.has(key)) {
+    const normalized = normalizeIdentityUrl(url, CANONICAL_IDENTITY_ORIGIN);
+    if (!normalized) {
+      return;
+    }
+
+    const key = identityUrlKey(normalized, CANONICAL_IDENTITY_ORIGIN);
+    if (!key || seen.has(key)) {
       return;
     }
 
@@ -164,9 +173,15 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
   const personId = toPersonId(authorPath);
   const role = author.jobTitle ?? author.headline ?? siteProfile.authorRole;
   const description = author.bioShort ?? siteProfile.siteDescription;
+  const websiteUrl =
+    normalizeIdentityUrl(author.websiteUrl, CANONICAL_IDENTITY_ORIGIN) ??
+    siteProfile.author.websiteUrl;
+  const linkedinUrl =
+    normalizeIdentityUrl(author.linkedinUrl, CANONICAL_IDENTITY_ORIGIN) ??
+    siteProfile.author.linkedinUrl;
   const sameAs = dedupeUrls([
-    author.websiteUrl,
-    author.linkedinUrl,
+    websiteUrl,
+    linkedinUrl,
     ...(author.sameAs?.map((link) => link.url) ?? []),
   ]);
 
@@ -189,7 +204,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
           name: author.name,
           title: role,
           description,
-          url: author.websiteUrl,
+          url: websiteUrl,
           imageUrl: toAbsoluteMediaUrl(author.profileImage?.url),
           worksForName: author.worksForName,
           worksForUrl: author.worksForUrl,
@@ -252,7 +267,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <a
-                  href={author.websiteUrl}
+                  href={websiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
@@ -260,19 +275,26 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
                   Website
                 </a>
                 <a
-                  href={author.linkedinUrl}
+                  href={linkedinUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
                 >
                   LinkedIn
                 </a>
-                <Link
+                <TrackedLink
                   href="/contact"
+                  eventName="funnel_contact_intent"
+                  eventProperties={{
+                    section: "author_profile",
+                    cta_label: "Contact",
+                    destination: "/contact",
+                    interaction_type: "link_click",
+                  }}
                   className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
                 >
                   Contact
-                </Link>
+                </TrackedLink>
               </div>
             </div>
           </div>

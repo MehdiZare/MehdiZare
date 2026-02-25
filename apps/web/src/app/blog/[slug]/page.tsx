@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getArticles, getArticleBySlug } from "@/lib/strapi";
@@ -338,18 +339,33 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                           LinkedIn
                         </a>
                       )}
-                      <Link
+                      <TrackedLink
                         href="/consulting"
+                        eventName="funnel_blog_nav_to_consulting"
+                        eventProperties={{
+                          section: "blog_author_card",
+                          cta_label: siteProfile.primaryCtaLabel,
+                          destination: "/consulting",
+                          interaction_type: "link_click",
+                          origin_content_type: "blog_post",
+                        }}
                         className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
                       >
                         {siteProfile.primaryCtaLabel}
-                      </Link>
-                      <Link
+                      </TrackedLink>
+                      <TrackedLink
                         href="/contact"
+                        eventName="funnel_contact_intent"
+                        eventProperties={{
+                          section: "blog_author_card",
+                          cta_label: "Contact",
+                          destination: "/contact",
+                          interaction_type: "link_click",
+                        }}
                         className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
                       >
                         Contact
-                      </Link>
+                      </TrackedLink>
                     </div>
                   </div>
                 </div>

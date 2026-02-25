@@ -5,8 +5,10 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { trackEvent } from "@/lib/analytics";
+import { captureEvent } from "@/lib/analytics";
 import type { NavItem } from "@/types/strapi";
+
+const isContactHref = (href: string): boolean => /^\/contact(?:\/|\?|#|$)/.test(href);
 
 interface NavbarProps {
   siteName: string;
@@ -62,6 +64,16 @@ export function Navbar({ siteName, navLinks, ctaLabel, ctaHref }: NavbarProps) {
                 ) : (
                   <Link
                     href={link.href}
+                    onClick={() => {
+                      if (isContactHref(link.href)) {
+                        captureEvent("funnel_contact_intent", {
+                          section: "navbar_links",
+                          cta_label: link.label,
+                          destination: link.href,
+                          interaction_type: "link_click",
+                        });
+                      }
+                    }}
                     className={cn(
                       "relative text-sm transition-colors",
                       isActive
@@ -82,10 +94,11 @@ export function Navbar({ siteName, navLinks, ctaLabel, ctaHref }: NavbarProps) {
             href={ctaHref}
             className="rounded-sm border border-ink px-5 py-2 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-paper"
             onClick={() => {
-              trackEvent("cta_work_with_me_clicked", {
-                page: "global",
+              captureEvent("funnel_cta_click", {
                 section: "navbar",
                 cta_label: ctaLabel,
+                destination: ctaHref,
+                interaction_type: "link_click",
               });
             }}
           >
@@ -147,7 +160,17 @@ export function Navbar({ siteName, navLinks, ctaLabel, ctaHref }: NavbarProps) {
                     ) : (
                       <Link
                         href={link.href}
-                        onClick={() => setOpenMenuForPath(null)}
+                        onClick={() => {
+                          setOpenMenuForPath(null);
+                          if (isContactHref(link.href)) {
+                            captureEvent("funnel_contact_intent", {
+                              section: "navbar_mobile_links",
+                              cta_label: link.label,
+                              destination: link.href,
+                              interaction_type: "link_click",
+                            });
+                          }
+                        }}
                         className={cn(
                           "block px-3 py-2 text-sm transition-colors",
                           isActive ? "text-ink" : "text-mid-gray hover:text-ink"
@@ -164,10 +187,11 @@ export function Navbar({ siteName, navLinks, ctaLabel, ctaHref }: NavbarProps) {
                   href={ctaHref}
                   onClick={() => {
                     setOpenMenuForPath(null);
-                    trackEvent("cta_work_with_me_clicked", {
-                      page: "global",
+                    captureEvent("funnel_cta_click", {
                       section: "navbar_mobile",
                       cta_label: ctaLabel,
+                      destination: ctaHref,
+                      interaction_type: "link_click",
                     });
                   }}
                   className="block rounded-sm border border-ink px-3 py-2 text-center text-sm font-medium text-ink"

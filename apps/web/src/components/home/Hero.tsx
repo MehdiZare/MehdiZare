@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { trackEvent } from "@/lib/analytics";
+import { captureEvent } from "@/lib/analytics";
 import { Label } from "@/components/shared/Label";
 import { HeroStats } from "@/components/home/HeroStats";
 
@@ -101,10 +101,11 @@ export function Hero({
               href={primaryCtaHref}
               className="inline-flex items-center gap-3 rounded-sm bg-ink px-7 py-3 text-sm font-medium text-paper transition-all hover:-translate-y-0.5 hover:bg-ink/85 hover:shadow-lg"
               onClick={() => {
-                trackEvent("cta_primary_clicked", {
-                  page: "home",
-                  section: "hero",
+                captureEvent("funnel_cta_click", {
+                  section: "hero_primary",
                   cta_label: primaryCtaLabel,
+                  destination: primaryCtaHref,
+                  interaction_type: "link_click",
                 });
               }}
             >
@@ -123,10 +124,11 @@ export function Hero({
               href={secondaryCtaHref}
               className="rounded-sm border border-ink/20 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
               onClick={() => {
-                trackEvent("cta_secondary_clicked", {
-                  page: "home",
-                  section: "hero",
+                captureEvent("funnel_cta_click", {
+                  section: "hero_secondary",
                   cta_label: secondaryCtaLabel,
+                  destination: secondaryCtaHref,
+                  interaction_type: "link_click",
                 });
               }}
             >

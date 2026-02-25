@@ -47,6 +47,10 @@ tasks:
     desc: Run web test suite
     cmd: pnpm --filter=web test
 
+  posthog:push-dashboard:
+    desc: Create/update the managed PostHog funnel dashboard via API
+    cmd: pnpm --filter=web posthog:push-dashboard
+
   pre-push:
     desc: Run required checks before pushing changes
     cmds:

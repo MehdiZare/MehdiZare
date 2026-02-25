@@ -1,13 +1,30 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { PostCard } from "@/components/blog/PostCard";
+import { getTagSeedBySlug } from "@/lib/taxonomy-seed";
 import { getTags, getTagBySlug, getArticles } from "@/lib/strapi";
 import { getSiteProfile } from "@/lib/site-profile";
 import { buildPageMetadata, buildWebPageJsonLd, buildBreadcrumbJsonLd } from "@/lib/seo";
-import { PostCard } from "@/components/blog/PostCard";
 
 interface TagPageProps {
   params: Promise<{ slug: string }>;
+}
+
+function formatTagName(slug: string): string {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part[0].toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function buildTagHighlights(tagTitle: string): string[] {
+  return [
+    `Hands-on implementation notes for ${tagTitle}.`,
+    "Production tradeoffs, reliability concerns, and practical patterns.",
+    "Links to related posts that help you go deeper quickly.",
+  ];
 }
 
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
@@ -21,12 +38,13 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
 
 export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
   const { slug } = await params;
+  const seed = getTagSeedBySlug(slug);
 
   try {
     const tagRes = await getTagBySlug(slug);
     const tag = tagRes.data[0];
 
-    if (!tag) {
+    if (!tag && !seed) {
       return {
         title: "Tag Not Found",
         robots: { index: false, follow: false },
@@ -34,33 +52,49 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
     }
 
     const siteProfile = await getSiteProfile();
+    const fallbackTitle = seed?.headline ?? seed?.name ?? formatTagName(slug);
+    const fallbackDescription =
+      seed?.intro ?? seed?.description ?? siteProfile.siteDescription;
 
     return buildPageMetadata({
       pathname: `/blog/tag/${slug}`,
-      title: tag.seo?.metaTitle ?? tag.headline ?? tag.name,
-      description: tag.seo?.metaDescription ?? tag.description ?? siteProfile.siteDescription,
-      seo: tag.seo,
+      title: tag?.seo?.metaTitle ?? tag?.headline ?? tag?.name ?? fallbackTitle,
+      description:
+        tag?.seo?.metaDescription ??
+        tag?.intro ??
+        tag?.description ??
+        fallbackDescription,
+      seo: tag?.seo,
     });
   } catch {
-    return {
-      title: "Tag Not Found",
-      robots: { index: false, follow: false },
-    };
+    if (!seed) {
+      return {
+        title: "Tag Not Found",
+        robots: { index: false, follow: false },
+      };
+    }
+
+    return buildPageMetadata({
+      pathname: `/blog/tag/${slug}`,
+      title: seed.headline ?? seed.name ?? formatTagName(slug),
+      description: seed.intro ?? seed.description ?? `Articles tagged ${formatTagName(slug)}.`,
+    });
   }
 }
 
 export default async function TagPage({ params }: TagPageProps) {
   const { slug } = await params;
+  const seed = getTagSeedBySlug(slug);
 
-  let tag;
+  let tag: Awaited<ReturnType<typeof getTagBySlug>>["data"][number] | undefined;
   try {
     const tagRes = await getTagBySlug(slug);
     tag = tagRes.data[0];
   } catch {
-    notFound();
+    // CMS unavailable -- keep seed fallback mode.
   }
 
-  if (!tag) {
+  if (!tag && !seed) {
     notFound();
   }
 
@@ -81,13 +115,19 @@ export default async function TagPage({ params }: TagPageProps) {
 
     articles = articlesRes.data;
   } catch {
-    // CMS unavailable — render empty state
+    // CMS unavailable -- render evergreen copy with empty-state articles.
   }
 
   const canonicalPath = `/blog/tag/${slug}`;
-  const pageTitle = tag.headline ?? tag.name;
-  const pageDescription = tag.description ?? "";
-  const introText = tag.intro ?? "";
+  const tagName = tag?.name ?? seed?.name ?? formatTagName(slug);
+  const pageTitle = tag?.headline ?? seed?.headline ?? tagName;
+  const pageDescription =
+    tag?.intro ??
+    seed?.intro ??
+    tag?.description ??
+    seed?.description ??
+    `Articles tagged ${tagName}.`;
+  const highlights = buildTagHighlights(pageTitle);
 
   return (
     <>
@@ -105,25 +145,28 @@ export default async function TagPage({ params }: TagPageProps) {
         data={buildBreadcrumbJsonLd([
           { name: "Home", path: "/" },
           { name: "Blog", path: "/blog" },
-          { name: tag.name, path: canonicalPath },
+          { name: tagName, path: canonicalPath },
         ])}
       />
       <section className="bg-paper py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          {/* Page Header */}
           <div className="mb-12">
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">Tag</p>
             <h1 className="mt-4 font-serif text-4xl text-ink sm:text-5xl">
               {pageTitle}
             </h1>
-            {introText && (
-              <p className="mt-4 text-lg text-mid-gray">
-                {introText}
-              </p>
-            )}
+            <p className="mt-4 text-lg text-mid-gray">{pageDescription}</p>
           </div>
 
-          {/* Articles Grid */}
+          <div className="mb-12 border border-warm-gray bg-paper p-6">
+            <h2 className="font-serif text-2xl text-ink">What You&apos;ll Find Here</h2>
+            <ul className="mt-4 space-y-2 text-sm text-mid-gray">
+              {highlights.map((point) => (
+                <li key={point}>{point}</li>
+              ))}
+            </ul>
+          </div>
+
           {articles.length > 0 ? (
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
               {articles.map((article) => (

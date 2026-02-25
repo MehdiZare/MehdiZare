@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { trackEvent } from "@/lib/analytics";
+import { captureEvent } from "@/lib/analytics";
 
 interface TickerLookupProps {
   placeholder: string;
@@ -20,8 +20,7 @@ export function TickerLookup({ placeholder }: TickerLookupProps) {
           if (!normalized) return;
 
           setSubmittedTicker(normalized);
-          trackEvent("bina_lookup_requested", {
-            page: "bina_print",
+          captureEvent("bina_lookup_requested", {
             ticker: normalized,
           });
         }}

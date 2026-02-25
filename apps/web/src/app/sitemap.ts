@@ -11,7 +11,9 @@ import {
   getTags,
 } from "@/lib/strapi";
 import { isBinaPrintEnabled } from "@/lib/feature-flags";
+import { getSiteProfile } from "@/lib/site-profile";
 import { getSiteUrl, toAbsoluteMediaUrl } from "@/lib/seo";
+import taxonomy from "../../../../data/taxonomy.json";
 
 const SITE_URL = getSiteUrl();
 
@@ -122,9 +124,67 @@ async function getAllTagsForSitemap(): Promise<Tag[]> {
   return tags;
 }
 
+interface TaxonomyCategoryNode {
+  slug?: string;
+  children?: TaxonomyCategoryNode[];
+}
+
+interface TaxonomyTagNode {
+  slug?: string;
+}
+
+interface TaxonomyFallbackData {
+  categories?: TaxonomyCategoryNode[];
+  tags?: TaxonomyTagNode[];
+}
+
+function normalizeSlug(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function dedupeStrings(values: string[]): string[] {
+  return [...new Set(values)];
+}
+
+function collectCategorySlugs(
+  nodes: TaxonomyCategoryNode[],
+  acc: string[]
+): void {
+  for (const node of nodes) {
+    const slug = normalizeSlug(node.slug);
+    if (slug) acc.push(slug);
+    if (node.children?.length) collectCategorySlugs(node.children, acc);
+  }
+}
+
+function getFallbackCategorySlugs(): string[] {
+  const input = taxonomy as TaxonomyFallbackData;
+  const slugs: string[] = [];
+  collectCategorySlugs(input.categories ?? [], slugs);
+  return dedupeStrings(slugs);
+}
+
+function getFallbackTagSlugs(): string[] {
+  const input = taxonomy as TaxonomyFallbackData;
+  const slugs = (input.tags ?? [])
+    .map((tag) => normalizeSlug(tag.slug))
+    .filter((slug): slug is string => Boolean(slug));
+
+  return dedupeStrings(slugs);
+}
+
+const FALLBACK_CATEGORY_SLUGS = getFallbackCategorySlugs();
+const FALLBACK_TAG_SLUGS = getFallbackTagSlugs();
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const showBinaPrint = isBinaPrintEnabled();
+  const degradedSources: string[] = [];
   const pageTimestamps = {
     home: now,
     about: now,
@@ -216,7 +276,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       };
     });
   } catch {
-    // Return static pages when CMS is unavailable.
+    degradedSources.push("articles");
   }
 
   try {
@@ -234,36 +294,102 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         : undefined,
     }));
   } catch {
-    // Return other pages when CMS is unavailable.
+    degradedSources.push("authors");
   }
 
-  let categoryPages: MetadataRoute.Sitemap = [];
-  let tagPages: MetadataRoute.Sitemap = [];
-
-  try {
-    const allCategories = await getAllCategoriesForSitemap();
-
-    categoryPages = allCategories.map((category) => ({
-      url: `${SITE_URL}/blog/category/${category.slug}`,
-      lastModified: safeDate(category.updatedAt, now),
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    }));
-  } catch {
-    // Skip category pages when CMS is unavailable.
+  if (authorPages.length === 0) {
+    try {
+      const siteProfile = await getSiteProfile();
+      const profilePath = siteProfile.author.profilePath;
+      if (profilePath.startsWith("/author/")) {
+        authorPages = [
+          {
+            url: `${SITE_URL}${profilePath}`,
+            lastModified: now,
+            changeFrequency: "monthly" as const,
+            priority: 0.6,
+            images: siteProfile.author.profileImage?.url
+              ? [toAbsoluteMediaUrl(siteProfile.author.profileImage.url)].filter(
+                  (imageUrl): imageUrl is string => Boolean(imageUrl)
+                )
+              : undefined,
+          },
+        ];
+      }
+    } catch {
+      // Best-effort fallback only.
+    }
   }
 
-  try {
-    const allTags = await getAllTagsForSitemap();
+  const categoryPages = await (async () => {
+    try {
+      const allCategories = await getAllCategoriesForSitemap();
 
-    tagPages = allTags.map((tag) => ({
-      url: `${SITE_URL}/blog/tag/${tag.slug}`,
-      lastModified: safeDate(tag.updatedAt, now),
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-    }));
-  } catch {
-    // Skip tag pages when CMS is unavailable.
+      if (allCategories.length === 0) {
+        degradedSources.push("categories");
+        return FALLBACK_CATEGORY_SLUGS.map((slug) => ({
+          url: `${SITE_URL}/blog/category/${slug}`,
+          lastModified: now,
+          changeFrequency: "weekly" as const,
+          priority: 0.7,
+        }));
+      }
+
+      return allCategories.map((category) => ({
+        url: `${SITE_URL}/blog/category/${category.slug}`,
+        lastModified: safeDate(category.updatedAt, now),
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      }));
+    } catch {
+      degradedSources.push("categories");
+      return FALLBACK_CATEGORY_SLUGS.map((slug) => ({
+        url: `${SITE_URL}/blog/category/${slug}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      }));
+    }
+  })();
+
+  const tagPages = await (async () => {
+    try {
+      const allTags = await getAllTagsForSitemap();
+
+      if (allTags.length === 0) {
+        degradedSources.push("tags");
+        return FALLBACK_TAG_SLUGS.map((slug) => ({
+          url: `${SITE_URL}/blog/tag/${slug}`,
+          lastModified: now,
+          changeFrequency: "weekly" as const,
+          priority: 0.6,
+        }));
+      }
+
+      return allTags.map((tag) => ({
+        url: `${SITE_URL}/blog/tag/${tag.slug}`,
+        lastModified: safeDate(tag.updatedAt, now),
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      }));
+    } catch {
+      degradedSources.push("tags");
+      return FALLBACK_TAG_SLUGS.map((slug) => ({
+        url: `${SITE_URL}/blog/tag/${slug}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      }));
+    }
+  })();
+
+  if (degradedSources.length > 0) {
+    const uniqueSources = dedupeStrings(degradedSources);
+    console.warn(
+      `[sitemap] CMS-backed sections unavailable (${uniqueSources.join(
+        ", "
+      )}); serving fallback sitemap entries where possible.`
+    );
   }
 
   return [...staticPages, ...articlePages, ...authorPages, ...categoryPages, ...tagPages];
