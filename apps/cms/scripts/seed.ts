@@ -331,6 +331,10 @@ interface TaxonomyTag {
 }
 
 async function seedCategories(): Promise<void> {
+  if (!Array.isArray(taxonomy.categories)) {
+    console.error("taxonomy.json: expected 'categories' to be an array.");
+    process.exit(1);
+  }
   const categories: TaxonomyCategory[] = taxonomy.categories;
   const slugToDocumentId: Record<string, string> = {};
 
@@ -389,6 +393,10 @@ async function seedCategories(): Promise<void> {
 }
 
 async function seedTags(): Promise<void> {
+  if (!Array.isArray(taxonomy.tags)) {
+    console.error("taxonomy.json: expected 'tags' to be an array.");
+    process.exit(1);
+  }
   const tags: TaxonomyTag[] = taxonomy.tags;
 
   for (const tag of tags) {
@@ -442,6 +450,11 @@ const siteSettings = {
     { platform: "Seeking Alpha", url: "https://seekingalpha.com/author/mehdi-zare" },
   ],
 };
+
+if (!Array.isArray(taxonomy.authors)) {
+  console.error("taxonomy.json: expected 'authors' to be an array.");
+  process.exit(1);
+}
 
 const primaryAuthor = taxonomy.authors.find(
   (a: { isPrimary?: boolean }) => a.isPrimary

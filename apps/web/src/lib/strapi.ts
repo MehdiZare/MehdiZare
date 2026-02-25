@@ -275,7 +275,9 @@ export async function getPrimaryAuthor(): Promise<Author | undefined> {
   return fallback.data[0];
 }
 
-export async function getCategories(): Promise<StrapiCollectionResponse<Category>> {
+export async function getCategories(
+  params?: FetchAPIParams
+): Promise<StrapiCollectionResponse<Category>> {
   return fetchAPI<StrapiCollectionResponse<Category>>("/categories", {
     populate: {
       children: { populate: "*" },
@@ -283,15 +285,19 @@ export async function getCategories(): Promise<StrapiCollectionResponse<Category
       seo: { populate: { metaImage: { populate: "*" } } },
     },
     sort: "order:asc",
+    ...params,
   });
 }
 
-export async function getTags(): Promise<StrapiCollectionResponse<Tag>> {
+export async function getTags(
+  params?: FetchAPIParams
+): Promise<StrapiCollectionResponse<Tag>> {
   return fetchAPI<StrapiCollectionResponse<Tag>>("/tags", {
     populate: {
       seo: { populate: { metaImage: { populate: "*" } } },
     },
     sort: "name:asc",
+    ...params,
   });
 }
 

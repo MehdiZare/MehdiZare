@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import type { Article, Author, Tag } from "@/types/strapi";
+import type { Article, Author, Category, Tag } from "@/types/strapi";
 import {
   getAboutPage,
   getArticles,
@@ -72,6 +72,54 @@ async function getAllAuthorsForSitemap(): Promise<Author[]> {
   }
 
   return authors;
+}
+
+async function getAllCategoriesForSitemap(): Promise<Category[]> {
+  const pageSize = 100;
+  let page = 1;
+  const categories: Category[] = [];
+
+  while (true) {
+    const response = await getCategories({
+      pagination: { page, pageSize, withCount: true },
+      sort: "order:asc",
+    });
+
+    categories.push(...response.data);
+
+    const pageCount = response.meta.pagination?.pageCount ?? 1;
+    if (page >= pageCount) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return categories;
+}
+
+async function getAllTagsForSitemap(): Promise<Tag[]> {
+  const pageSize = 100;
+  let page = 1;
+  const tags: Tag[] = [];
+
+  while (true) {
+    const response = await getTags({
+      pagination: { page, pageSize, withCount: true },
+      sort: "name:asc",
+    });
+
+    tags.push(...response.data);
+
+    const pageCount = response.meta.pagination?.pageCount ?? 1;
+    if (page >= pageCount) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return tags;
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -193,8 +241,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let tagPages: MetadataRoute.Sitemap = [];
 
   try {
-    const categoriesRes = await getCategories();
-    const allCategories = categoriesRes.data;
+    const allCategories = await getAllCategoriesForSitemap();
 
     categoryPages = allCategories.map((category) => ({
       url: `${SITE_URL}/blog/category/${category.slug}`,
@@ -207,9 +254,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   try {
-    const tagsRes = await getTags();
+    const allTags = await getAllTagsForSitemap();
 
-    tagPages = tagsRes.data.map((tag: Tag) => ({
+    tagPages = allTags.map((tag) => ({
       url: `${SITE_URL}/blog/tag/${tag.slug}`,
       lastModified: safeDate(tag.updatedAt, now),
       changeFrequency: "weekly" as const,
