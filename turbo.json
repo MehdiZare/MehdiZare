@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["DISABLE_STRAPI_CMS"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
