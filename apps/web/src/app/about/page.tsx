@@ -7,6 +7,7 @@ import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
+import { DevCmsBanner } from "@/components/shared/DevCmsBanner";
 import { buildAboutFallback } from "@/content/fallbacks";
 import {
   buildBreadcrumbJsonLd,
@@ -58,6 +59,7 @@ export default async function AboutPage() {
 
   let data = fallbackData;
   let cmsStructuredData: unknown;
+  let cmsFailed = false;
 
   try {
     const response = await getAboutPage();
@@ -92,11 +94,12 @@ export default async function AboutPage() {
       };
     }
   } catch {
-    // Use fallback content if CMS is unavailable.
+    cmsFailed = true;
   }
 
   return (
     <div className="bg-paper pb-20">
+      {cmsFailed && <DevCmsBanner page="about-page" />}
       <CmsStructuredData
         idPrefix="about-cms-jsonld"
         data={cmsStructuredData}

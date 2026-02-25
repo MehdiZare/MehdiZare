@@ -56,11 +56,36 @@ export interface Article {
   featuredImage: StrapiImage | null;
   category: Category | null;
   tags: Tag[];
+  author: Author | null;
   readingTime: number | null;
   seo: SEO | null;
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
+}
+
+export interface Author {
+  id: number;
+  documentId: string;
+  name: string;
+  slug: string;
+  isPrimary: boolean | null;
+  headline: string | null;
+  bioShort: string;
+  bioLong: BlocksContent | null;
+  websiteUrl: string;
+  linkedinUrl: string;
+  sameAs: SocialLink[];
+  profileImage: StrapiImage | null;
+  jobTitle: string | null;
+  worksForName: string | null;
+  worksForUrl: string | null;
+  alumniOf: string[] | null;
+  knowsAbout: string[] | null;
+  credentials: Credential[];
+  addressLocality: string | null;
+  addressRegion: string | null;
+  addressCountry: string | null;
 }
 
 export interface Category {

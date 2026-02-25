@@ -13,13 +13,12 @@ test("Site Profile enforces a required field contract", () => {
   assert.match(source, /"authorBioShort"/);
 });
 
-test("Site Profile supports strict CI validation mode", () => {
-  assert.match(source, /process\.env\.CI === "true"/);
+test("Site Profile supports strict validation mode", () => {
   assert.match(source, /process\.env\.SITE_PROFILE_STRICT === "true"/);
   assert.match(source, /SiteProfileValidationError/);
 });
 
 test("Site Profile keeps non-strict fallback behavior", () => {
-  assert.match(source, /return mergeProfile\(undefined\)/);
+  assert.match(source, /return mergeProfile\(undefined/);
   assert.match(source, /return mergeProfile\(settings\)/);
 });

@@ -1,5 +1,6 @@
 import type {
   Article,
+  Author,
   Category,
   Tag,
   AboutPage,
@@ -11,13 +12,12 @@ import type {
   StrapiResponse,
   StrapiCollectionResponse,
 } from "@/types/strapi";
-import { publicEnv } from "@/lib/public-env";
 import { serverEnv } from "@/lib/server-env";
 
-const STRAPI_URL = publicEnv.strapiUrl;
+const STRAPI_URL = serverEnv.strapiUrl;
 const STRAPI_API_TOKEN = serverEnv.strapiApiToken;
 const STRAPI_TIMEOUT_MS = 15_000;
-const STRAPI_DISABLED = (process.env.DISABLE_STRAPI_CMS ?? "true").toLowerCase() !== "false";
+const STRAPI_DISABLED = serverEnv.strapiDisabled;
 
 interface FetchAPIParams {
   populate?: string | string[] | Record<string, unknown>;
@@ -116,7 +116,11 @@ async function fetchStrapi(input: URL, init: RequestInit & { path: string }): Pr
       ...init,
       signal: AbortSignal.timeout(STRAPI_TIMEOUT_MS),
     });
-  } catch {
+  } catch (err) {
+    console.warn(
+      `⚠ CMS unavailable — failed to reach Strapi at ${input.origin} (path: ${init.path}). Falling back to default content.`,
+      err instanceof Error ? err.message : err
+    );
     throw new StrapiRequestError("Failed to reach Strapi API", { path: init.path });
   }
 
@@ -143,7 +147,7 @@ export async function fetchAPI<T>(path: string, params?: FetchAPIParams): Promis
   const response = await fetchStrapi(url, {
     method: "GET",
     headers: buildHeaders(),
-    next: { revalidate: 60 },
+    next: { revalidate: 86_400 },
     path,
   });
 
@@ -183,8 +187,21 @@ function flattenParams(
 const articlePopulate = {
   category: { populate: "*" },
   tags: { populate: "*" },
+  author: {
+    populate: {
+      sameAs: { populate: "*" },
+      profileImage: { populate: "*" },
+      credentials: { populate: "*" },
+    },
+  },
   featuredImage: { populate: "*" },
   seo: { populate: { metaImage: { populate: "*" } } },
+};
+
+const authorPopulate = {
+  sameAs: { populate: "*" },
+  profileImage: { populate: "*" },
+  credentials: { populate: "*" },
 };
 
 export async function getArticles(
@@ -205,6 +222,57 @@ export async function getArticleBySlug(
       slug: { $eq: slug },
     },
   });
+}
+
+export async function getAuthors(
+  params?: FetchAPIParams
+): Promise<StrapiCollectionResponse<Author>> {
+  return fetchAPI<StrapiCollectionResponse<Author>>("/authors", {
+    populate: authorPopulate,
+    ...params,
+  });
+}
+
+export async function getAuthorBySlug(
+  slug: string
+): Promise<StrapiCollectionResponse<Author>> {
+  return fetchAPI<StrapiCollectionResponse<Author>>("/authors", {
+    populate: authorPopulate,
+    filters: {
+      slug: { $eq: slug },
+    },
+    pagination: {
+      page: 1,
+      pageSize: 1,
+    },
+  });
+}
+
+export async function getPrimaryAuthor(): Promise<Author | undefined> {
+  const primary = await getAuthors({
+    filters: {
+      isPrimary: { $eq: true },
+    },
+    sort: "updatedAt:desc",
+    pagination: {
+      page: 1,
+      pageSize: 1,
+    },
+  });
+
+  if (primary.data.length > 0) {
+    return primary.data[0];
+  }
+
+  const fallback = await getAuthors({
+    sort: "updatedAt:desc",
+    pagination: {
+      page: 1,
+      pageSize: 1,
+    },
+  });
+
+  return fallback.data[0];
 }
 
 export async function getCategories(): Promise<StrapiCollectionResponse<Category>> {

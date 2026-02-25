@@ -8,6 +8,7 @@ import {
   buildBreadcrumbJsonLd,
   buildPageMetadata,
   buildWebPageJsonLd,
+  toPersonId,
   toAbsoluteMediaUrl,
 } from "@/lib/seo";
 import { CategoryFilter } from "@/components/blog/CategoryFilter";
@@ -130,10 +131,12 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
   const pageTitle = "Blog";
   const pageDescription =
     siteProfile.siteDescription;
+  const canonicalAuthorId = toPersonId(siteProfile.author.profilePath);
   const blogJsonLd = buildBlogJsonLd({
     pathname: canonicalPath,
     title: pageTitle,
     description: siteProfile.siteDescription,
+    authorId: canonicalAuthorId,
     posts: articles.map((article) => ({
       title: article.title,
       path: `/blog/${article.slug}`,

@@ -1,5 +1,4 @@
 const DEFAULT_SITE_URL = "https://mehdi-zare.com";
-const DEFAULT_STRAPI_URL = "http://localhost:1337";
 const DEFAULT_POSTHOG_HOST = "https://t.mehdi-zare.com";
 
 function parseUrl(name: string, value: string | undefined, fallback: string): URL {
@@ -38,11 +37,6 @@ function ensureHttpsInProduction(name: string, url: URL): void {
 }
 
 const siteUrl = parseUrl("NEXT_PUBLIC_SITE_URL", process.env.NEXT_PUBLIC_SITE_URL, DEFAULT_SITE_URL);
-const strapiUrl = parseUrl(
-  "NEXT_PUBLIC_STRAPI_URL",
-  process.env.NEXT_PUBLIC_STRAPI_URL,
-  DEFAULT_STRAPI_URL
-);
 const posthogHost = parseUrl(
   "NEXT_PUBLIC_POSTHOG_HOST",
   process.env.NEXT_PUBLIC_POSTHOG_HOST,
@@ -51,12 +45,10 @@ const posthogHost = parseUrl(
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim() || "";
 
 ensureHttpsInProduction("NEXT_PUBLIC_SITE_URL", siteUrl);
-ensureHttpsInProduction("NEXT_PUBLIC_STRAPI_URL", strapiUrl);
 ensureHttpsInProduction("NEXT_PUBLIC_POSTHOG_HOST", posthogHost);
 
 export const publicEnv = {
   siteUrl: siteUrl.origin,
-  strapiUrl: strapiUrl.origin,
   posthogHost: posthogHost.origin.replace(/\/$/, ""),
   posthogKey,
   allowedImageHosts: parseCsvList(process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS),
@@ -64,13 +56,23 @@ export const publicEnv = {
 
 export function toAbsoluteStrapiMediaUrl(url: string): string {
   if (!url) {
-    return publicEnv.strapiUrl;
+    return "";
   }
 
   try {
-    return new URL(url).toString();
+    const parsed = new URL(url);
+    if (parsed.pathname === "/uploads" || parsed.pathname.startsWith("/uploads/")) {
+      return `/cms-uploads${parsed.pathname.slice("/uploads".length)}${parsed.search}${parsed.hash}`;
+    }
+    return url;
   } catch {
+    if (url.startsWith("/uploads/") || url === "/uploads") {
+      const queryIdx = url.indexOf("?");
+      const path = queryIdx !== -1 ? url.slice(0, queryIdx) : url;
+      const rest = queryIdx !== -1 ? url.slice(queryIdx) : "";
+      return `/cms-uploads${path.slice("/uploads".length)}${rest}`;
+    }
     const normalizedPath = url.startsWith("/") ? url : `/${url}`;
-    return new URL(normalizedPath, publicEnv.strapiUrl).toString();
+    return `/cms-uploads${normalizedPath}`;
   }
 }
