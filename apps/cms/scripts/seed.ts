@@ -434,7 +434,7 @@ const siteSettings = {
     { label: "Writing", href: "/blog" },
   ],
   socialLinks: [
-    { platform: "Website", url: "https://mehdi-zare.com" },
+    { platform: "Website", url: "https://www.mehdi-zare.com" },
     { platform: "LinkedIn", url: "https://linkedin.com/in/mehdizare" },
     { platform: "GitHub", url: "https://github.com/mehdizare" },
     { platform: "Medium", url: "https://medium.com/@mehdi-zare" },

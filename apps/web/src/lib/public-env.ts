@@ -1,4 +1,4 @@
-const DEFAULT_SITE_URL = "https://mehdi-zare.com";
+const DEFAULT_SITE_URL = "https://www.mehdi-zare.com";
 const DEFAULT_POSTHOG_HOST = "https://t.mehdi-zare.com";
 
 function parseUrl(name: string, value: string | undefined, fallback: string): URL {

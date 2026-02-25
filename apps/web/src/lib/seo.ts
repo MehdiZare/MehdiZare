@@ -3,7 +3,7 @@ import type { SEO, StrapiImage } from "../types/strapi";
 import { publicEnv, toAbsoluteStrapiMediaUrl } from "./public-env";
 import { DEFAULT_SITE_PROFILE } from "./site-profile-defaults";
 
-const DEFAULT_SITE_URL = "https://mehdi-zare.com";
+const DEFAULT_SITE_URL = "https://www.mehdi-zare.com";
 
 export const SITE_NAME = DEFAULT_SITE_PROFILE.siteName;
 export const PERSON_NAME = DEFAULT_SITE_PROFILE.siteName;
@@ -11,7 +11,7 @@ export const PERSON_TITLE = DEFAULT_SITE_PROFILE.credentialLine;
 export const DEFAULT_SITE_DESCRIPTION = DEFAULT_SITE_PROFILE.siteDescription;
 
 export const PERSON_SAME_AS = [
-  "https://mehdi-zare.com",
+  "https://www.mehdi-zare.com",
   "https://linkedin.com/in/mehdizare",
   "https://github.com/mehdizare",
   "https://medium.com/@mehdi-zare",
