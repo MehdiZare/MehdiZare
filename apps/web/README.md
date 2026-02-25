@@ -25,11 +25,29 @@ Next.js App Router frontend for the public portfolio.
 - `ENABLE_BINA_PRINT` (`true` to expose `/bina-print` and related links)
 - `NEXT_PUBLIC_POSTHOG_KEY`
 - `NEXT_PUBLIC_POSTHOG_HOST`
+- `STRAPI_FETCH_REVALIDATE_SECONDS` (optional; defaults to `600`)
+- `REVALIDATE_SECRET` (optional but recommended if using `/api/revalidate`)
 - `POSTHOG_PERSONAL_API_KEY` (required for dashboard sync script)
 - `POSTHOG_ENVIRONMENT_ID` (optional, defaults to `@current`)
 - `POSTHOG_APP_HOST` (optional, defaults to `https://us.posthog.com`)
 - `POSTHOG_DRY_RUN` (optional, `true` to preview API actions)
 - `NEXT_PUBLIC_BEEHIIV_EMBED_URL` (defaults to `https://embeds.beehiiv.com`)
+
+## CMS Cache Invalidation
+
+To force immediate frontend updates after publishing in Strapi, call:
+
+`POST /api/revalidate?secret=<REVALIDATE_SECRET>`
+
+Recommended Strapi webhook payload shape:
+
+```json
+{
+  "event": "entry.publish",
+  "model": "article",
+  "entry": { "slug": "my-post-slug" }
+}
+```
 
 ## Security Notes
 

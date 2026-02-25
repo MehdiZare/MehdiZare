@@ -1,6 +1,14 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["DISABLE_STRAPI_CMS"],
+  "globalEnv": [
+    "DISABLE_STRAPI_CMS",
+    "STRAPI_URL",
+    "STRAPI_API_TOKEN",
+    "REQUIRE_STRAPI_API_TOKEN",
+    "STRAPI_FETCH_REVALIDATE_SECONDS",
+    "REVALIDATE_SECRET",
+    "STRAPI_WEBHOOK_SECRET"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

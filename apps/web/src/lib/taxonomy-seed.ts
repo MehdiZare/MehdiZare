@@ -153,9 +153,18 @@ function buildTagSeedMap(input: TaxonomySeedData): Map<string, TagSeed> {
   return map;
 }
 
-const taxonomySeed = taxonomy as TaxonomySeedData;
-const categorySeedMap = buildCategorySeedMap(taxonomySeed);
-const tagSeedMap = buildTagSeedMap(taxonomySeed);
+let categorySeedMap: Map<string, CategorySeed>;
+let tagSeedMap: Map<string, TagSeed>;
+
+try {
+  const taxonomySeed = taxonomy as TaxonomySeedData;
+  categorySeedMap = buildCategorySeedMap(taxonomySeed);
+  tagSeedMap = buildTagSeedMap(taxonomySeed);
+} catch (error) {
+  console.warn("[taxonomy-seed] Failed to initialise taxonomy maps:", error);
+  categorySeedMap = new Map();
+  tagSeedMap = new Map();
+}
 
 export function getCategorySeedBySlug(slug: string): CategorySeed | undefined {
   return categorySeedMap.get(slug);

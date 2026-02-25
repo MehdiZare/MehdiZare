@@ -28,8 +28,10 @@ export function TrackedAnchor<K extends AnalyticsEventName>({
     <a
       {...props}
       onClick={(event) => {
-        captureEvent(eventName, eventProperties);
         onClick?.(event);
+        if (!event.defaultPrevented) {
+          captureEvent(eventName, eventProperties);
+        }
       }}
     >
       {children}

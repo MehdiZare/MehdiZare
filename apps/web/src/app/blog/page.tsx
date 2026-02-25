@@ -4,8 +4,6 @@ import { getBlogListingData } from "@/lib/blog-listing";
 import { getSiteProfile } from "@/lib/site-profile";
 import { buildPageMetadata, toPersonId } from "@/lib/seo";
 
-export const revalidate = 86_400;
-
 export async function generateMetadata(): Promise<Metadata> {
   const siteProfile = await getSiteProfile();
 

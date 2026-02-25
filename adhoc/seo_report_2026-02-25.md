@@ -112,7 +112,7 @@ Live checks were captured at `2026-02-25T18:17:00.614Z`.
 ### F-003 (High): Missing GEO support file (`llms.txt`)
 
 **Symptom**
-- AI-search/answer-engine oriented file is not served.
+- AI-search/answer-engine-oriented file is not served.
 
 **Evidence**
 - Live: `/llms.txt` returns 404.

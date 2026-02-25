@@ -26,6 +26,10 @@ ensureHttpsInProduction("STRAPI_URL", strapiUrl);
 
 const strapiApiToken = process.env.STRAPI_API_TOKEN?.trim() || "";
 const requiresStrapiApiToken = process.env.REQUIRE_STRAPI_API_TOKEN === "true";
+const revalidateSecret =
+  process.env.REVALIDATE_SECRET?.trim() ||
+  process.env.STRAPI_WEBHOOK_SECRET?.trim() ||
+  "";
 
 if (requiresStrapiApiToken && !strapiApiToken) {
   throw new Error("Missing STRAPI_API_TOKEN in production.");
@@ -35,4 +39,5 @@ export const serverEnv = {
   strapiUrl: strapiUrl.origin,
   strapiApiToken,
   strapiDisabled: (process.env.DISABLE_STRAPI_CMS ?? "").trim().toLowerCase() === "true",
+  revalidateSecret,
 } as const;

@@ -160,7 +160,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
         },
       },
     },
-    sort: "publishedDate:desc",
+    sort: "publishedAt:desc",
     pagination: {
       page: 1,
       pageSize: 24,

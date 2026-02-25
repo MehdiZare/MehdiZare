@@ -91,12 +91,12 @@ function readStoredAttributionContext(): AttributionContext | null {
     return null;
   }
 
-  const rawValue = window.sessionStorage.getItem(ATTRIBUTION_STORAGE_KEY);
-  if (!rawValue) {
-    return null;
-  }
-
   try {
+    const rawValue = window.sessionStorage.getItem(ATTRIBUTION_STORAGE_KEY);
+    if (!rawValue) {
+      return null;
+    }
+
     const parsed = JSON.parse(rawValue);
     return isAttributionContext(parsed) ? parsed : null;
   } catch {
