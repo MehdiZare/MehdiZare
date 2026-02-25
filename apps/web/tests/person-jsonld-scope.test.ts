@@ -1,12 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const { toPersonId } = await import("../src/lib/seo.ts");
 
 function readSource(relativePath: string): string {
-  return readFileSync(resolve(process.cwd(), relativePath), "utf8");
+  return readFileSync(resolve(__dirname, "..", relativePath), "utf8");
 }
 
 test("global and author person IDs are distinct to avoid duplicate @id collisions", () => {

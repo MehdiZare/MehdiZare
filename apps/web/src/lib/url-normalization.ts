@@ -64,8 +64,9 @@ export function identityUrlKey(
 
   try {
     const parsed = new URL(normalized);
+    const port = parsed.port ? `:${parsed.port}` : "";
     const path = parsed.pathname === "/" ? "" : parsed.pathname;
-    return `${parsed.protocol}//${parsed.hostname.toLowerCase()}${path}${parsed.search}${parsed.hash}`;
+    return `${parsed.protocol}//${parsed.hostname.toLowerCase()}${port}${path}${parsed.search}${parsed.hash}`;
   } catch {
     return normalized.toLowerCase();
   }

@@ -7,6 +7,7 @@ import {
   buildPageMetadata,
   buildWebPageJsonLd,
   getSiteUrl,
+  toPersonId,
 } from "@/lib/seo";
 import { getSiteProfile } from "@/lib/site-profile";
 
@@ -91,7 +92,7 @@ export default async function ContactPage() {
     areaServed,
     description: siteProfile.contactPrompt,
     about: {
-      "@id": `${siteUrl}/#person`,
+      "@id": toPersonId(),
     },
     mainEntityOfPage: {
       "@id": `${siteUrl}/contact#webpage`,
