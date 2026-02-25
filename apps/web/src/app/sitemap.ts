@@ -324,46 +324,47 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  let categoryPages: MetadataRoute.Sitemap;
-  let tagPages: MetadataRoute.Sitemap;
+  const categoryPages: MetadataRoute.Sitemap = await (async () => {
+    try {
+      const allCategories = await getAllCategoriesForSitemap();
 
-  try {
-    const allCategories = await getAllCategoriesForSitemap();
+      return allCategories.map((category) => ({
+        url: `${SITE_URL}/blog/category/${category.slug}`,
+        lastModified: safeDate(category.updatedAt, now),
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      }));
+    } catch {
+      degradedSources.push("categories");
+      return FALLBACK_CATEGORY_SLUGS.map((slug) => ({
+        url: `${SITE_URL}/blog/category/${slug}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      }));
+    }
+  })();
 
-    categoryPages = allCategories.map((category) => ({
-      url: `${SITE_URL}/blog/category/${category.slug}`,
-      lastModified: safeDate(category.updatedAt, now),
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    }));
-  } catch {
-    degradedSources.push("categories");
-    categoryPages = FALLBACK_CATEGORY_SLUGS.map((slug) => ({
-      url: `${SITE_URL}/blog/category/${slug}`,
-      lastModified: now,
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    }));
-  }
+  const tagPages: MetadataRoute.Sitemap = await (async () => {
+    try {
+      const allTags = await getAllTagsForSitemap();
 
-  try {
-    const allTags = await getAllTagsForSitemap();
-
-    tagPages = allTags.map((tag) => ({
-      url: `${SITE_URL}/blog/tag/${tag.slug}`,
-      lastModified: safeDate(tag.updatedAt, now),
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-    }));
-  } catch {
-    degradedSources.push("tags");
-    tagPages = FALLBACK_TAG_SLUGS.map((slug) => ({
-      url: `${SITE_URL}/blog/tag/${slug}`,
-      lastModified: now,
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-    }));
-  }
+      return allTags.map((tag) => ({
+        url: `${SITE_URL}/blog/tag/${tag.slug}`,
+        lastModified: safeDate(tag.updatedAt, now),
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      }));
+    } catch {
+      degradedSources.push("tags");
+      return FALLBACK_TAG_SLUGS.map((slug) => ({
+        url: `${SITE_URL}/blog/tag/${slug}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      }));
+    }
+  })();
 
   if (degradedSources.length > 0) {
     const uniqueSources = dedupeStrings(degradedSources);

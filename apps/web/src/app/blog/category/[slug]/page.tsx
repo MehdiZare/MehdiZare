@@ -2,18 +2,56 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { PostCard } from "@/components/blog/PostCard";
+import { getCategorySeedBySlug } from "@/lib/taxonomy-seed";
 import { getCategories, getCategoryBySlug, getArticles } from "@/lib/strapi";
 import {
   buildPageMetadata,
   buildWebPageJsonLd,
   buildBreadcrumbJsonLd,
 } from "@/lib/seo";
-import { PostCard } from "@/components/blog/PostCard";
 
 type ArticleList = Awaited<ReturnType<typeof getArticles>>["data"];
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
+}
+
+interface SubcategoryCard {
+  id: number | string;
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+function formatCategoryName(slug: string): string {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part[0].toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function buildWhatYouWillFindPoints(
+  categoryTitle: string,
+  subcategories: SubcategoryCard[]
+): string[] {
+  const points = [
+    `Production-focused implementation patterns for ${categoryTitle}.`,
+    "Architecture and tooling decisions that hold up beyond prototypes.",
+    "Evaluation and reliability practices to keep AI systems trustworthy.",
+  ];
+
+  if (subcategories.length > 0) {
+    points.push(
+      `Focused tracks: ${subcategories
+        .slice(0, 4)
+        .map((subcategory) => subcategory.name)
+        .join(", ")}.`
+    );
+  }
+
+  return [...new Set(points)];
 }
 
 export async function generateStaticParams() {
@@ -40,12 +78,14 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: CategoryPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const seed = getCategorySeedBySlug(slug);
+
   try {
-    const { slug } = await params;
     const res = await getCategoryBySlug(slug);
     const category = res.data[0];
 
-    if (!category) {
+    if (!category && !seed) {
       return {
         title: "Category Not Found",
         robots: {
@@ -55,47 +95,106 @@ export async function generateMetadata({
       };
     }
 
+    const fallbackName = seed?.headline ?? seed?.name ?? formatCategoryName(slug);
+    const fallbackDescription =
+      seed?.intro ?? seed?.description ?? `Articles in ${fallbackName}`;
+
     return buildPageMetadata({
       pathname: `/blog/category/${slug}`,
-      title: category.seo?.metaTitle ?? category.headline ?? category.name,
+      title:
+        category?.seo?.metaTitle ??
+        category?.headline ??
+        category?.name ??
+        fallbackName,
       description:
-        category.seo?.metaDescription ?? category.description ?? `Articles in ${category.name}`,
-      seo: category.seo,
+        category?.seo?.metaDescription ??
+        category?.intro ??
+        category?.description ??
+        fallbackDescription,
+      seo: category?.seo,
       type: "website",
     });
   } catch {
-    return {
-      title: "Category Not Found",
-      robots: {
-        index: false,
-        follow: false,
-      },
-    };
+    if (!seed) {
+      return {
+        title: "Category Not Found",
+        robots: {
+          index: false,
+          follow: false,
+        },
+      };
+    }
+
+    const fallbackName = seed.headline ?? seed.name ?? formatCategoryName(slug);
+
+    return buildPageMetadata({
+      pathname: `/blog/category/${slug}`,
+      title: fallbackName,
+      description: seed.intro ?? seed.description ?? `Articles in ${fallbackName}`,
+      type: "website",
+    });
   }
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
+  const seed = getCategorySeedBySlug(slug);
 
-  let category;
+  let category: Awaited<ReturnType<typeof getCategoryBySlug>>["data"][number] | undefined;
   try {
     const res = await getCategoryBySlug(slug);
     category = res.data[0];
   } catch {
+    // CMS unavailable -- keep seed fallback mode.
+  }
+
+  if (!category && !seed) {
     notFound();
   }
 
-  if (!category) {
-    notFound();
-  }
-
-  const isParent = category.children && category.children.length > 0;
-  const hasParent = Boolean(category.parent);
-  const canonicalPath = `/blog/category/${slug}`;
-
-  const categoryTitle = category.headline ?? category.name;
+  const categoryName = category?.name ?? seed?.name ?? formatCategoryName(slug);
+  const categoryTitle = category?.headline ?? seed?.headline ?? categoryName;
   const categoryDescription =
-    category.intro ?? category.description ?? `Articles in ${category.name}`;
+    category?.intro ??
+    seed?.intro ??
+    category?.description ??
+    seed?.description ??
+    `Articles in ${categoryName}`;
+
+  const parentSeed = seed?.parentSlug ? getCategorySeedBySlug(seed.parentSlug) : undefined;
+  const parentInfo = category?.parent
+    ? {
+        name: category.parent.name,
+        slug: category.parent.slug,
+      }
+    : parentSeed
+      ? {
+          name:
+            parentSeed.name ??
+            parentSeed.headline ??
+            formatCategoryName(parentSeed.slug),
+          slug: parentSeed.slug,
+        }
+      : null;
+
+  const subcategories: SubcategoryCard[] =
+    category?.children && category.children.length > 0
+      ? category.children.map((child) => ({
+          id: child.id,
+          name: child.name,
+          slug: child.slug,
+          description: child.description,
+        }))
+      : (seed?.children ?? []).map((child) => ({
+          id: child.slug,
+          name: child.name ?? child.headline ?? formatCategoryName(child.slug),
+          slug: child.slug,
+          description: child.description,
+        }));
+
+  const childSlugs = subcategories.map((subcategory) => subcategory.slug);
+  const isParent = subcategories.length > 0;
+  const canonicalPath = `/blog/category/${slug}`;
 
   let articles: ArticleList = [];
 
@@ -112,12 +211,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     });
     articles = res.data;
 
-    if (isParent && category.children && category.children.length > 0) {
+    if (childSlugs.length > 0) {
       const childResults = await Promise.all(
-        category.children.map((child) =>
+        childSlugs.map((childSlug) =>
           getArticles({
             filters: {
-              category: { slug: { $eq: child.slug } },
+              category: { slug: { $eq: childSlug } },
             },
             sort: "publishedDate:desc",
             pagination: {
@@ -134,7 +233,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
       const seenIds = new Set<number>();
       articles = articles.filter((article) => {
-        if (seenIds.has(article.id)) return false;
+        if (seenIds.has(article.id)) {
+          return false;
+        }
+
         seenIds.add(article.id);
         return true;
       });
@@ -146,24 +248,26 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       });
     }
   } catch {
-    // CMS unavailable -- render empty state
+    // CMS unavailable -- render evergreen copy with empty-state articles.
   }
 
-  const breadcrumbItems = hasParent
+  const breadcrumbItems = parentInfo
     ? [
         { name: "Home", path: "/" },
         { name: "Blog", path: "/blog" },
         {
-          name: category.parent!.name,
-          path: `/blog/category/${category.parent!.slug}`,
+          name: parentInfo.name,
+          path: `/blog/category/${parentInfo.slug}`,
         },
-        { name: category.name, path: canonicalPath },
+        { name: categoryName, path: canonicalPath },
       ]
     : [
         { name: "Home", path: "/" },
         { name: "Blog", path: "/blog" },
-        { name: category.name, path: canonicalPath },
+        { name: categoryName, path: canonicalPath },
       ];
+
+  const whatYouWillFind = buildWhatYouWillFindPoints(categoryTitle, subcategories);
 
   return (
     <>
@@ -182,25 +286,23 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       />
       <section className="bg-paper py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          {/* Breadcrumb */}
-          {hasParent && category.parent && (
+          {parentInfo && (
             <nav className="mb-8 font-mono text-xs text-mid-gray">
               <Link href="/blog" className="text-accent-warm hover:underline">
                 Blog
               </Link>
               <span className="mx-2">/</span>
               <Link
-                href={`/blog/category/${category.parent.slug}`}
+                href={`/blog/category/${parentInfo.slug}`}
                 className="text-accent-warm hover:underline"
               >
-                {category.parent.name}
+                {parentInfo.name}
               </Link>
               <span className="mx-2">/</span>
-              <span>{category.name}</span>
+              <span>{categoryName}</span>
             </nav>
           )}
 
-          {/* Page Header */}
           <div className="mb-12">
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">
               Category
@@ -208,21 +310,25 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <h1 className="mt-4 font-serif text-4xl text-ink sm:text-5xl">
               {categoryTitle}
             </h1>
-            {categoryDescription && (
-              <p className="mt-4 text-lg text-mid-gray">
-                {categoryDescription}
-              </p>
-            )}
+            <p className="mt-4 text-lg text-mid-gray">{categoryDescription}</p>
           </div>
 
-          {/* Subcategory Cards (parent categories only) */}
-          {isParent && category.children && category.children.length > 0 && (
+          <div className="mb-12 border border-warm-gray bg-paper p-6">
+            <h2 className="font-serif text-2xl text-ink">What You&apos;ll Find Here</h2>
+            <ul className="mt-4 space-y-2 text-sm text-mid-gray">
+              {whatYouWillFind.map((point) => (
+                <li key={point}>{point}</li>
+              ))}
+            </ul>
+          </div>
+
+          {isParent && subcategories.length > 0 && (
             <div className="mb-12">
               <h2 className="mb-6 font-serif text-2xl text-ink">
                 Subcategories
               </h2>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {category.children.map((child) => (
+                {subcategories.map((child) => (
                   <Link
                     key={child.id}
                     href={`/blog/category/${child.slug}`}
@@ -242,7 +348,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             </div>
           )}
 
-          {/* Articles Section */}
           {isParent && (
             <h2 className="mb-6 font-serif text-2xl text-ink">All Articles</h2>
           )}

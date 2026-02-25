@@ -74,8 +74,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const siteProfile = await getSiteProfile();
-  const personPath = siteProfile.author.profilePath;
-  const personId = toPersonId(personPath);
+  const personId = toPersonId();
 
   return (
     <html lang="en">
@@ -99,7 +98,6 @@ export default async function RootLayout({
             id="person-jsonld"
             data={buildPersonJsonLd({
               id: personId,
-              path: personPath,
               name: siteProfile.authorName,
               title: siteProfile.authorRole,
               description: siteProfile.siteDescription,
@@ -117,7 +115,6 @@ export default async function RootLayout({
               addressLocality: siteProfile.author.addressLocality,
               addressRegion: siteProfile.author.addressRegion,
               addressCountry: siteProfile.author.addressCountry,
-              mainEntityOfPagePath: personPath,
               sameAs: siteProfile.author.sameAs.length > 0
                 ? siteProfile.author.sameAs.map((socialLink) => socialLink.url)
                 : undefined,

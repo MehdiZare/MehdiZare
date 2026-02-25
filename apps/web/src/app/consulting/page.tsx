@@ -93,6 +93,27 @@ export default async function ConsultingPage() {
         answer: faq.answer,
       }))
   );
+  const providerAddress =
+    siteProfile.author.addressLocality ||
+    siteProfile.author.addressRegion ||
+    siteProfile.author.addressCountry
+      ? {
+          "@type": "PostalAddress",
+          addressLocality: siteProfile.author.addressLocality,
+          addressRegion: siteProfile.author.addressRegion,
+          addressCountry: siteProfile.author.addressCountry,
+        }
+      : undefined;
+  const serviceAreaName = [
+    siteProfile.author.addressLocality,
+    siteProfile.author.addressRegion,
+    siteProfile.author.addressCountry,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const areaServed = serviceAreaName
+    ? [{ "@type": "Place", name: serviceAreaName }, { "@type": "Country", name: "United States" }]
+    : [{ "@type": "Country", name: "United States" }];
   const consultingServiceJsonLd = {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
@@ -101,17 +122,29 @@ export default async function ConsultingPage() {
     url: `${siteUrl}/consulting`,
     description: data.subtitle,
     provider: {
+      "@type": "Person",
       "@id": `${siteUrl}/#person`,
+      name: siteProfile.authorName,
+      url: siteProfile.author.websiteUrl,
+      jobTitle: siteProfile.authorRole,
+      sameAs:
+        siteProfile.author.sameAs.length > 0
+          ? siteProfile.author.sameAs.map((socialLink) => socialLink.url)
+          : undefined,
+      address: providerAddress,
     },
+    address: providerAddress,
     serviceType: data.services.map((service) => service.name),
     audience: data.audiences.map((audience) => ({
       "@type": "Audience",
       audienceType: audience.title,
     })),
-    areaServed: {
-      "@type": "Country",
-      name: "United States",
+    areaServed,
+    availableLanguage: ["English"],
+    mainEntityOfPage: {
+      "@id": `${siteUrl}/consulting#webpage`,
     },
+    knowsAbout: siteProfile.knowsAbout,
   };
 
   return (

@@ -36,6 +36,9 @@ export const DEFAULT_SITE_PROFILE = {
   authorSlug: "mehdi-zare",
   authorWebsiteUrl: "https://www.mehdi-zare.com",
   authorLinkedinUrl: "https://linkedin.com/in/mehdizare",
+  authorAddressLocality: "Arlington",
+  authorAddressRegion: "VA",
+  authorAddressCountry: "US",
   authorWorksForName: "Sev1Tech",
   authorWorksForUrl: "https://sev1tech.com",
   authorAlumniOf: [

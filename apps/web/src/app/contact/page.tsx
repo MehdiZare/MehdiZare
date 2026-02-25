@@ -71,14 +71,31 @@ function SocialIcon({ platform }: { platform: string }) {
 export default async function ContactPage() {
   const siteProfile = await getSiteProfile();
   const siteUrl = getSiteUrl();
+  const serviceAreaName = [
+    siteProfile.author.addressLocality,
+    siteProfile.author.addressRegion,
+    siteProfile.author.addressCountry,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const areaServed = serviceAreaName
+    ? [{ "@type": "Place", name: serviceAreaName }, { "@type": "Country", name: "United States" }]
+    : [{ "@type": "Country", name: "United States" }];
   const contactPointJsonLd = {
     "@context": "https://schema.org",
     "@type": "ContactPoint",
     "@id": `${siteUrl}/contact#contactpoint`,
     url: `${siteUrl}/contact`,
-    contactType: "consulting inquiries",
+    contactType: "AI consulting inquiries",
     availableLanguage: ["English"],
-    areaServed: "US",
+    areaServed,
+    description: siteProfile.contactPrompt,
+    about: {
+      "@id": `${siteUrl}/#person`,
+    },
+    mainEntityOfPage: {
+      "@id": `${siteUrl}/contact#webpage`,
+    },
   };
 
   return (

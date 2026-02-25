@@ -3,6 +3,7 @@ import {
   DEFAULT_NAV_ITEMS,
   DEFAULT_SOCIAL_LINKS,
 } from "./site-profile-defaults";
+import { identityUrlKey, normalizeIdentityUrl } from "./url-normalization";
 import { isBinaPrintEnabled } from "./feature-flags";
 import { serverEnv } from "./server-env";
 import type {
@@ -14,6 +15,8 @@ import type {
   SocialLink,
   StrapiImage,
 } from "../types/strapi";
+
+const CANONICAL_IDENTITY_ORIGIN = DEFAULT_SITE_PROFILE.authorWebsiteUrl;
 
 const REQUIRED_SITE_PROFILE_FIELDS = [
   "siteName",
@@ -171,14 +174,15 @@ function normalizeSocialLinks(items: SiteSettings["socialLinks"]): SocialLink[] 
     .map((item, index) => {
       const platform = normalizeString(item?.platform);
       const url = normalizeString(item?.url);
-      if (!platform || !url) {
+      const normalizedUrl = normalizeIdentityUrl(url, CANONICAL_IDENTITY_ORIGIN);
+      if (!platform || !normalizedUrl) {
         return null;
       }
 
       return {
         id: item.id ?? index + 1,
         platform,
-        url,
+        url: normalizedUrl,
       };
     })
     .filter((item): item is SocialLink => Boolean(item));
@@ -191,13 +195,21 @@ function dedupeSocialLinks(items: SocialLink[]): SocialLink[] {
   const deduped: SocialLink[] = [];
 
   items.forEach((item) => {
-    const key = item.url.trim().toLowerCase();
-    if (seen.has(key)) {
+    const normalizedUrl = normalizeIdentityUrl(item.url, CANONICAL_IDENTITY_ORIGIN);
+    if (!normalizedUrl) {
+      return;
+    }
+
+    const key = identityUrlKey(normalizedUrl, CANONICAL_IDENTITY_ORIGIN);
+    if (!key || seen.has(key)) {
       return;
     }
 
     seen.add(key);
-    deduped.push(item);
+    deduped.push({
+      ...item,
+      url: normalizedUrl,
+    });
   });
 
   return deduped;
@@ -211,25 +223,30 @@ function buildCanonicalSocialLinks(
     ? author.sameAs
         .map((item, index) => {
           const platform = normalizeString(item?.platform);
-          const url = normalizeString(item?.url);
+          const normalizedUrl = normalizeIdentityUrl(
+            normalizeString(item?.url),
+            CANONICAL_IDENTITY_ORIGIN
+          );
 
-          if (!platform || !url) {
+          if (!platform || !normalizedUrl) {
             return null;
           }
 
           return {
             id: item.id ?? index + 1,
             platform,
-            url,
+            url: normalizedUrl,
           };
         })
         .filter((item): item is SocialLink => Boolean(item))
     : [];
 
   const websiteUrl =
-    normalizeString(author?.websiteUrl) ?? DEFAULT_SITE_PROFILE.authorWebsiteUrl;
+    normalizeIdentityUrl(normalizeString(author?.websiteUrl), CANONICAL_IDENTITY_ORIGIN) ??
+    DEFAULT_SITE_PROFILE.authorWebsiteUrl;
   const linkedinUrl =
-    normalizeString(author?.linkedinUrl) ?? DEFAULT_SITE_PROFILE.authorLinkedinUrl;
+    normalizeIdentityUrl(normalizeString(author?.linkedinUrl), CANONICAL_IDENTITY_ORIGIN) ??
+    DEFAULT_SITE_PROFILE.authorLinkedinUrl;
 
   const canonical = dedupeSocialLinks([
     { id: 1, platform: "Website", url: websiteUrl },
@@ -281,11 +298,11 @@ function buildAuthorProfile(
   const slug = normalizeString(author?.slug) ?? fallbackSlug;
   const canonicalSocialLinks = buildCanonicalSocialLinks(author, settings?.socialLinks);
   const websiteUrl =
-    normalizeString(author?.websiteUrl) ??
+    normalizeIdentityUrl(normalizeString(author?.websiteUrl), CANONICAL_IDENTITY_ORIGIN) ??
     canonicalSocialLinks.find((link) => link.platform.toLowerCase() === "website")?.url ??
     DEFAULT_SITE_PROFILE.authorWebsiteUrl;
   const linkedinUrl =
-    normalizeString(author?.linkedinUrl) ??
+    normalizeIdentityUrl(normalizeString(author?.linkedinUrl), CANONICAL_IDENTITY_ORIGIN) ??
     canonicalSocialLinks.find((link) => link.platform.toLowerCase() === "linkedin")?.url ??
     DEFAULT_SITE_PROFILE.authorLinkedinUrl;
 
@@ -316,9 +333,12 @@ function buildAuthorProfile(
     alumniOf: alumniOf.length > 0 ? alumniOf : [...DEFAULT_SITE_PROFILE.authorAlumniOf],
     knowsAbout: knowsAbout.length > 0 ? knowsAbout : [...DEFAULT_SITE_PROFILE.knowsAbout],
     credentials: normalizeCredentials(author?.credentials),
-    addressLocality: normalizeString(author?.addressLocality),
-    addressRegion: normalizeString(author?.addressRegion),
-    addressCountry: normalizeString(author?.addressCountry),
+    addressLocality:
+      normalizeString(author?.addressLocality) ?? DEFAULT_SITE_PROFILE.authorAddressLocality,
+    addressRegion:
+      normalizeString(author?.addressRegion) ?? DEFAULT_SITE_PROFILE.authorAddressRegion,
+    addressCountry:
+      normalizeString(author?.addressCountry) ?? DEFAULT_SITE_PROFILE.authorAddressCountry,
   };
 }
 
@@ -338,7 +358,9 @@ function hasValidSocialLinks(items: SiteSettings["socialLinks"]): boolean {
   }
 
   return items.some(
-    (item) => Boolean(normalizeString(item?.platform)) && Boolean(normalizeString(item?.url))
+    (item) =>
+      Boolean(normalizeString(item?.platform)) &&
+      Boolean(normalizeIdentityUrl(normalizeString(item?.url), CANONICAL_IDENTITY_ORIGIN))
   );
 }
 
@@ -351,8 +373,12 @@ function hasCanonicalAuthorData(author: Author | null | undefined): boolean {
 }
 
 function hasCanonicalSocialData(author: Author | null | undefined): boolean {
-  const hasWebsite = Boolean(normalizeString(author?.websiteUrl));
-  const hasLinkedIn = Boolean(normalizeString(author?.linkedinUrl));
+  const hasWebsite = Boolean(
+    normalizeIdentityUrl(normalizeString(author?.websiteUrl), CANONICAL_IDENTITY_ORIGIN)
+  );
+  const hasLinkedIn = Boolean(
+    normalizeIdentityUrl(normalizeString(author?.linkedinUrl), CANONICAL_IDENTITY_ORIGIN)
+  );
 
   if (hasWebsite && hasLinkedIn) {
     return true;
@@ -363,7 +389,9 @@ function hasCanonicalSocialData(author: Author | null | undefined): boolean {
   }
 
   return author.sameAs.some(
-    (item) => Boolean(normalizeString(item?.platform)) && Boolean(normalizeString(item?.url))
+    (item) =>
+      Boolean(normalizeString(item?.platform)) &&
+      Boolean(normalizeIdentityUrl(normalizeString(item?.url), CANONICAL_IDENTITY_ORIGIN))
   );
 }
 
