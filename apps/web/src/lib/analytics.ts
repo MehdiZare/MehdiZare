@@ -96,7 +96,7 @@ export function resolvePageType(pathname: string): AnalyticsPageType {
   if (normalized.startsWith("/blog/tag/")) {
     return "tag";
   }
-  if (normalized === "/blog" || /^\/blog\/page\/\d+$/.test(normalized)) {
+  if (normalized === "/blog" || /^\/blog\/page\/\d+\/?$/.test(normalized)) {
     return "blog";
   }
   if (normalized.startsWith("/blog/")) {

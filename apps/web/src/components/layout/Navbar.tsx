@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { captureEvent } from "@/lib/analytics";
 import type { NavItem } from "@/types/strapi";
 
+const isContactHref = (href: string): boolean => /^\/contact(?:\/|\?|#|$)/.test(href);
+
 interface NavbarProps {
   siteName: string;
   navLinks: NavItem[];
@@ -63,7 +65,7 @@ export function Navbar({ siteName, navLinks, ctaLabel, ctaHref }: NavbarProps) {
                   <Link
                     href={link.href}
                     onClick={() => {
-                      if (link.href === "/contact") {
+                      if (isContactHref(link.href)) {
                         captureEvent("funnel_contact_intent", {
                           section: "navbar_links",
                           cta_label: link.label,
@@ -160,7 +162,7 @@ export function Navbar({ siteName, navLinks, ctaLabel, ctaHref }: NavbarProps) {
                         href={link.href}
                         onClick={() => {
                           setOpenMenuForPath(null);
-                          if (link.href === "/contact") {
+                          if (isContactHref(link.href)) {
                             captureEvent("funnel_contact_intent", {
                               section: "navbar_mobile_links",
                               cta_label: link.label,

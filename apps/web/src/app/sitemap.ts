@@ -328,6 +328,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     try {
       const allCategories = await getAllCategoriesForSitemap();
 
+      if (allCategories.length === 0) {
+        degradedSources.push("categories");
+        return FALLBACK_CATEGORY_SLUGS.map((slug) => ({
+          url: `${SITE_URL}/blog/category/${slug}`,
+          lastModified: now,
+          changeFrequency: "weekly" as const,
+          priority: 0.7,
+        }));
+      }
+
       return allCategories.map((category) => ({
         url: `${SITE_URL}/blog/category/${category.slug}`,
         lastModified: safeDate(category.updatedAt, now),
@@ -348,6 +358,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const tagPages = await (async () => {
     try {
       const allTags = await getAllTagsForSitemap();
+
+      if (allTags.length === 0) {
+        degradedSources.push("tags");
+        return FALLBACK_TAG_SLUGS.map((slug) => ({
+          url: `${SITE_URL}/blog/tag/${slug}`,
+          lastModified: now,
+          changeFrequency: "weekly" as const,
+          priority: 0.6,
+        }));
+      }
 
       return allTags.map((tag) => ({
         url: `${SITE_URL}/blog/tag/${tag.slug}`,

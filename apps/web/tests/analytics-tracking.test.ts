@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const {
   captureEvent,
@@ -99,6 +102,7 @@ test("resolvePageType classifies core routes correctly", () => {
   assert.equal(resolvePageType("/author/mehdi-zare"), "author");
   assert.equal(resolvePageType("/blog"), "blog");
   assert.equal(resolvePageType("/blog/page/2"), "blog");
+  assert.equal(resolvePageType("/blog/page/2/"), "blog");
   assert.equal(resolvePageType("/blog/category/ai-engineering"), "category");
   assert.equal(resolvePageType("/blog/tag/llms"), "tag");
   assert.equal(resolvePageType("/blog/building-production-rag"), "blog_post");
@@ -185,7 +189,7 @@ test("legacy funnel event names are removed from source", () => {
   ];
 
   for (const relativePath of sourceFiles) {
-    const source = readFileSync(resolve(process.cwd(), relativePath), "utf8");
+    const source = readFileSync(resolve(__dirname, "..", relativePath), "utf8");
     for (const legacyName of legacyNames) {
       assert.doesNotMatch(source, new RegExp(legacyName));
     }
