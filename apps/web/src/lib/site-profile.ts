@@ -523,7 +523,7 @@ export async function getSiteProfile(options: SiteProfileOptions = {}): Promise<
       "⚠ CMS unavailable — site profile falling back to default content.",
       error instanceof Error ? error.message : error
     );
-    return mergeProfile(undefined);
+    return mergeProfile(undefined, options.author);
   }
 }
 

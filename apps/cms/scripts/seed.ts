@@ -187,6 +187,7 @@ async function getAllArticles(): Promise<ArticleRecord[]> {
 }
 
 async function linkAllArticlesToAuthor(author: AuthorRecord): Promise<void> {
+  const forceOverwrite = process.env.SEED_FORCE_AUTHOR_OVERWRITE === "true";
   const articles = await getAllArticles();
   if (articles.length === 0) {
     console.log("  • No articles found to backfill author relation.");
@@ -196,6 +197,9 @@ async function linkAllArticlesToAuthor(author: AuthorRecord): Promise<void> {
   let updatedCount = 0;
   for (const article of articles) {
     if (article.author?.documentId === author.documentId) {
+      continue;
+    }
+    if (article.author?.documentId && !forceOverwrite) {
       continue;
     }
 

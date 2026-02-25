@@ -118,7 +118,9 @@ export default async function RootLayout({
               addressRegion: siteProfile.author.addressRegion,
               addressCountry: siteProfile.author.addressCountry,
               mainEntityOfPagePath: personPath,
-              sameAs: siteProfile.author.sameAs.map((socialLink) => socialLink.url),
+              sameAs: siteProfile.author.sameAs.length > 0
+                ? siteProfile.author.sameAs.map((socialLink) => socialLink.url)
+                : undefined,
               knowsAbout: siteProfile.knowsAbout,
             })}
           />

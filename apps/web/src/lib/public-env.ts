@@ -67,7 +67,10 @@ export function toAbsoluteStrapiMediaUrl(url: string): string {
     return url;
   } catch {
     if (url.startsWith("/uploads/") || url === "/uploads") {
-      return `/cms-uploads${url.slice("/uploads".length)}`;
+      const queryIdx = url.indexOf("?");
+      const path = queryIdx !== -1 ? url.slice(0, queryIdx) : url;
+      const rest = queryIdx !== -1 ? url.slice(queryIdx) : "";
+      return `/cms-uploads${path.slice("/uploads".length)}${rest}`;
     }
     const normalizedPath = url.startsWith("/") ? url : `/${url}`;
     return `/cms-uploads${normalizedPath}`;

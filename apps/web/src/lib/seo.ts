@@ -344,7 +344,9 @@ export function buildPersonJsonLd(options: PersonJsonLdOptions = {}): Record<str
   const siteUrl = getSiteUrl();
   const canonicalPath = options.path;
   const id = options.id ?? toPersonId(canonicalPath);
-  const profileUrl = options.url ?? toAbsoluteUrl(canonicalPath ?? "/", siteUrl);
+  const profileUrl = options.url
+    ? toAbsoluteUrl(options.url, siteUrl)
+    : toAbsoluteUrl(canonicalPath ?? "/", siteUrl);
   const name = options.name ?? PERSON_NAME;
   const title = options.title ?? PERSON_TITLE;
   const description = options.description ?? DEFAULT_SITE_DESCRIPTION;

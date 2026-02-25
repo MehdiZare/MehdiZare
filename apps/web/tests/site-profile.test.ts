@@ -20,6 +20,6 @@ test("Site Profile supports strict CI validation mode", () => {
 });
 
 test("Site Profile keeps non-strict fallback behavior", () => {
-  assert.match(source, /return mergeProfile\(undefined\)/);
+  assert.match(source, /return mergeProfile\(undefined/);
   assert.match(source, /return mergeProfile\(settings\)/);
 });

@@ -318,22 +318,26 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                       >
                         Author Profile
                       </Link>
-                      <a
-                        href={authorWebsite}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
-                      >
-                        Website
-                      </a>
-                      <a
-                        href={authorLinkedIn}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
-                      >
-                        LinkedIn
-                      </a>
+                      {authorWebsite && (
+                        <a
+                          href={authorWebsite}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
+                        >
+                          Website
+                        </a>
+                      )}
+                      {authorLinkedIn && (
+                        <a
+                          href={authorLinkedIn}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
+                        >
+                          LinkedIn
+                        </a>
+                      )}
                       <Link
                         href="/consulting"
                         className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"

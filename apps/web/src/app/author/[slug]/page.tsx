@@ -106,13 +106,14 @@ function dedupeUrls(urls: string[]): string[] {
   const deduped: string[] = [];
 
   urls.forEach((url) => {
-    const key = url.trim().toLowerCase();
-    if (!url || seen.has(key)) {
+    const normalized = url.trim();
+    const key = normalized.toLowerCase();
+    if (!normalized || seen.has(key)) {
       return;
     }
 
     seen.add(key);
-    deduped.push(url);
+    deduped.push(normalized);
   });
 
   return deduped;

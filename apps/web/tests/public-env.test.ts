@@ -26,3 +26,8 @@ test("toAbsoluteStrapiMediaUrl preserves query/hash when rewriting absolute Stra
   const url = toAbsoluteStrapiMediaUrl("http://localhost:1337/uploads/image.png?v=1#hero");
   assert.equal(url, "/cms-uploads/image.png?v=1#hero");
 });
+
+test("toAbsoluteStrapiMediaUrl preserves query string for relative /uploads path", () => {
+  const url = toAbsoluteStrapiMediaUrl("/uploads/image.png?v=2");
+  assert.equal(url, "/cms-uploads/image.png?v=2");
+});
