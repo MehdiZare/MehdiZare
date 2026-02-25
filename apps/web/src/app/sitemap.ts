@@ -324,7 +324,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  const categoryPages: MetadataRoute.Sitemap = await (async () => {
+  const categoryPages = await (async () => {
     try {
       const allCategories = await getAllCategoriesForSitemap();
 
@@ -345,7 +345,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   })();
 
-  const tagPages: MetadataRoute.Sitemap = await (async () => {
+  const tagPages = await (async () => {
     try {
       const allTags = await getAllTagsForSitemap();
 

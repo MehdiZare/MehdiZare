@@ -169,7 +169,6 @@ export default async function ContactPage() {
                 </p>
                 <CalComTrigger
                   className="mt-4"
-                  page="contact"
                   section="schedule_panel"
                 />
               </div>

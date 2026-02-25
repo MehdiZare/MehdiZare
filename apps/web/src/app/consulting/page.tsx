@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
+import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { FAQ } from "@/components/consulting/FAQ";
 import { CalComTrigger } from "@/components/scheduling/CalComTrigger";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
@@ -216,20 +217,34 @@ export default async function ConsultingPage() {
             ))}
           </div>
           <AnimatedSection delay={0.3} className="mt-10 text-center">
-            <a
+            <TrackedAnchor
               href={schedulerAnchorHref}
+              eventName="funnel_cta_click"
+              eventProperties={{
+                section: "consulting_mid_cta",
+                cta_label: siteProfile.primaryCtaLabel,
+                destination: schedulerAnchorHref,
+                interaction_type: "link_click",
+              }}
               className="inline-flex bg-ink px-8 py-3 text-sm font-medium text-paper transition hover:bg-ink/85"
             >
               {siteProfile.primaryCtaLabel}
-            </a>
+            </TrackedAnchor>
             <p className="mt-3 text-sm text-mid-gray">
               Prefer email?{" "}
-              <Link
+              <TrackedLink
                 href="/contact"
+                eventName="funnel_contact_intent"
+                eventProperties={{
+                  section: "consulting_mid_cta",
+                  cta_label: "Start a conversation",
+                  destination: "/contact",
+                  interaction_type: "link_click",
+                }}
                 className="text-ink underline underline-offset-4 transition-colors hover:text-mid-gray"
               >
                 Start a conversation
-              </Link>
+              </TrackedLink>
               .
             </p>
           </AnimatedSection>
@@ -272,7 +287,6 @@ export default async function ConsultingPage() {
               <CalComTrigger
                 className="mt-6"
                 label="Open Scheduling"
-                page="consulting"
                 section="booking_section"
               />
             </div>

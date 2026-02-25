@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { initSessionAttributionIfNeeded } from "@/lib/analytics-context";
 import { publicEnv } from "@/lib/public-env";
 
 const SCRIPT_ID = "posthog-array-js";
@@ -10,8 +11,15 @@ export function PostHogScripts() {
 
   useEffect(() => {
     if (!posthogKey) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(
+          "PostHog disabled: NEXT_PUBLIC_POSTHOG_KEY is missing."
+        );
+      }
       return;
     }
+
+    initSessionAttributionIfNeeded();
 
     const initPosthog = () => {
       if (!window.posthog?.init || window.posthog.__mzInitialized) {
@@ -23,6 +31,7 @@ export function PostHogScripts() {
         ui_host: "https://us.posthog.com",
         person_profiles: "identified_only",
         capture_pageview: true,
+        autocapture: true,
       });
       window.posthog.__mzInitialized = true;
     };

@@ -8,7 +8,7 @@ import type {
 } from "@/types/strapi";
 import type { SiteProfile } from "@/lib/site-profile";
 
-function buildCanonicalAboutStory(_siteProfile: SiteProfile): string[] {
+function buildCanonicalAboutStory(): string[] {
   return [
     "I studied physics because I wanted to understand how things work from first principles. But I was never just a theorist — while earning my degree at the University of Tehran, I was already writing code and building products. That tension between rigorous analysis and the urge to ship something real has defined my entire career.",
     "Fardabook.com was the first proof. I founded a textbook-focused online bookstore and ran product, operations, and go-to-market from scratch. It taught me that building a company and building software are the same discipline: figure out what people need, then engineer a system that delivers it reliably.",
@@ -133,7 +133,7 @@ export function buildAboutFallback(siteProfile: SiteProfile): AboutFallbackData 
   return {
     title: `About ${siteProfile.siteName}`,
     positioningStatement: siteProfile.positioningSubheadline,
-    story: buildCanonicalAboutStory(siteProfile),
+    story: buildCanonicalAboutStory(),
     storyBlocks: undefined,
     stats: fallbackStats,
     credentials: fallbackCredentials,
