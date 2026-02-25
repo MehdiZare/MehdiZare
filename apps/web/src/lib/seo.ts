@@ -138,10 +138,6 @@ export function getSiteUrl(): string {
   return normalizeOrigin(publicEnv.siteUrl ?? DEFAULT_SITE_URL, DEFAULT_SITE_URL);
 }
 
-export function getStrapiUrl(): string {
-  return getSiteUrl();
-}
-
 export function toAbsoluteUrl(pathOrUrl: string, baseUrl = getSiteUrl()): string {
   if (!pathOrUrl.trim()) {
     return baseUrl;

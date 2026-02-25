@@ -137,14 +137,6 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname, "../.."),
   },
-  async rewrites() {
-    return [
-      {
-        source: "/cms-uploads/:path*",
-        destination: `${strapiUrl.origin}/uploads/:path*`,
-      },
-    ];
-  },
   async headers() {
     return [
       {

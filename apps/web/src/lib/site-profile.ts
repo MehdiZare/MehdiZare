@@ -4,6 +4,7 @@ import {
   DEFAULT_SOCIAL_LINKS,
 } from "./site-profile-defaults";
 import { isBinaPrintEnabled } from "./feature-flags";
+import { serverEnv } from "./server-env";
 import type {
   Author,
   Credential,
@@ -413,16 +414,12 @@ function collectMissingRequiredFields(
   return missing;
 }
 
-function isStrapiDisabled(): boolean {
-  return (process.env.DISABLE_STRAPI_CMS ?? "false").toLowerCase() !== "false";
-}
-
 function resolveStrictMode(explicit?: boolean): boolean {
   if (typeof explicit === "boolean") {
     return explicit;
   }
 
-  if (isStrapiDisabled()) {
+  if (serverEnv.strapiDisabled) {
     return false;
   }
 

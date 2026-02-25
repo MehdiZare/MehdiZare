@@ -61,8 +61,8 @@ export function toAbsoluteStrapiMediaUrl(url: string): string {
 
   try {
     const parsed = new URL(url);
-    if (parsed.pathname.startsWith("/uploads/")) {
-      return `/cms-uploads${parsed.pathname.slice("/uploads".length)}`;
+    if (parsed.pathname === "/uploads" || parsed.pathname.startsWith("/uploads/")) {
+      return `/cms-uploads${parsed.pathname.slice("/uploads".length)}${parsed.search}${parsed.hash}`;
     }
     return url;
   } catch {

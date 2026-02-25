@@ -34,4 +34,5 @@ if (requiresStrapiApiToken && !strapiApiToken) {
 export const serverEnv = {
   strapiUrl: strapiUrl.origin,
   strapiApiToken,
+  strapiDisabled: (process.env.DISABLE_STRAPI_CMS ?? "false").toLowerCase() !== "false",
 } as const;

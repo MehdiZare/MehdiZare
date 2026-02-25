@@ -21,3 +21,8 @@ test("toAbsoluteStrapiMediaUrl returns empty string for empty input", () => {
   const url = toAbsoluteStrapiMediaUrl("");
   assert.equal(url, "");
 });
+
+test("toAbsoluteStrapiMediaUrl preserves query/hash when rewriting absolute Strapi URL", () => {
+  const url = toAbsoluteStrapiMediaUrl("http://localhost:1337/uploads/image.png?v=1#hero");
+  assert.equal(url, "/cms-uploads/image.png?v=1#hero");
+});

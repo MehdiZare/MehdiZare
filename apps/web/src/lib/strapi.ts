@@ -17,7 +17,7 @@ import { serverEnv } from "@/lib/server-env";
 const STRAPI_URL = serverEnv.strapiUrl;
 const STRAPI_API_TOKEN = serverEnv.strapiApiToken;
 const STRAPI_TIMEOUT_MS = 15_000;
-const STRAPI_DISABLED = (process.env.DISABLE_STRAPI_CMS ?? "false").toLowerCase() !== "false";
+const STRAPI_DISABLED = serverEnv.strapiDisabled;
 
 interface FetchAPIParams {
   populate?: string | string[] | Record<string, unknown>;
