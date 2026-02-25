@@ -317,7 +317,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         ];
       }
     } catch {
-      // Best-effort fallback only.
+      degradedSources.push("authors");
     }
   }
 

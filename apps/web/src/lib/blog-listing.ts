@@ -26,29 +26,21 @@ export type BlogListingData = {
 };
 
 export async function getBlogListingData(currentPage: number): Promise<BlogListingData> {
-  try {
-    const [articlesRes, categoriesRes] = await Promise.all([
-      getArticles({
-        sort: "publishedAt:desc",
-        pagination: {
-          page: currentPage,
-          pageSize: BLOG_PAGE_SIZE,
-          withCount: true,
-        },
-      }),
-      getCategories(),
-    ]);
+  const [articlesResult, categoriesResult] = await Promise.allSettled([
+    getArticles({
+      sort: "publishedAt:desc",
+      pagination: {
+        page: currentPage,
+        pageSize: BLOG_PAGE_SIZE,
+        withCount: true,
+      },
+    }),
+    getCategories(),
+  ]);
 
-    return {
-      articles: articlesRes.data,
-      pagination: articlesRes.meta.pagination,
-      categories: categoriesRes.data,
-    };
-  } catch {
-    return {
-      articles: [],
-      pagination: undefined,
-      categories: [],
-    };
-  }
+  return {
+    articles: articlesResult.status === "fulfilled" ? articlesResult.value.data : [],
+    pagination: articlesResult.status === "fulfilled" ? articlesResult.value.meta.pagination : undefined,
+    categories: categoriesResult.status === "fulfilled" ? categoriesResult.value.data : [],
+  };
 }

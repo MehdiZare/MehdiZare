@@ -32,6 +32,12 @@ function sanitizePath(path: string): string | null {
   return path;
 }
 
+function sanitizeSlug(slug: string): string | null {
+  const trimmed = slug.trim();
+  if (!trimmed || trimmed.includes("/") || trimmed.includes("://")) return null;
+  return encodeURIComponent(trimmed);
+}
+
 function collectPaths(payload: RevalidatePayload): string[] {
   const paths = new Set<string>([
     "/",
@@ -52,7 +58,7 @@ function collectPaths(payload: RevalidatePayload): string[] {
     }
   }
 
-  const slug = payload.entry?.slug;
+  const slug = payload.entry?.slug ? sanitizeSlug(payload.entry.slug) : null;
   if (slug) {
     if (payload.model === "article") {
       paths.add(`/blog/${slug}`);

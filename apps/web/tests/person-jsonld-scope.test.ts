@@ -6,18 +6,19 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const { toPersonId } = await import("../src/lib/seo.ts");
+const { toPersonId, getSiteUrl } = await import("../src/lib/seo.ts");
 
 function readSource(relativePath: string): string {
   return readFileSync(resolve(__dirname, "..", relativePath), "utf8");
 }
 
 test("global and author person IDs are distinct to avoid duplicate @id collisions", () => {
+  const siteUrl = getSiteUrl();
   const globalPersonId = toPersonId();
   const authorPersonId = toPersonId("/author/mehdi-zare");
 
-  assert.equal(globalPersonId, "https://www.mehdi-zare.com/#person");
-  assert.equal(authorPersonId, "https://www.mehdi-zare.com/author/mehdi-zare#person");
+  assert.equal(globalPersonId, `${siteUrl}/#person`);
+  assert.equal(authorPersonId, `${siteUrl}/author/mehdi-zare#person`);
   assert.notEqual(globalPersonId, authorPersonId);
 });
 

@@ -157,12 +157,19 @@ function forceCanonicalHost(pathOrUrl: string, siteUrl = getSiteUrl()): string {
 
   try {
     const parsedCandidate = new URL(candidate);
+    const protocol = parsedCandidate.protocol;
+
+    if (protocol !== "http:" && protocol !== "https:") {
+      return toAbsoluteUrl("/", siteUrl);
+    }
 
     if (parsedCandidate.origin === canonicalBase.origin) {
       return parsedCandidate.toString();
     }
 
-    return `${canonicalBase.origin}${parsedCandidate.pathname}${parsedCandidate.search}${parsedCandidate.hash}`;
+    parsedCandidate.protocol = canonicalBase.protocol;
+    parsedCandidate.host = canonicalBase.host;
+    return parsedCandidate.toString();
   } catch {
     return toAbsoluteUrl(pathOrUrl, siteUrl);
   }
