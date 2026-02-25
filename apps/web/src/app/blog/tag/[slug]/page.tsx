@@ -27,11 +27,10 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
     const tag = tagRes.data[0];
 
     if (!tag) {
-      return buildPageMetadata({
-        pathname: `/blog/tag/${slug}`,
+      return {
         title: "Tag Not Found",
-        description: "The requested tag could not be found.",
-      });
+        robots: { index: false, follow: false },
+      };
     }
 
     const siteProfile = await getSiteProfile();
@@ -43,25 +42,23 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
       seo: tag.seo,
     });
   } catch {
-    return buildPageMetadata({
-      pathname: `/blog/tag/${slug}`,
+    return {
       title: "Tag Not Found",
-      description: "The requested tag could not be found.",
-    });
+      robots: { index: false, follow: false },
+    };
   }
 }
 
 export default async function TagPage({ params }: TagPageProps) {
   const { slug } = await params;
 
-  let tagRes;
+  let tag;
   try {
-    tagRes = await getTagBySlug(slug);
+    const tagRes = await getTagBySlug(slug);
+    tag = tagRes.data[0];
   } catch {
     notFound();
   }
-
-  const tag = tagRes.data[0];
 
   if (!tag) {
     notFound();

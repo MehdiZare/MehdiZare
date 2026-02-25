@@ -303,7 +303,6 @@ export async function getCategoryBySlug(
       children: { populate: "*" },
       parent: { populate: "*" },
       seo: { populate: { metaImage: { populate: "*" } } },
-      articles: { populate: articlePopulate },
     },
     filters: {
       slug: { $eq: slug },
@@ -321,7 +320,6 @@ export async function getTagBySlug(
   return fetchAPI<StrapiCollectionResponse<Tag>>("/tags", {
     populate: {
       seo: { populate: { metaImage: { populate: "*" } } },
-      articles: { populate: articlePopulate },
     },
     filters: {
       slug: { $eq: slug },

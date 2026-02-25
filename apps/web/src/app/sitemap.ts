@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import type { Article, Author, Category, Tag } from "@/types/strapi";
+import type { Article, Author, Tag } from "@/types/strapi";
 import {
   getAboutPage,
   getArticles,
@@ -194,13 +194,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const categoriesRes = await getCategories();
-    const allCategories: Category[] = [];
-    for (const cat of categoriesRes.data) {
-      allCategories.push(cat);
-      if (cat.children) {
-        allCategories.push(...cat.children);
-      }
-    }
+    const allCategories = categoriesRes.data;
 
     categoryPages = allCategories.map((category) => ({
       url: `${SITE_URL}/blog/category/${category.slug}`,

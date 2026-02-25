@@ -370,9 +370,10 @@ async function seedCategories(): Promise<void> {
     if (parent.children) {
       for (const child of parent.children) {
         const parentDocId = slugToDocumentId[parent.slug];
-        if (parentDocId) {
+        const childDocId = slugToDocumentId[child.slug];
+        if (parentDocId && childDocId) {
           await strapiFetch<StrapiEntityResponse<CategoryRecord>>(
-            `categories/${slugToDocumentId[child.slug]}`,
+            `categories/${childDocId}`,
             {
               method: "PUT",
               body: JSON.stringify({
@@ -445,6 +446,11 @@ const siteSettings = {
 const primaryAuthor = taxonomy.authors.find(
   (a: { isPrimary?: boolean }) => a.isPrimary
 ) ?? taxonomy.authors[0];
+
+if (!primaryAuthor) {
+  console.error("No authors found in taxonomy.json");
+  process.exit(1);
+}
 
 // ---------------------------------------------------------------------------
 // Content: HomePage (draftAndPublish: true)
