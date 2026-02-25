@@ -1,12 +1,14 @@
 import type { MetadataRoute } from "next";
-import type { Article, Author } from "@/types/strapi";
+import type { Article, Author, Category, Tag } from "@/types/strapi";
 import {
   getAboutPage,
   getArticles,
   getAuthors,
   getBinaPrintPage,
+  getCategories,
   getConsultingPage,
   getHomePage,
+  getTags,
 } from "@/lib/strapi";
 import { isBinaPrintEnabled } from "@/lib/feature-flags";
 import { getSiteUrl, toAbsoluteMediaUrl } from "@/lib/seo";
@@ -187,5 +189,41 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Return other pages when CMS is unavailable.
   }
 
-  return [...staticPages, ...articlePages, ...authorPages];
+  let categoryPages: MetadataRoute.Sitemap = [];
+  let tagPages: MetadataRoute.Sitemap = [];
+
+  try {
+    const categoriesRes = await getCategories();
+    const allCategories: Category[] = [];
+    for (const cat of categoriesRes.data) {
+      allCategories.push(cat);
+      if (cat.children) {
+        allCategories.push(...cat.children);
+      }
+    }
+
+    categoryPages = allCategories.map((category) => ({
+      url: `${SITE_URL}/blog/category/${category.slug}`,
+      lastModified: safeDate(category.updatedAt, now),
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }));
+  } catch {
+    // Skip category pages when CMS is unavailable.
+  }
+
+  try {
+    const tagsRes = await getTags();
+
+    tagPages = tagsRes.data.map((tag: Tag) => ({
+      url: `${SITE_URL}/blog/tag/${tag.slug}`,
+      lastModified: safeDate(tag.updatedAt, now),
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    }));
+  } catch {
+    // Skip tag pages when CMS is unavailable.
+  }
+
+  return [...staticPages, ...articlePages, ...authorPages, ...categoryPages, ...tagPages];
 }

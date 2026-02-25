@@ -78,6 +78,13 @@ export interface Category {
   name: string;
   slug: string;
   description?: string;
+  parent?: Category | null;
+  children?: Category[];
+  order?: number;
+  headline?: string;
+  intro?: string;
+  seo?: SEO;
+  articles?: Article[];
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
@@ -88,6 +95,11 @@ export interface Tag {
   documentId: string;
   name: string;
   slug: string;
+  description?: string;
+  headline?: string;
+  intro?: string;
+  seo?: SEO;
+  articles?: Article[];
   createdAt: string;
   updatedAt: string;
   publishedAt: string;

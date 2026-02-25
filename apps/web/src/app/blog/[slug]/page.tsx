@@ -243,7 +243,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <div className="mb-6 flex flex-wrap items-center gap-3 text-sm">
                 {article.category && (
                   <Link
-                    href={`/blog?category=${article.category.slug}`}
+                    href={`/blog/category/${article.category.slug}`}
                     className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-accent-warm"
                   >
                     {article.category.name}

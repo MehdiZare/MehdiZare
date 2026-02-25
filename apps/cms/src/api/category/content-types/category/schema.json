@@ -27,6 +27,33 @@
       "relation": "oneToMany",
       "target": "api::article.article",
       "mappedBy": "category"
+    },
+    "parent": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category",
+      "inversedBy": "children"
+    },
+    "children": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::category.category",
+      "mappedBy": "parent"
+    },
+    "order": {
+      "type": "integer",
+      "default": 0
+    },
+    "headline": {
+      "type": "string"
+    },
+    "intro": {
+      "type": "text"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
     }
   }
 }

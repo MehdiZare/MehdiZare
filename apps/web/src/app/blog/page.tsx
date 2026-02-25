@@ -16,28 +16,11 @@ import { PostCard } from "@/components/blog/PostCard";
 
 interface BlogSearchParams {
   page?: string;
-  category?: string;
-  tag?: string;
 }
 
 function normalizePageParam(value?: string): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1;
-}
-
-function normalizeSlugParam(value?: string): string | null {
-  const normalized = value?.trim();
-  return normalized ? normalized : null;
-}
-
-function buildBlogPath(page: number, categorySlug: string | null, tagSlug: string | null): string {
-  const sp = new URLSearchParams();
-  if (page > 1) sp.set("page", String(page));
-  if (categorySlug) sp.set("category", categorySlug);
-  if (tagSlug) sp.set("tag", tagSlug);
-
-  const qs = sp.toString();
-  return qs ? `/blog?${qs}` : "/blog";
 }
 
 interface BlogPageProps {
@@ -48,9 +31,6 @@ export async function generateMetadata({ searchParams }: BlogPageProps): Promise
   const siteProfile = await getSiteProfile();
   const params = await searchParams;
   const currentPage = normalizePageParam(params.page);
-  const categorySlug = normalizeSlugParam(params.category);
-  const tagSlug = normalizeSlugParam(params.tag);
-  const isVariantPage = currentPage > 1 || Boolean(categorySlug) || Boolean(tagSlug);
 
   const metadata = buildPageMetadata({
     pathname: "/blog",
@@ -66,7 +46,7 @@ export async function generateMetadata({ searchParams }: BlogPageProps): Promise
     ],
   });
 
-  if (isVariantPage) {
+  if (currentPage > 1) {
     metadata.robots = {
       index: false,
       follow: true,
@@ -80,18 +60,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
   const siteProfile = await getSiteProfile();
   const params = await searchParams;
   const currentPage = normalizePageParam(params.page);
-  const categorySlug = normalizeSlugParam(params.category);
-  const tagSlug = normalizeSlugParam(params.tag);
   const canonicalPath = "/blog";
-
-  // Build filters based on search params
-  const filters: Record<string, unknown> = {};
-  if (categorySlug) {
-    filters.category = { slug: { $eq: categorySlug } };
-  }
-  if (tagSlug) {
-    filters.tags = { slug: { $eq: tagSlug } };
-  }
 
   let articles: Awaited<ReturnType<typeof getArticles>>["data"] = [];
   let pagination: Awaited<ReturnType<typeof getArticles>>["meta"]["pagination"] | undefined;
@@ -100,7 +69,6 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
   try {
     const [articlesRes, categoriesRes] = await Promise.all([
       getArticles({
-        filters: Object.keys(filters).length > 0 ? filters : undefined,
         sort: "publishedDate:desc",
         pagination: {
           page: currentPage,
@@ -123,9 +91,8 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
     : false;
   const hasPrevPage = currentPage > 1;
 
-  // Build pagination search params
   function buildPageUrl(page: number): string {
-    return buildBlogPath(page, categorySlug, tagSlug);
+    return page > 1 ? `/blog?page=${page}` : `/blog`;
   }
 
   const pageTitle = "Blog";
@@ -181,7 +148,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
           <div className="mb-10">
             <CategoryFilter
               categories={categories}
-              activeSlug={categorySlug}
+              activeSlug={null}
             />
           </div>
 
