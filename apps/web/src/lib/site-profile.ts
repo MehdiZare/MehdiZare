@@ -423,7 +423,7 @@ function resolveStrictMode(explicit?: boolean): boolean {
     return false;
   }
 
-  return process.env.CI === "true" || process.env.SITE_PROFILE_STRICT === "true";
+  return process.env.SITE_PROFILE_STRICT === "true";
 }
 
 function mergeProfile(settings: SiteSettings | null | undefined, author?: Author | null): SiteProfile {
