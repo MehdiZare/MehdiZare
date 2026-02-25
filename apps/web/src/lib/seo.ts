@@ -11,6 +11,7 @@ export const PERSON_TITLE = DEFAULT_SITE_PROFILE.credentialLine;
 export const DEFAULT_SITE_DESCRIPTION = DEFAULT_SITE_PROFILE.siteDescription;
 
 export const PERSON_SAME_AS = [
+  "https://mehdi-zare.com",
   "https://linkedin.com/in/mehdizare",
   "https://github.com/mehdizare",
   "https://medium.com/@mehdi-zare",
@@ -61,6 +62,8 @@ interface BlogPostingJsonLdOptions {
   keywords?: string[];
   articleSection?: string;
   readingTimeMinutes?: number;
+  authorId?: string;
+  publisherId?: string;
 }
 
 interface BlogListItem {
@@ -75,6 +78,7 @@ interface BlogJsonLdOptions {
   title: string;
   description: string;
   posts: BlogListItem[];
+  authorId?: string;
 }
 
 interface FAQJsonLdItem {
@@ -85,14 +89,41 @@ interface FAQJsonLdItem {
 interface WebsiteJsonLdOptions {
   name?: string;
   description?: string;
+  publisherId?: string;
+}
+
+interface PersonCredential {
+  name: string;
+  issuer?: string;
+  url?: string;
+  description?: string;
 }
 
 interface PersonJsonLdOptions {
+  id?: string;
+  path?: string;
   name?: string;
   title?: string;
   description?: string;
+  url?: string;
+  imageUrl?: string;
+  worksForName?: string;
+  worksForUrl?: string;
+  alumniOf?: string[];
+  credentials?: PersonCredential[];
+  addressLocality?: string;
+  addressRegion?: string;
+  addressCountry?: string;
+  mainEntityOfPagePath?: string;
   sameAs?: string[];
   knowsAbout?: string[];
+}
+
+interface ProfilePageJsonLdOptions {
+  pathname: string;
+  title: string;
+  description: string;
+  personId: string;
 }
 
 function normalizeOrigin(value: string, fallback: string): string {
@@ -131,6 +162,18 @@ export function toAbsoluteMediaUrl(url?: string | null): string | undefined {
 
   const proxyPath = toAbsoluteStrapiMediaUrl(url);
   return toAbsoluteUrl(proxyPath, getSiteUrl());
+}
+
+export function toWebPageId(pathname: string): string {
+  return `${toAbsoluteUrl(pathname, getSiteUrl())}#webpage`;
+}
+
+export function toPersonId(pathname?: string): string {
+  if (!pathname) {
+    return `${getSiteUrl()}/#person`;
+  }
+
+  return `${toAbsoluteUrl(pathname, getSiteUrl())}#person`;
 }
 
 export function resolveCanonicalUrl(pathname: string, canonicalUrl?: string): string {
@@ -285,6 +328,7 @@ export function buildWebsiteJsonLd(options: WebsiteJsonLdOptions = {}): Record<s
   const siteUrl = getSiteUrl();
   const name = options.name ?? SITE_NAME;
   const description = options.description ?? DEFAULT_SITE_DESCRIPTION;
+  const publisherId = options.publisherId ?? toPersonId();
 
   return {
     "@context": "https://schema.org",
@@ -295,27 +339,76 @@ export function buildWebsiteJsonLd(options: WebsiteJsonLdOptions = {}): Record<s
     description,
     inLanguage: "en-US",
     publisher: {
-      "@id": `${siteUrl}/#person`,
+      "@id": publisherId,
     },
   };
 }
 
 export function buildPersonJsonLd(options: PersonJsonLdOptions = {}): Record<string, unknown> {
   const siteUrl = getSiteUrl();
+  const canonicalPath = options.path;
+  const id = options.id ?? toPersonId(canonicalPath);
+  const profileUrl = options.url ?? toAbsoluteUrl(canonicalPath ?? "/", siteUrl);
   const name = options.name ?? PERSON_NAME;
   const title = options.title ?? PERSON_TITLE;
   const description = options.description ?? DEFAULT_SITE_DESCRIPTION;
   const sameAs = options.sameAs ?? PERSON_SAME_AS;
   const knowsAbout = options.knowsAbout ?? DEFAULT_KNOWS_ABOUT;
+  const alumniOf = options.alumniOf ?? [];
+  const credentials = options.credentials ?? [];
+  const hasCredential = credentials
+    .map((credential) => {
+      if (!credential.name?.trim()) {
+        return null;
+      }
+
+      return {
+        "@type": "EducationalOccupationalCredential",
+        name: credential.name,
+        credentialCategory: credential.issuer,
+        description: credential.description,
+        url: credential.url,
+      };
+    })
+    .filter(Boolean) as Array<Record<string, unknown>>;
+
+  const address =
+    options.addressLocality || options.addressRegion || options.addressCountry
+      ? {
+          "@type": "PostalAddress",
+          addressLocality: options.addressLocality,
+          addressRegion: options.addressRegion,
+          addressCountry: options.addressCountry,
+        }
+      : undefined;
+
+  const worksFor =
+    options.worksForName || options.worksForUrl
+      ? {
+          "@type": "Organization",
+          name: options.worksForName,
+          url: options.worksForUrl,
+        }
+      : undefined;
 
   return {
     "@context": "https://schema.org",
     "@type": "Person",
-    "@id": `${siteUrl}/#person`,
+    "@id": id,
     name,
-    url: siteUrl,
+    url: profileUrl,
     jobTitle: title,
     description,
+    image: options.imageUrl,
+    worksFor,
+    alumniOf: alumniOf.length > 0 ? alumniOf : undefined,
+    hasCredential: hasCredential.length > 0 ? hasCredential : undefined,
+    address,
+    mainEntityOfPage: options.mainEntityOfPagePath
+      ? {
+          "@id": toWebPageId(options.mainEntityOfPagePath),
+        }
+      : undefined,
     sameAs,
     knowsAbout,
   };
@@ -344,6 +437,32 @@ export function buildWebPageJsonLd({
   };
 }
 
+export function buildProfilePageJsonLd({
+  pathname,
+  title,
+  description,
+  personId,
+}: ProfilePageJsonLdOptions): Record<string, unknown> {
+  const siteUrl = getSiteUrl();
+  const canonical = toAbsoluteUrl(pathname, siteUrl);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    "@id": `${canonical}#webpage`,
+    url: canonical,
+    name: title,
+    description,
+    inLanguage: "en-US",
+    isPartOf: {
+      "@id": `${siteUrl}/#website`,
+    },
+    mainEntity: {
+      "@id": personId,
+    },
+  };
+}
+
 export function buildBreadcrumbJsonLd(items: BreadcrumbItem[]): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
@@ -367,9 +486,13 @@ export function buildBlogPostingJsonLd({
   keywords,
   articleSection,
   readingTimeMinutes,
+  authorId,
+  publisherId,
 }: BlogPostingJsonLdOptions): Record<string, unknown> {
   const siteUrl = getSiteUrl();
   const canonical = toAbsoluteUrl(pathname, siteUrl);
+  const resolvedAuthorId = authorId ?? toPersonId();
+  const resolvedPublisherId = publisherId ?? resolvedAuthorId;
 
   return {
     "@context": "https://schema.org",
@@ -385,10 +508,10 @@ export function buildBlogPostingJsonLd({
     datePublished,
     dateModified,
     author: {
-      "@id": `${siteUrl}/#person`,
+      "@id": resolvedAuthorId,
     },
     publisher: {
-      "@id": `${siteUrl}/#person`,
+      "@id": resolvedPublisherId,
     },
     articleSection,
     keywords,
@@ -406,9 +529,11 @@ export function buildBlogJsonLd({
   title,
   description,
   posts,
+  authorId,
 }: BlogJsonLdOptions): Record<string, unknown> {
   const siteUrl = getSiteUrl();
   const canonical = toAbsoluteUrl(pathname, siteUrl);
+  const resolvedAuthorId = authorId ?? toPersonId();
 
   return {
     "@context": "https://schema.org",
@@ -429,7 +554,7 @@ export function buildBlogJsonLd({
       datePublished: post.datePublished,
       image: post.imageUrl ? [post.imageUrl] : undefined,
       author: {
-        "@id": `${siteUrl}/#person`,
+        "@id": resolvedAuthorId,
       },
     })),
   };

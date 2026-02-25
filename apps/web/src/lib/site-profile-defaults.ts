@@ -6,10 +6,11 @@ export const DEFAULT_NAV_ITEMS: NavItem[] = [
 ];
 
 export const DEFAULT_SOCIAL_LINKS: SocialLink[] = [
-  { id: 1, platform: "LinkedIn", url: "https://linkedin.com/in/mehdizare" },
-  { id: 2, platform: "GitHub", url: "https://github.com/mehdizare" },
-  { id: 3, platform: "Medium", url: "https://medium.com/@mehdi-zare" },
-  { id: 4, platform: "Seeking Alpha", url: "https://seekingalpha.com/author/mehdi-zare" },
+  { id: 1, platform: "Website", url: "https://mehdi-zare.com" },
+  { id: 2, platform: "LinkedIn", url: "https://linkedin.com/in/mehdizare" },
+  { id: 3, platform: "GitHub", url: "https://github.com/mehdizare" },
+  { id: 4, platform: "Medium", url: "https://medium.com/@mehdi-zare" },
+  { id: 5, platform: "Seeking Alpha", url: "https://seekingalpha.com/author/mehdi-zare" },
 ];
 
 export const DEFAULT_SITE_PROFILE = {
@@ -32,6 +33,15 @@ export const DEFAULT_SITE_PROFILE = {
   authorRole: "Principal AI Engineer",
   authorBioShort:
     "Principal AI engineer shipping production systems across finance, defense, healthcare, and enterprise.",
+  authorSlug: "mehdi-zare",
+  authorWebsiteUrl: "https://mehdi-zare.com",
+  authorLinkedinUrl: "https://linkedin.com/in/mehdizare",
+  authorWorksForName: "Sev1Tech",
+  authorWorksForUrl: "https://sev1tech.com",
+  authorAlumniOf: [
+    "University of Maryland, Smith School of Business",
+    "University of Tehran",
+  ],
   footerText: "© Mehdi Zare",
   bookCallHref: "/consulting#book",
   knowsAbout: [

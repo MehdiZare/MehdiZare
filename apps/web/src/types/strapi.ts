@@ -93,6 +93,34 @@ export interface Tag {
   publishedAt: string;
 }
 
+export interface Author {
+  id: number;
+  documentId: string;
+  name: string;
+  slug: string;
+  isPrimary?: boolean;
+  headline?: string;
+  bioShort: string;
+  bioLong?: BlocksContent;
+  websiteUrl: string;
+  linkedinUrl: string;
+  sameAs?: SocialLink[];
+  profileImage?: StrapiImage;
+  jobTitle?: string;
+  worksForName?: string;
+  worksForUrl?: string;
+  alumniOf?: string[];
+  knowsAbout?: string[];
+  credentials?: Credential[];
+  addressLocality?: string;
+  addressRegion?: string;
+  addressCountry?: string;
+  articles?: Article[];
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+}
+
 export interface Article {
   id: number;
   documentId: string;
@@ -103,6 +131,7 @@ export interface Article {
   featuredImage?: StrapiImage;
   category?: Category;
   tags?: Tag[];
+  author?: Author;
   seo?: SEO;
   publishedDate?: string;
   readingTime?: number;

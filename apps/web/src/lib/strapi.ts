@@ -1,5 +1,6 @@
 import type {
   Article,
+  Author,
   Category,
   Tag,
   AboutPage,
@@ -186,8 +187,21 @@ function flattenParams(
 const articlePopulate = {
   category: { populate: "*" },
   tags: { populate: "*" },
+  author: {
+    populate: {
+      sameAs: { populate: "*" },
+      profileImage: { populate: "*" },
+      credentials: { populate: "*" },
+    },
+  },
   featuredImage: { populate: "*" },
   seo: { populate: { metaImage: { populate: "*" } } },
+};
+
+const authorPopulate = {
+  sameAs: { populate: "*" },
+  profileImage: { populate: "*" },
+  credentials: { populate: "*" },
 };
 
 export async function getArticles(
@@ -208,6 +222,57 @@ export async function getArticleBySlug(
       slug: { $eq: slug },
     },
   });
+}
+
+export async function getAuthors(
+  params?: FetchAPIParams
+): Promise<StrapiCollectionResponse<Author>> {
+  return fetchAPI<StrapiCollectionResponse<Author>>("/authors", {
+    populate: authorPopulate,
+    ...params,
+  });
+}
+
+export async function getAuthorBySlug(
+  slug: string
+): Promise<StrapiCollectionResponse<Author>> {
+  return fetchAPI<StrapiCollectionResponse<Author>>("/authors", {
+    populate: authorPopulate,
+    filters: {
+      slug: { $eq: slug },
+    },
+    pagination: {
+      page: 1,
+      pageSize: 1,
+    },
+  });
+}
+
+export async function getPrimaryAuthor(): Promise<Author | undefined> {
+  const primary = await getAuthors({
+    filters: {
+      isPrimary: { $eq: true },
+    },
+    sort: "updatedAt:desc",
+    pagination: {
+      page: 1,
+      pageSize: 1,
+    },
+  });
+
+  if (primary.data.length > 0) {
+    return primary.data[0];
+  }
+
+  const fallback = await getAuthors({
+    sort: "updatedAt:desc",
+    pagination: {
+      page: 1,
+      pageSize: 1,
+    },
+  });
+
+  return fallback.data[0];
 }
 
 export async function getCategories(): Promise<StrapiCollectionResponse<Category>> {

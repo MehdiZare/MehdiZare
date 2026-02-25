@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
-import type { Article } from "@/types/strapi";
+import type { Article, Author } from "@/types/strapi";
 import {
   getAboutPage,
   getArticles,
+  getAuthors,
   getBinaPrintPage,
   getConsultingPage,
   getHomePage,
@@ -45,6 +46,30 @@ async function getAllArticlesForSitemap(): Promise<Article[]> {
   }
 
   return articles;
+}
+
+async function getAllAuthorsForSitemap(): Promise<Author[]> {
+  const pageSize = 100;
+  let page = 1;
+  const authors: Author[] = [];
+
+  while (true) {
+    const response = await getAuthors({
+      pagination: { page, pageSize, withCount: true },
+      sort: "updatedAt:desc",
+    });
+
+    authors.push(...response.data);
+
+    const pageCount = response.meta.pagination?.pageCount ?? 1;
+    if (page >= pageCount) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return authors;
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -121,6 +146,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   let articlePages: MetadataRoute.Sitemap = [];
+  let authorPages: MetadataRoute.Sitemap = [];
 
   try {
     const articles = await getAllArticlesForSitemap();
@@ -143,5 +169,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Return static pages when CMS is unavailable.
   }
 
-  return [...staticPages, ...articlePages];
+  try {
+    const authors = await getAllAuthorsForSitemap();
+
+    authorPages = authors.map((author) => ({
+      url: `${SITE_URL}/author/${author.slug}`,
+      lastModified: safeDate(author.updatedAt, now),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+      images: author.profileImage?.url
+        ? [toAbsoluteMediaUrl(author.profileImage.url)].filter(
+            (imageUrl): imageUrl is string => Boolean(imageUrl)
+          )
+        : undefined,
+    }));
+  } catch {
+    // Return other pages when CMS is unavailable.
+  }
+
+  return [...staticPages, ...articlePages, ...authorPages];
 }

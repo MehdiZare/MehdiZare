@@ -5,6 +5,7 @@ const {
   buildWebsiteJsonLd,
   buildPersonJsonLd,
   buildWebPageJsonLd,
+  buildProfilePageJsonLd,
   buildBreadcrumbJsonLd,
   buildBlogPostingJsonLd,
   buildBlogJsonLd,
@@ -67,6 +68,16 @@ test("buildPersonJsonLd accepts overrides", () => {
   assert.deepEqual(result.sameAs, ["https://example.com"]);
 });
 
+test("buildPersonJsonLd supports canonical author path and mainEntityOfPage", () => {
+  const result = buildPersonJsonLd({
+    path: "/author/mehdi-zare",
+    mainEntityOfPagePath: "/author/mehdi-zare",
+  });
+  assert.ok((result["@id"] as string).includes("/author/mehdi-zare#person"));
+  const mainEntity = result.mainEntityOfPage as Record<string, unknown>;
+  assert.ok((mainEntity["@id"] as string).includes("/author/mehdi-zare#webpage"));
+});
+
 // ── WebPage JSON-LD ────────────────────────────────────────────────────
 
 test("buildWebPageJsonLd emits correct structure", () => {
@@ -100,6 +111,18 @@ test("buildWebPageJsonLd references parent website via isPartOf", () => {
   });
   const isPartOf = result.isPartOf as Record<string, unknown>;
   assert.ok((isPartOf["@id"] as string).endsWith("/#website"));
+});
+
+test("buildProfilePageJsonLd links ProfilePage mainEntity to person @id", () => {
+  const result = buildProfilePageJsonLd({
+    pathname: "/author/mehdi-zare",
+    title: "Mehdi Zare",
+    description: "Author profile",
+    personId: "https://mehdi-zare.com/author/mehdi-zare#person",
+  });
+  assert.equal(result["@type"], "ProfilePage");
+  const mainEntity = result.mainEntity as Record<string, unknown>;
+  assert.equal(mainEntity["@id"], "https://mehdi-zare.com/author/mehdi-zare#person");
 });
 
 // ── BreadcrumbList JSON-LD ─────────────────────────────────────────────
@@ -195,6 +218,20 @@ test("buildBlogPostingJsonLd wraps imageUrl in array", () => {
   assert.deepEqual(result.image, ["https://example.com/img.jpg"]);
 });
 
+test("buildBlogPostingJsonLd supports explicit author and publisher IDs", () => {
+  const result = buildBlogPostingJsonLd({
+    pathname: "/blog/test",
+    headline: "Test",
+    description: "desc",
+    authorId: "https://mehdi-zare.com/author/mehdi-zare#person",
+    publisherId: "https://mehdi-zare.com/author/mehdi-zare#person",
+  });
+  const author = result.author as Record<string, unknown>;
+  const publisher = result.publisher as Record<string, unknown>;
+  assert.equal(author["@id"], "https://mehdi-zare.com/author/mehdi-zare#person");
+  assert.equal(publisher["@id"], "https://mehdi-zare.com/author/mehdi-zare#person");
+});
+
 // ── Blog JSON-LD ───────────────────────────────────────────────────────
 
 test("buildBlogJsonLd emits Blog type with blogPost array", () => {
@@ -225,6 +262,19 @@ test("buildBlogJsonLd child BlogPosting entries reference author via #person", (
   const posts = result.blogPost as Array<Record<string, unknown>>;
   const author = posts[0].author as Record<string, unknown>;
   assert.ok((author["@id"] as string).endsWith("/#person"));
+});
+
+test("buildBlogJsonLd supports explicit author IDs for child posts", () => {
+  const result = buildBlogJsonLd({
+    pathname: "/blog",
+    title: "Blog",
+    description: "desc",
+    authorId: "https://mehdi-zare.com/author/mehdi-zare#person",
+    posts: [{ title: "Post", path: "/blog/post" }],
+  });
+  const posts = result.blogPost as Array<Record<string, unknown>>;
+  const author = posts[0].author as Record<string, unknown>;
+  assert.equal(author["@id"], "https://mehdi-zare.com/author/mehdi-zare#person");
 });
 
 // ── FAQPage JSON-LD ────────────────────────────────────────────────────

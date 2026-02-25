@@ -8,6 +8,8 @@ import {
   buildPersonJsonLd,
   buildWebsiteJsonLd,
   getSiteUrl,
+  toAbsoluteMediaUrl,
+  toPersonId,
 } from "@/lib/seo";
 import { getSiteProfile } from "@/lib/site-profile";
 import "./globals.css";
@@ -72,6 +74,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const siteProfile = await getSiteProfile();
+  const personPath = siteProfile.author.profilePath;
+  const personId = toPersonId(personPath);
 
   return (
     <html lang="en">
@@ -88,15 +92,33 @@ export default async function RootLayout({
             data={buildWebsiteJsonLd({
               name: siteProfile.siteName,
               description: siteProfile.siteDescription,
+              publisherId: personId,
             })}
           />
           <JsonLd
             id="person-jsonld"
             data={buildPersonJsonLd({
-              name: siteProfile.siteName,
+              id: personId,
+              path: personPath,
+              name: siteProfile.authorName,
               title: siteProfile.authorRole,
               description: siteProfile.siteDescription,
-              sameAs: siteProfile.socialLinks.map((socialLink) => socialLink.url),
+              url: siteProfile.author.websiteUrl,
+              imageUrl: toAbsoluteMediaUrl(siteProfile.author.profileImage?.url),
+              worksForName: siteProfile.author.worksForName,
+              worksForUrl: siteProfile.author.worksForUrl,
+              alumniOf: siteProfile.author.alumniOf,
+              credentials: siteProfile.author.credentials.map((credential) => ({
+                name: credential.title,
+                issuer: credential.issuer,
+                url: credential.url,
+                description: credential.description,
+              })),
+              addressLocality: siteProfile.author.addressLocality,
+              addressRegion: siteProfile.author.addressRegion,
+              addressCountry: siteProfile.author.addressCountry,
+              mainEntityOfPagePath: personPath,
+              sameAs: siteProfile.author.sameAs.map((socialLink) => socialLink.url),
               knowsAbout: siteProfile.knowsAbout,
             })}
           />

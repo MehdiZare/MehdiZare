@@ -47,6 +47,13 @@
     "readingTime": {
       "type": "integer"
     },
+    "author": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::author.author",
+      "inversedBy": "articles",
+      "required": true
+    },
     "seo": {
       "type": "component",
       "component": "shared.seo"

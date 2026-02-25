@@ -27,31 +27,185 @@ if (!STRAPI_API_TOKEN) {
 // Helpers
 // ---------------------------------------------------------------------------
 
+interface StrapiCollectionResponse<T> {
+  data: T[];
+  meta?: {
+    pagination?: {
+      page: number;
+      pageSize: number;
+      pageCount: number;
+      total: number;
+    };
+  };
+}
+
+interface StrapiEntityResponse<T> {
+  data: T;
+}
+
+interface AuthorRecord {
+  id: number;
+  documentId: string;
+  slug: string;
+  name: string;
+}
+
+interface ArticleRecord {
+  id: number;
+  documentId: string;
+  title: string;
+  slug: string;
+  author?: {
+    id: number;
+    documentId: string;
+    slug?: string;
+  };
+}
+
+function buildUrl(path: string, query: Record<string, string> = {}): string {
+  const url = new URL(`/api/${path}`, STRAPI_URL);
+
+  Object.entries(query).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+
+  return url.toString();
+}
+
+async function strapiFetch<T>(
+  path: string,
+  init: RequestInit,
+  query: Record<string, string> = {}
+): Promise<T> {
+  const url = buildUrl(path, query);
+  const response = await fetch(url, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${STRAPI_API_TOKEN}`,
+      ...(init.headers ?? {}),
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`${path} — ${response.status} ${response.statusText}: ${text}`);
+  }
+
+  return (await response.json()) as T;
+}
+
 async function putSingleType(
   singularName: string,
   payload: Record<string, unknown>,
   options: { publish?: boolean } = {}
 ): Promise<void> {
-  const params = options.publish ? "?status=published" : "";
-  const url = `${STRAPI_URL}/api/${singularName}${params}`;
   const body: Record<string, unknown> = { data: payload };
 
-  console.log(`PUT ${url}`);
-  const response = await fetch(url, {
+  console.log(`PUT /api/${singularName}`);
+  await strapiFetch<unknown>(singularName, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${STRAPI_API_TOKEN}`,
-    },
     body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`${singularName} — ${response.status} ${response.statusText}: ${text}`);
-  }
+  }, options.publish ? { status: "published" } : {});
 
   console.log(`  ✓ ${singularName} seeded`);
+}
+
+async function upsertAuthorBySlug(
+  slug: string,
+  payload: Record<string, unknown>,
+  options: { publish?: boolean } = {}
+): Promise<AuthorRecord> {
+  const existing = await strapiFetch<StrapiCollectionResponse<AuthorRecord>>("authors", {
+    method: "GET",
+  }, {
+    "filters[slug][$eq]": slug,
+    "pagination[pageSize]": "1",
+  });
+
+  const query = options.publish ? { status: "published" } : {};
+
+  if (existing.data.length > 0) {
+    const author = existing.data[0];
+    const response = await strapiFetch<StrapiEntityResponse<AuthorRecord>>(
+      `authors/${author.documentId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ data: payload }),
+      },
+      query
+    );
+    return response.data;
+  }
+
+  const created = await strapiFetch<StrapiEntityResponse<AuthorRecord>>(
+    "authors",
+    {
+      method: "POST",
+      body: JSON.stringify({ data: payload }),
+    },
+    query
+  );
+
+  return created.data;
+}
+
+async function getAllArticles(): Promise<ArticleRecord[]> {
+  const articles: ArticleRecord[] = [];
+  const pageSize = 100;
+  let page = 1;
+
+  while (true) {
+    const response = await strapiFetch<StrapiCollectionResponse<ArticleRecord>>("articles", {
+      method: "GET",
+    }, {
+      "pagination[page]": String(page),
+      "pagination[pageSize]": String(pageSize),
+      "pagination[withCount]": "true",
+      "populate[author][populate]": "*",
+    });
+
+    articles.push(...response.data);
+
+    const pageCount = response.meta?.pagination?.pageCount ?? 1;
+    if (page >= pageCount) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return articles;
+}
+
+async function linkAllArticlesToAuthor(author: AuthorRecord): Promise<void> {
+  const articles = await getAllArticles();
+  if (articles.length === 0) {
+    console.log("  • No articles found to backfill author relation.");
+    return;
+  }
+
+  let updatedCount = 0;
+  for (const article of articles) {
+    if (article.author?.documentId === author.documentId) {
+      continue;
+    }
+
+    await strapiFetch<unknown>(`articles/${article.documentId}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        data: {
+          author: author.documentId,
+        },
+      }),
+    }, {
+      status: "published",
+    });
+
+    updatedCount += 1;
+  }
+
+  console.log(`  ✓ Linked ${updatedCount} article(s) to author "${author.name}"`);
 }
 
 // ---------------------------------------------------------------------------
@@ -85,11 +239,55 @@ const siteSettings = {
     { label: "Writing", href: "/blog" },
   ],
   socialLinks: [
+    { platform: "Website", url: "https://mehdi-zare.com" },
     { platform: "LinkedIn", url: "https://linkedin.com/in/mehdizare" },
     { platform: "GitHub", url: "https://github.com/mehdizare" },
     { platform: "Medium", url: "https://medium.com/@mehdi-zare" },
     { platform: "Seeking Alpha", url: "https://seekingalpha.com/author/mehdi-zare" },
   ],
+};
+
+const primaryAuthor = {
+  name: "Mehdi Zare, CFA",
+  slug: "mehdi-zare",
+  isPrimary: true,
+  headline: "Principal AI Engineer",
+  bioShort:
+    "Principal AI engineer shipping production systems across finance, defense, healthcare, and enterprise.",
+  websiteUrl: "https://mehdi-zare.com",
+  linkedinUrl: "https://linkedin.com/in/mehdizare",
+  sameAs: [
+    { platform: "Website", url: "https://mehdi-zare.com" },
+    { platform: "LinkedIn", url: "https://linkedin.com/in/mehdizare" },
+    { platform: "GitHub", url: "https://github.com/mehdizare" },
+    { platform: "Medium", url: "https://medium.com/@mehdi-zare" },
+    { platform: "Seeking Alpha", url: "https://seekingalpha.com/author/mehdi-zare" },
+  ],
+  jobTitle: "Principal AI Engineer",
+  worksForName: "Sev1Tech",
+  worksForUrl: "https://sev1tech.com",
+  alumniOf: [
+    "University of Maryland, Smith School of Business",
+    "University of Tehran",
+  ],
+  knowsAbout: [
+    "Artificial Intelligence",
+    "Machine Learning",
+    "Financial Analysis",
+    "Quantitative Finance",
+    "AI Engineering",
+  ],
+  credentials: [
+    { title: "CFA Charterholder", issuer: "CFA Institute" },
+    {
+      title: "AWS Certified Solutions Architect - Associate",
+      issuer: "Amazon Web Services",
+    },
+    { title: "Secret Security Clearance", issuer: "U.S. Government" },
+  ],
+  addressLocality: "Arlington",
+  addressRegion: "VA",
+  addressCountry: "US",
 };
 
 // ---------------------------------------------------------------------------
@@ -325,11 +523,15 @@ const binaPrintPage = {
 async function main(): Promise<void> {
   console.log(`Seeding Strapi at ${STRAPI_URL}\n`);
 
+  const author = await upsertAuthorBySlug(primaryAuthor.slug, primaryAuthor, { publish: true });
+  console.log(`  ✓ author seeded (${author.slug})`);
+
   await putSingleType("site-setting", siteSettings);
   await putSingleType("home-page", homePage, { publish: true });
   await putSingleType("about-page", aboutPage, { publish: true });
   await putSingleType("consulting-page", consultingPage, { publish: true });
   await putSingleType("bina-print-page", binaPrintPage, { publish: true });
+  await linkAllArticlesToAuthor(author);
 
   console.log("\nDone — all content types seeded.");
 }

@@ -1,0 +1,93 @@
+{
+  "kind": "collectionType",
+  "collectionName": "authors",
+  "info": {
+    "singularName": "author",
+    "pluralName": "authors",
+    "displayName": "Author",
+    "description": "Public author profile used for article attribution and structured data"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true,
+      "unique": true
+    },
+    "isPrimary": {
+      "type": "boolean",
+      "default": false,
+      "description": "Marks the canonical site author profile"
+    },
+    "headline": {
+      "type": "string"
+    },
+    "bioShort": {
+      "type": "text",
+      "required": true
+    },
+    "bioLong": {
+      "type": "blocks"
+    },
+    "websiteUrl": {
+      "type": "string",
+      "required": true
+    },
+    "linkedinUrl": {
+      "type": "string",
+      "required": true
+    },
+    "sameAs": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.social-link"
+    },
+    "profileImage": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "jobTitle": {
+      "type": "string"
+    },
+    "worksForName": {
+      "type": "string"
+    },
+    "worksForUrl": {
+      "type": "string"
+    },
+    "alumniOf": {
+      "type": "json"
+    },
+    "knowsAbout": {
+      "type": "json"
+    },
+    "credentials": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.credential"
+    },
+    "addressLocality": {
+      "type": "string"
+    },
+    "addressRegion": {
+      "type": "string"
+    },
+    "addressCountry": {
+      "type": "string"
+    },
+    "articles": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::article.article",
+      "mappedBy": "author"
+    }
+  }
+}

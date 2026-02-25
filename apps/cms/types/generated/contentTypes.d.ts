@@ -477,6 +477,8 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   attributes: {
+    author: Schema.Attribute.Relation<'manyToOne', 'api::author.author'> &
+      Schema.Attribute.Required;
     category: Schema.Attribute.Relation<'manyToOne', 'api::category.category'>;
     content: Schema.Attribute.Blocks;
     createdAt: Schema.Attribute.DateTime;
@@ -500,6 +502,53 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiAuthorAuthor extends Struct.CollectionTypeSchema {
+  collectionName: 'authors';
+  info: {
+    description: 'Public author profile used for article attribution and structured data';
+    displayName: 'Author';
+    pluralName: 'authors';
+    singularName: 'author';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    addressCountry: Schema.Attribute.String;
+    addressLocality: Schema.Attribute.String;
+    addressRegion: Schema.Attribute.String;
+    alumniOf: Schema.Attribute.JSON;
+    articles: Schema.Attribute.Relation<'oneToMany', 'api::article.article'>;
+    bioLong: Schema.Attribute.Blocks;
+    bioShort: Schema.Attribute.Text & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    credentials: Schema.Attribute.Component<'shared.credential', true>;
+    headline: Schema.Attribute.String;
+    isPrimary: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    jobTitle: Schema.Attribute.String;
+    knowsAbout: Schema.Attribute.JSON;
+    linkedinUrl: Schema.Attribute.String & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::author.author'> &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    profileImage: Schema.Attribute.Media<'images'>;
+    publishedAt: Schema.Attribute.DateTime;
+    sameAs: Schema.Attribute.Component<'shared.social-link', true>;
+    slug: Schema.Attribute.UID<'name'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    websiteUrl: Schema.Attribute.String & Schema.Attribute.Required;
+    worksForName: Schema.Attribute.String;
+    worksForUrl: Schema.Attribute.String;
   };
 }
 
@@ -1327,6 +1376,7 @@ declare module '@strapi/strapi' {
       'admin::user': AdminUser;
       'api::about-page.about-page': ApiAboutPageAboutPage;
       'api::article.article': ApiArticleArticle;
+      'api::author.author': ApiAuthorAuthor;
       'api::bina-print-page.bina-print-page': ApiBinaPrintPageBinaPrintPage;
       'api::category.category': ApiCategoryCategory;
       'api::consulting-page.consulting-page': ApiConsultingPageConsultingPage;

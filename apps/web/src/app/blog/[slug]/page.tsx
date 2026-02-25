@@ -16,6 +16,7 @@ import {
   buildWebPageJsonLd,
   splitKeywords,
   toAbsoluteMediaUrl,
+  toPersonId,
 } from "@/lib/seo";
 
 interface BlogPostPageProps {
@@ -119,6 +120,22 @@ function formatDate(dateString: string): string {
   });
 }
 
+function buildInitials(name: string): string {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return "AU";
+  }
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const siteProfile = await getSiteProfile();
   const { slug } = await params;
@@ -158,6 +175,19 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const displayDate =
     article.publishedDate ?? article.publishedAt;
   const articlePath = `/blog/${article.slug}`;
+  const articleAuthor = article.author;
+  const authorName = articleAuthor?.name ?? siteProfile.authorName;
+  const authorRole =
+    articleAuthor?.jobTitle ?? articleAuthor?.headline ?? siteProfile.authorRole;
+  const authorBio =
+    articleAuthor?.bioShort ?? siteProfile.authorBioShort;
+  const authorPath = articleAuthor?.slug
+    ? `/author/${articleAuthor.slug}`
+    : siteProfile.author.profilePath;
+  const authorPersonId = toPersonId(authorPath);
+  const authorWebsite = articleAuthor?.websiteUrl ?? siteProfile.author.websiteUrl;
+  const authorLinkedIn = articleAuthor?.linkedinUrl ?? siteProfile.author.linkedinUrl;
+  const authorInitials = buildInitials(authorName);
   const articleDescription =
     article.excerpt || siteProfile.siteDescription;
   const primaryImage =
@@ -176,6 +206,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     keywords: resolvedKeywords.length > 0 ? resolvedKeywords : undefined,
     articleSection: article.category?.name,
     readingTimeMinutes: article.readingTime,
+    authorId: authorPersonId,
+    publisherId: authorPersonId,
   });
 
   return (
@@ -267,19 +299,41 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <div className="mt-10 border border-warm-gray bg-paper p-6 sm:p-8">
                 <div className="flex items-start gap-4">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-muted font-serif text-xl text-ink">
-                    MZ
+                    {authorInitials}
                   </div>
                   <div>
                     <h3 className="font-serif text-lg text-ink">
-                      {siteProfile.authorName}
+                      {authorName}
                     </h3>
                     <p className="font-mono text-xs text-accent-warm">
-                      {siteProfile.authorRole}
+                      {authorRole}
                     </p>
                     <p className="mt-2 text-sm text-mid-gray leading-relaxed">
-                      {siteProfile.authorBioShort}
+                      {authorBio}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-3">
+                      <Link
+                        href={authorPath}
+                        className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
+                      >
+                        Author Profile
+                      </Link>
+                      <a
+                        href={authorWebsite}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
+                      >
+                        Website
+                      </a>
+                      <a
+                        href={authorLinkedIn}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
+                      >
+                        LinkedIn
+                      </a>
                       <Link
                         href="/consulting"
                         className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
