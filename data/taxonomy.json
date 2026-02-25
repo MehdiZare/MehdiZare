@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Blog taxonomy for mehdi-zare.com — categories, tags, and authors with page content and SEO",
-    "siteUrl": "https://mehdi-zare.com"
+    "siteUrl": "https://www.mehdi-zare.com"
   },
 
   "authors": [
@@ -11,10 +11,10 @@
       "isPrimary": true,
       "headline": "Principal AI Engineer",
       "bioShort": "Principal AI engineer shipping production systems across finance, defense, healthcare, and enterprise.",
-      "websiteUrl": "https://mehdi-zare.com",
+      "websiteUrl": "https://www.mehdi-zare.com",
       "linkedinUrl": "https://linkedin.com/in/mehdizare",
       "sameAs": [
-        { "platform": "Website", "url": "https://mehdi-zare.com" },
+        { "platform": "Website", "url": "https://www.mehdi-zare.com" },
         { "platform": "LinkedIn", "url": "https://linkedin.com/in/mehdizare" },
         { "platform": "GitHub", "url": "https://github.com/mehdizare" },
         { "platform": "Medium", "url": "https://medium.com/@mehdi-zare" },
@@ -57,7 +57,7 @@
       "seo": {
         "metaTitle": "AI Engineering — Mehdi Zare",
         "metaDescription": "Practical posts on building and deploying AI systems in production. Agents, RAG, LLMs, ML pipelines, and real-world architecture from a Principal AI Engineer.",
-        "canonicalURL": "https://mehdi-zare.com/blog/category/ai-engineering",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/category/ai-engineering",
         "keywords": "AI engineering, production AI, LLM deployment, RAG architecture, ML pipelines, AI agents"
       },
       "children": [
@@ -71,7 +71,7 @@
           "seo": {
             "metaTitle": "AI Agents & Automation — Mehdi Zare",
             "metaDescription": "Building AI agents that work in production. Multi-agent systems, LangGraph workflows, tool use, and the real challenges of autonomous AI pipelines.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/agents-and-automation",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/agents-and-automation",
             "keywords": "AI agents, multi-agent systems, LangGraph, autonomous AI, tool use, agentic workflows"
           }
         },
@@ -85,7 +85,7 @@
           "seo": {
             "metaTitle": "LLMs in Production — Mehdi Zare",
             "metaDescription": "Getting large language models from prototype to production. RAG, evaluation, hallucination mitigation, and deployment patterns from real-world projects.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/llms-in-production",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/llms-in-production",
             "keywords": "LLMs in production, RAG, hallucination mitigation, LLM evaluation, model deployment, production ML"
           }
         },
@@ -99,7 +99,7 @@
           "seo": {
             "metaTitle": "Data & ML Pipelines — Mehdi Zare",
             "metaDescription": "ML infrastructure, Databricks workflows, SageMaker deployments, feature engineering, and data pipelines for production AI systems.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/data-and-ml-pipelines",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/data-and-ml-pipelines",
             "keywords": "ML pipelines, Databricks, SageMaker, feature engineering, data engineering, ML infrastructure"
           }
         }
@@ -116,7 +116,7 @@
       "seo": {
         "metaTitle": "AI + Finance — Mehdi Zare",
         "metaDescription": "Where AI engineering meets investing and financial analysis. Written by a CFA Charterholder and Principal AI Engineer building at the intersection.",
-        "canonicalURL": "https://mehdi-zare.com/blog/category/ai-finance",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/category/ai-finance",
         "keywords": "AI finance, CFA AI, financial AI, AI investing, quantitative analysis, fintech AI"
       },
       "children": [
@@ -130,7 +130,7 @@
           "seo": {
             "metaTitle": "CFA Meets AI — Mehdi Zare",
             "metaDescription": "How CFA frameworks apply to AI — risk management, model evaluation, and governance from someone who builds both. A CFA Charterholder's guide to artificial intelligence.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/cfa-meets-ai",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/cfa-meets-ai",
             "keywords": "CFA AI, CFA charterholder AI, CFA guide to AI, financial risk AI, AI governance finance"
           }
         },
@@ -144,7 +144,7 @@
           "seo": {
             "metaTitle": "AI-Powered Valuations & Equity Analysis — Mehdi Zare",
             "metaDescription": "AI-powered company scoring and equity analysis. Bina Print methodology, quantitative investment approaches, and what AI finds that traditional analysts miss.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/ai-valuations",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/ai-valuations",
             "keywords": "AI valuations, AI stock analysis, company scoring, Bina Print, quantitative investing, AI equity research"
           }
         },
@@ -158,7 +158,7 @@
           "seo": {
             "metaTitle": "Investing for Beginners — Mehdi Zare",
             "metaDescription": "Plain-language investing guides for beginners. Fundamentals, portfolio basics, and how to make smarter decisions with your money — from a CFA Charterholder.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/investing-for-beginners",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/investing-for-beginners",
             "keywords": "investing for beginners, beginner investing, how to invest, personal finance, portfolio basics, CFA guide investing"
           }
         }
@@ -175,7 +175,7 @@
       "seo": {
         "metaTitle": "AI Governance & Compliance — Mehdi Zare",
         "metaDescription": "AI compliance, regulation, and risk frameworks for regulated industries. SEC oversight, AI readiness, and practical governance.",
-        "canonicalURL": "https://mehdi-zare.com/blog/category/ai-governance",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/category/ai-governance",
         "keywords": "AI governance, AI compliance, AI regulation, responsible AI, AI risk framework, SEC AI"
       },
       "children": [
@@ -189,7 +189,7 @@
           "seo": {
             "metaTitle": "AI Compliance & Regulation — Mehdi Zare",
             "metaDescription": "SEC AI examination priorities, FINRA oversight, AI washing enforcement, and what financial firms need to know about AI regulation.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/compliance-and-regulation",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/compliance-and-regulation",
             "keywords": "AI compliance, SEC AI, FINRA AI, AI washing, AI regulation finance, regulatory AI"
           }
         },
@@ -203,7 +203,7 @@
           "seo": {
             "metaTitle": "AI Readiness Frameworks & Assessments — Mehdi Zare",
             "metaDescription": "How to evaluate your organization's AI readiness. Scorecards, assessment frameworks, and practical checklists for teams preparing for AI adoption.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/ai-readiness",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/ai-readiness",
             "keywords": "AI readiness, AI assessment, AI adoption framework, organizational AI, AI scorecard, enterprise AI readiness"
           }
         }
@@ -220,7 +220,7 @@
       "seo": {
         "metaTitle": "AI & Cybersecurity — Mehdi Zare",
         "metaDescription": "AI-powered threats, secure deployment, and building AI for high-stakes environments. Written by a Principal AI Engineer working federal cybersecurity missions.",
-        "canonicalURL": "https://mehdi-zare.com/blog/category/cybersecurity",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/category/cybersecurity",
         "keywords": "AI cybersecurity, AI threats, secure AI deployment, Zero Trust AI, federal cybersecurity, GovCloud AI"
       },
       "children": [
@@ -234,7 +234,7 @@
           "seo": {
             "metaTitle": "AI Threats & Fraud — Mehdi Zare",
             "metaDescription": "GenAI-driven fraud, prompt injection attacks, deepfakes, and emerging AI threat vectors. Understanding the evolving attack surface.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/ai-threats-and-fraud",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/ai-threats-and-fraud",
             "keywords": "AI fraud, GenAI threats, prompt injection, deepfakes, AI attack surface, AI security threats"
           }
         },
@@ -248,7 +248,7 @@
           "seo": {
             "metaTitle": "Secure AI Deployment — Mehdi Zare",
             "metaDescription": "Deploying AI in classified and regulated environments. GovCloud, FedRAMP, Zero Trust architecture, and audit-ready AI systems.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/secure-ai-deployment",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/secure-ai-deployment",
             "keywords": "secure AI deployment, GovCloud AI, FedRAMP AI, Zero Trust AI, classified AI, audit-ready AI"
           }
         }
@@ -265,7 +265,7 @@
       "seo": {
         "metaTitle": "Career Insights — Mehdi Zare",
         "metaDescription": "Lessons from a non-linear career spanning physics, finance, and AI engineering. Career transitions, domain expertise, and building across industries.",
-        "canonicalURL": "https://mehdi-zare.com/blog/category/career",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/category/career",
         "keywords": "AI career, career transition, quant to AI, CFA engineer, non-linear career, domain expertise"
       },
       "children": [
@@ -279,7 +279,7 @@
           "seo": {
             "metaTitle": "Career Transitions — Mehdi Zare",
             "metaDescription": "How to switch careers across domains. Practical lessons from moving between physics, finance, and AI engineering — including what transfers and what doesn't.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/career-transitions",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/career-transitions",
             "keywords": "career transition, switching careers, career change AI, domain switching, portfolio career"
           }
         },
@@ -293,7 +293,7 @@
           "seo": {
             "metaTitle": "Lessons & Reflections — Mehdi Zare",
             "metaDescription": "Hard-won insights on leadership, cross-functional communication, and working across disciplines. The non-technical skills that make technical work succeed.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/lessons-and-reflections",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/lessons-and-reflections",
             "keywords": "leadership AI, cross-functional teams, communication engineers, domain expertise, career lessons"
           }
         }
@@ -310,7 +310,7 @@
       "seo": {
         "metaTitle": "Build Log — Mehdi Zare",
         "metaDescription": "Behind the scenes on building AI products. Architecture decisions, progress updates, and honest takes from shipping Bina Capital, RoboWrite, and Grounded.Codes.",
-        "canonicalURL": "https://mehdi-zare.com/blog/category/build-log",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/category/build-log",
         "keywords": "build log, building in public, AI product development, indie maker, shipping AI products, startup build log"
       },
       "children": [
@@ -324,7 +324,7 @@
           "seo": {
             "metaTitle": "Building Bina Capital — Mehdi Zare",
             "metaDescription": "Behind the scenes on building Bina Capital, an AI-powered investing tool for beginners. Bina Print methodology, product decisions, and development updates.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/bina-capital",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/bina-capital",
             "keywords": "Bina Capital, Bina Print, AI investing tool, company scoring, beginner investing AI, build log fintech"
           }
         },
@@ -338,7 +338,7 @@
           "seo": {
             "metaTitle": "Building RoboWrite — Mehdi Zare",
             "metaDescription": "Behind the scenes on building RoboWrite, an AI-powered content operations platform for agencies. Brand voice extraction, SEO scoring, and CMS integration.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/robowrite",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/robowrite",
             "keywords": "RoboWrite, AI content platform, content operations, brand voice AI, SEO automation, build log SaaS"
           }
         },
@@ -352,7 +352,7 @@
           "seo": {
             "metaTitle": "Building Grounded.Codes — Mehdi Zare",
             "metaDescription": "Behind the scenes on building Grounded.Codes, a decision intelligence MCP server for AI coding agents. Library recommendations, lockfile scoping, and developer tooling.",
-            "canonicalURL": "https://mehdi-zare.com/blog/category/grounded-codes",
+            "canonicalURL": "https://www.mehdi-zare.com/blog/category/grounded-codes",
             "keywords": "Grounded.Codes, MCP server, AI coding agents, developer tools, library recommendations, build log devtools"
           }
         }
@@ -370,7 +370,7 @@
       "seo": {
         "metaTitle": "LangChain — Mehdi Zare",
         "metaDescription": "Practical LangChain tutorials and production patterns. Building LLM-powered applications with chains, retrieval, and agents.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/langchain",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/langchain",
         "keywords": "LangChain, LangChain tutorial, LangChain production, LLM framework, LangChain agents"
       }
     },
@@ -383,7 +383,7 @@
       "seo": {
         "metaTitle": "LangGraph — Mehdi Zare",
         "metaDescription": "Building stateful AI agent workflows with LangGraph. Multi-step orchestration, state management, and production agent patterns.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/langgraph",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/langgraph",
         "keywords": "LangGraph, AI agent workflow, stateful agents, multi-step AI, agent orchestration"
       }
     },
@@ -396,7 +396,7 @@
       "seo": {
         "metaTitle": "RAG (Retrieval-Augmented Generation) — Mehdi Zare",
         "metaDescription": "Building RAG systems that work in production. Chunking strategies, retrieval quality, hallucination mitigation, and real-world RAG architecture.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/rag",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/rag",
         "keywords": "RAG, retrieval augmented generation, RAG architecture, RAG production, LLM retrieval, document AI"
       }
     },
@@ -409,7 +409,7 @@
       "seo": {
         "metaTitle": "FastAPI — Mehdi Zare",
         "metaDescription": "Building production Python APIs with FastAPI. API design, async patterns, middleware, and architecting backends for AI-powered services.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/fastapi",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/fastapi",
         "keywords": "FastAPI, Python API, async Python, FastAPI production, AI backend"
       }
     },
@@ -422,7 +422,7 @@
       "seo": {
         "metaTitle": "Next.js — Mehdi Zare",
         "metaDescription": "Building modern web applications with Next.js. Server components, app router patterns, and integrating AI features into production web apps.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/nextjs",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/nextjs",
         "keywords": "Next.js, React, server components, app router, web development, AI web apps"
       }
     },
@@ -435,7 +435,7 @@
       "seo": {
         "metaTitle": "Supabase — Mehdi Zare",
         "metaDescription": "Using Supabase for AI-powered applications. Postgres patterns, Row Level Security, auth integration, and building production-grade backends.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/supabase",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/supabase",
         "keywords": "Supabase, Postgres, backend, Row Level Security, AI backend, Supabase production"
       }
     },
@@ -448,7 +448,7 @@
       "seo": {
         "metaTitle": "Databricks — Mehdi Zare",
         "metaDescription": "Data engineering and ML workflows on Databricks. Spark pipelines, MLflow, and deploying AI in enterprise and government environments.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/databricks",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/databricks",
         "keywords": "Databricks, Spark, MLflow, data engineering, ML pipelines, enterprise AI"
       }
     },
@@ -461,7 +461,7 @@
       "seo": {
         "metaTitle": "AWS Bedrock — Mehdi Zare",
         "metaDescription": "Building with AWS Bedrock for enterprise and government AI. Managed LLM access, RAG integration, and production patterns.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/aws-bedrock",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/aws-bedrock",
         "keywords": "AWS Bedrock, foundation models, managed LLM, enterprise AI, GovCloud AI, AWS AI"
       }
     },
@@ -474,7 +474,7 @@
       "seo": {
         "metaTitle": "SageMaker — Mehdi Zare",
         "metaDescription": "Training and deploying ML models on Amazon SageMaker. Custom model deployment, GovCloud patterns, and production ML infrastructure.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/sagemaker",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/sagemaker",
         "keywords": "SageMaker, ML deployment, custom models, GovCloud ML, AWS ML, model training"
       }
     },
@@ -487,7 +487,7 @@
       "seo": {
         "metaTitle": "Modal — Mehdi Zare",
         "metaDescription": "Serverless ML compute with Modal. On-demand model inference, batch scoring, and infrastructure patterns for AI products.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/modal",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/modal",
         "keywords": "Modal, serverless ML, model inference, batch compute, AI infrastructure, serverless AI"
       }
     },
@@ -500,7 +500,7 @@
       "seo": {
         "metaTitle": "Python — Mehdi Zare",
         "metaDescription": "Practical Python for AI and production systems. Async patterns, Pydantic models, packaging, testing, and real-world Python development workflows.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/python",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/python",
         "keywords": "Python, Python AI, Pydantic, async Python, Python production, Python backend"
       }
     },
@@ -513,7 +513,7 @@
       "seo": {
         "metaTitle": "TypeScript — Mehdi Zare",
         "metaDescription": "TypeScript for full-stack AI applications. Type-safe patterns, React integration, API contracts, and building robust web frontends with confidence.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/typescript",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/typescript",
         "keywords": "TypeScript, full-stack, type-safe, React TypeScript, web development"
       }
     },
@@ -526,7 +526,7 @@
       "seo": {
         "metaTitle": "MCP (Model Context Protocol) — Mehdi Zare",
         "metaDescription": "Building MCP servers for AI coding agents. Model Context Protocol patterns, tool integration, and connecting agents to real-world services.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/mcp",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/mcp",
         "keywords": "MCP, Model Context Protocol, MCP server, AI tools, agent integration, Cursor MCP"
       }
     },
@@ -539,7 +539,7 @@
       "seo": {
         "metaTitle": "LLMs (Large Language Models) — Mehdi Zare",
         "metaDescription": "Large language models in practice. Capabilities, limitations, and what it takes to use LLMs in production across finance, defense, and healthcare.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/llms",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/llms",
         "keywords": "LLMs, large language models, GPT, Claude, LLM production, language model applications"
       }
     },
@@ -552,7 +552,7 @@
       "seo": {
         "metaTitle": "AI Agents — Mehdi Zare",
         "metaDescription": "Building AI agents that work in production. Architecture, reasoning patterns, tool use, and the gap between demo agents and real ones.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/ai-agents",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/ai-agents",
         "keywords": "AI agents, autonomous AI, agent architecture, tool use, agentic AI, production agents"
       }
     },
@@ -565,7 +565,7 @@
       "seo": {
         "metaTitle": "LLM Hallucination — Mehdi Zare",
         "metaDescription": "Understanding and mitigating LLM hallucination. Detection methods, prevention patterns, and engineering approaches for trustworthy AI.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/hallucination",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/hallucination",
         "keywords": "hallucination, LLM hallucination, AI accuracy, hallucination mitigation, trustworthy AI"
       }
     },
@@ -578,7 +578,7 @@
       "seo": {
         "metaTitle": "Prompt Engineering — Mehdi Zare",
         "metaDescription": "Effective prompt engineering for production AI. Structured prompts, system design, and techniques for reliable LLM outputs.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/prompt-engineering",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/prompt-engineering",
         "keywords": "prompt engineering, LLM prompts, prompt design, structured prompts, AI prompt techniques"
       }
     },
@@ -591,7 +591,7 @@
       "seo": {
         "metaTitle": "AI Evaluation — Mehdi Zare",
         "metaDescription": "Measuring AI system quality. Evaluation frameworks, metrics, benchmarks, and the testing patterns that separate production AI from prototypes.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/evaluation",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/evaluation",
         "keywords": "AI evaluation, LLM evaluation, AI metrics, benchmarks, eval framework, AI testing"
       }
     },
@@ -604,7 +604,7 @@
       "seo": {
         "metaTitle": "Model Fine-Tuning — Mehdi Zare",
         "metaDescription": "When and how to fine-tune LLMs. Domain adaptation, training strategies, and when RAG or prompt engineering is the better choice.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/fine-tuning",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/fine-tuning",
         "keywords": "fine-tuning, model fine-tuning, domain adaptation, LLM training, custom models"
       }
     },
@@ -617,7 +617,7 @@
       "seo": {
         "metaTitle": "Structured Outputs — Mehdi Zare",
         "metaDescription": "Getting reliable structured data from LLMs. JSON mode, Pydantic integration, schema validation, and production patterns.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/structured-outputs",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/structured-outputs",
         "keywords": "structured outputs, LLM JSON, Pydantic LLM, schema validation, typed outputs"
       }
     },
@@ -630,7 +630,7 @@
       "seo": {
         "metaTitle": "AI Observability — Mehdi Zare",
         "metaDescription": "Monitoring and debugging AI systems in production. Tracing, logging, metrics, and the observability patterns that keep AI systems healthy.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/observability",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/observability",
         "keywords": "AI observability, LLM monitoring, AI tracing, production debugging, AI metrics, LLM ops"
       }
     },
@@ -643,7 +643,7 @@
       "seo": {
         "metaTitle": "Zero Trust for AI — Mehdi Zare",
         "metaDescription": "Zero Trust architecture for AI systems and agent workflows. Securing autonomous AI in enterprise and government environments.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/zero-trust",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/zero-trust",
         "keywords": "Zero Trust AI, Zero Trust architecture, AI security, agent security, enterprise AI security"
       }
     },
@@ -656,7 +656,7 @@
       "seo": {
         "metaTitle": "SEO — Mehdi Zare",
         "metaDescription": "Search engine optimization strategies and AI-powered SEO tooling. Technical SEO, content optimization, and how AI is transforming search.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/seo",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/seo",
         "keywords": "SEO, AI SEO, search engine optimization, content SEO, technical SEO"
       }
     },
@@ -669,7 +669,7 @@
       "seo": {
         "metaTitle": "Finance — Mehdi Zare",
         "metaDescription": "AI applied to financial services, investing, and capital markets. Quantitative analysis and AI insights from a CFA Charterholder and AI engineer.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/finance",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/finance",
         "keywords": "finance, financial services, investing, capital markets, CFA, fintech"
       }
     },
@@ -682,7 +682,7 @@
       "seo": {
         "metaTitle": "AI in Defense — Mehdi Zare",
         "metaDescription": "Building AI for defense and national security. Lessons from federal programs on constraints, compliance, and high-stakes deployment.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/defense",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/defense",
         "keywords": "AI defense, national security AI, federal AI, government AI, defense technology"
       }
     },
@@ -695,7 +695,7 @@
       "seo": {
         "metaTitle": "AI in Healthcare — Mehdi Zare",
         "metaDescription": "Building AI for healthcare. CMS programs, regulatory constraints, and the unique challenges of deploying AI where patient outcomes are at stake.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/healthcare",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/healthcare",
         "keywords": "healthcare AI, CMS AI, medical AI, health technology, clinical AI, healthcare ML"
       }
     },
@@ -708,7 +708,7 @@
       "seo": {
         "metaTitle": "Content Operations — Mehdi Zare",
         "metaDescription": "AI-powered content operations for agencies and teams. Workflows, automation, brand voice extraction, and scaling content production with AI.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/content-ops",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/content-ops",
         "keywords": "content operations, content ops, AI content, content automation, agency content, content strategy"
       }
     },
@@ -721,7 +721,7 @@
       "seo": {
         "metaTitle": "Developer Tools — Mehdi Zare",
         "metaDescription": "Lessons from building developer tools like Grounded.Codes and fmp-data. API design principles, developer experience patterns, and shipping tools engineers adopt.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/developer-tools",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/developer-tools",
         "keywords": "developer tools, devtools, API design, developer experience, DX, engineering tools"
       }
     },
@@ -734,7 +734,7 @@
       "seo": {
         "metaTitle": "Bina Print — Mehdi Zare",
         "metaDescription": "Bina Print AI-powered company scoring. Methodology, score updates, and what AI reveals about companies that traditional analyst ratings miss.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/bina-print",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/bina-print",
         "keywords": "Bina Print, company scoring, AI stock score, AI equity analysis, investment scoring"
       }
     },
@@ -747,7 +747,7 @@
       "seo": {
         "metaTitle": "RoboWrite — Mehdi Zare",
         "metaDescription": "RoboWrite content operations platform. AI-powered brand voice extraction, SEO scoring, and automated content publishing for agencies.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/robowrite",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/robowrite",
         "keywords": "RoboWrite, AI content platform, agency content, brand voice AI, content automation"
       }
     },
@@ -760,7 +760,7 @@
       "seo": {
         "metaTitle": "Grounded.Codes — Mehdi Zare",
         "metaDescription": "Posts about building Grounded.Codes — an MCP server that gives AI coding agents decision intelligence with library recommendations pinned to your lockfile.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/grounded-codes",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/grounded-codes",
         "keywords": "Grounded.Codes, MCP server, AI coding, library recommendations, developer tools AI"
       }
     },
@@ -773,7 +773,7 @@
       "seo": {
         "metaTitle": "CFA & AI — Mehdi Zare",
         "metaDescription": "How CFA expertise applies to AI engineering. Risk frameworks, governance, and the rare intersection of financial analysis and production AI.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/cfa",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/cfa",
         "keywords": "CFA, CFA AI, CFA charterholder, financial analysis AI, CFA technology"
       }
     },
@@ -786,7 +786,7 @@
       "seo": {
         "metaTitle": "Career Transition — Mehdi Zare",
         "metaDescription": "Navigating career changes across industries. Practical lessons from switching between physics, finance, and AI engineering.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/career-transition",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/career-transition",
         "keywords": "career transition, career change, switching industries, career pivot, non-linear career"
       }
     },
@@ -799,7 +799,7 @@
       "seo": {
         "metaTitle": "Building in Public — Mehdi Zare",
         "metaDescription": "The real journey of building AI products. Honest updates on wins, failures, and the decisions behind shipping Bina Capital, RoboWrite, and Grounded.Codes.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/building-in-public",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/building-in-public",
         "keywords": "building in public, indie maker, shipping products, startup journey, build in public"
       }
     },
@@ -812,7 +812,7 @@
       "seo": {
         "metaTitle": "Open Source — Mehdi Zare",
         "metaDescription": "Open source AI and finance projects. Contributions, maintenance lessons, community building, and what I've learned from publishing code in the open.",
-        "canonicalURL": "https://mehdi-zare.com/blog/tag/open-source",
+        "canonicalURL": "https://www.mehdi-zare.com/blog/tag/open-source",
         "keywords": "open source, open source AI, fmp-data, open source finance, OSS contributions"
       }
     }

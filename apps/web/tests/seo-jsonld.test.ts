@@ -10,6 +10,7 @@ const {
   buildBlogPostingJsonLd,
   buildBlogJsonLd,
   buildFAQJsonLd,
+  resolveCanonicalUrl,
 } = await import("../src/lib/seo.ts");
 
 // ── WebSite JSON-LD ────────────────────────────────────────────────────
@@ -35,6 +36,19 @@ test("buildWebsiteJsonLd accepts name and description overrides", () => {
   const result = buildWebsiteJsonLd({ name: "Custom Name", description: "Custom desc" });
   assert.equal(result.name, "Custom Name");
   assert.equal(result.description, "Custom desc");
+});
+
+test("resolveCanonicalUrl keeps configured canonical host for relative paths", () => {
+  const result = resolveCanonicalUrl("/blog/category/ai-engineering");
+  assert.equal(result, "https://www.mehdi-zare.com/blog/category/ai-engineering");
+});
+
+test("resolveCanonicalUrl forces configured canonical host for absolute overrides", () => {
+  const result = resolveCanonicalUrl(
+    "/blog/category/ai-engineering",
+    "https://mehdi-zare.com/blog/category/ai-engineering"
+  );
+  assert.equal(result, "https://www.mehdi-zare.com/blog/category/ai-engineering");
 });
 
 // ── Person JSON-LD ─────────────────────────────────────────────────────

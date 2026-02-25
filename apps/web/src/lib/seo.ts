@@ -151,6 +151,23 @@ export function toAbsoluteUrl(pathOrUrl: string, baseUrl = getSiteUrl()): string
   }
 }
 
+function forceCanonicalHost(pathOrUrl: string, siteUrl = getSiteUrl()): string {
+  const canonicalBase = new URL(siteUrl);
+  const candidate = toAbsoluteUrl(pathOrUrl, siteUrl);
+
+  try {
+    const parsedCandidate = new URL(candidate);
+
+    if (parsedCandidate.origin === canonicalBase.origin) {
+      return parsedCandidate.toString();
+    }
+
+    return `${canonicalBase.origin}${parsedCandidate.pathname}${parsedCandidate.search}${parsedCandidate.hash}`;
+  } catch {
+    return toAbsoluteUrl(pathOrUrl, siteUrl);
+  }
+}
+
 export function toAbsoluteMediaUrl(url?: string | null): string | undefined {
   if (!url) {
     return undefined;
@@ -173,11 +190,13 @@ export function toPersonId(pathname?: string): string {
 }
 
 export function resolveCanonicalUrl(pathname: string, canonicalUrl?: string): string {
+  const siteUrl = getSiteUrl();
+
   if (canonicalUrl?.trim()) {
-    return toAbsoluteUrl(canonicalUrl, getSiteUrl());
+    return forceCanonicalHost(canonicalUrl, siteUrl);
   }
 
-  return toAbsoluteUrl(pathname, getSiteUrl());
+  return forceCanonicalHost(pathname, siteUrl);
 }
 
 export function normalizeRobotsValue(value?: string): string | undefined {
