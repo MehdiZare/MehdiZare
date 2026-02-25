@@ -101,6 +101,7 @@ test("resolvePageType classifies core routes correctly", () => {
   assert.equal(resolvePageType("/contact"), "contact");
   assert.equal(resolvePageType("/author/mehdi-zare"), "author");
   assert.equal(resolvePageType("/blog"), "blog");
+  assert.equal(resolvePageType("/blog/"), "blog");
   assert.equal(resolvePageType("/blog/page/2"), "blog");
   assert.equal(resolvePageType("/blog/page/2/"), "blog");
   assert.equal(resolvePageType("/blog/category/ai-engineering"), "category");

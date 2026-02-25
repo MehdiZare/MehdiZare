@@ -151,24 +151,21 @@ function dedupeStrings(values: string[]): string[] {
   return [...new Set(values)];
 }
 
+function collectCategorySlugs(
+  nodes: TaxonomyCategoryNode[],
+  acc: string[]
+): void {
+  for (const node of nodes) {
+    const slug = normalizeSlug(node.slug);
+    if (slug) acc.push(slug);
+    if (node.children?.length) collectCategorySlugs(node.children, acc);
+  }
+}
+
 function getFallbackCategorySlugs(): string[] {
   const input = taxonomy as TaxonomyFallbackData;
   const slugs: string[] = [];
-
-  input.categories?.forEach((category) => {
-    const categorySlug = normalizeSlug(category.slug);
-    if (categorySlug) {
-      slugs.push(categorySlug);
-    }
-
-    category.children?.forEach((child) => {
-      const childSlug = normalizeSlug(child.slug);
-      if (childSlug) {
-        slugs.push(childSlug);
-      }
-    });
-  });
-
+  collectCategorySlugs(input.categories ?? [], slugs);
   return dedupeStrings(slugs);
 }
 

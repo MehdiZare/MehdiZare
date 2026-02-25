@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const DEFAULT_APP_HOST = "https://us.posthog.com";
+const DEFAULT_ENVIRONMENT_ID = "@current";
 const DEFAULT_DASHBOARD_NAME = "MZ | Website Funnel";
 const DEFAULT_DASHBOARD_DESCRIPTION =
   "Managed via API. Tracks key website funnel and Bina intent events.";
@@ -300,9 +301,12 @@ async function upsertInsights({ client, dashboardId, dryRun }) {
 
 async function main() {
   const apiKey = readRequiredEnv("POSTHOG_PERSONAL_API_KEY");
-  const environmentId = readRequiredEnv("POSTHOG_ENVIRONMENT_ID");
   const appHost = normalizeHost(
     readOptionalEnv("POSTHOG_APP_HOST", DEFAULT_APP_HOST)
+  );
+  const environmentId = readOptionalEnv(
+    "POSTHOG_ENVIRONMENT_ID",
+    DEFAULT_ENVIRONMENT_ID
   );
 
   const dashboardName = readOptionalEnv(

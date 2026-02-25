@@ -20,7 +20,11 @@ function normalizePathname(pathname: string | null | undefined): string {
     return "/";
   }
 
-  return pathname.startsWith("/") ? pathname : `/${pathname}`;
+  let p = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  if (p.length > 1 && p.endsWith("/")) {
+    p = p.slice(0, -1);
+  }
+  return p;
 }
 
 function toNullableString(value: unknown): string | null {

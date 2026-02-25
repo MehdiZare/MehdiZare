@@ -26,7 +26,7 @@ Next.js App Router frontend for the public portfolio.
 - `NEXT_PUBLIC_POSTHOG_KEY`
 - `NEXT_PUBLIC_POSTHOG_HOST`
 - `POSTHOG_PERSONAL_API_KEY` (required for dashboard sync script)
-- `POSTHOG_ENVIRONMENT_ID` (required for dashboard sync script)
+- `POSTHOG_ENVIRONMENT_ID` (optional, defaults to `@current`)
 - `POSTHOG_APP_HOST` (optional, defaults to `https://us.posthog.com`)
 - `POSTHOG_DRY_RUN` (optional, `true` to preview API actions)
 - `NEXT_PUBLIC_BEEHIIV_EMBED_URL` (defaults to `https://embeds.beehiiv.com`)
