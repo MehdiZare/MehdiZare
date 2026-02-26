@@ -146,7 +146,7 @@ export default async function ContactPage() {
                   Social
                 </h3>
                 <div className="mt-3 flex flex-col gap-3">
-                  {siteProfile.socialLinks.map((link) => (
+                  {siteProfile.socialLinks.filter((link) => link.platform.toLowerCase() !== "website").map((link) => (
                     <a
                       key={`${link.id}-${link.url}`}
                       href={link.url}

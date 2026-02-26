@@ -118,13 +118,13 @@ export function TableOfContents({ content }: TableOfContentsProps) {
             <a
               href={`#${heading.id}`}
               className={cn(
-                "block text-sm py-1 transition-colors",
-                heading.level === 3 && "pl-4",
+                "block text-sm py-1 transition-colors border-l-2 pl-2",
+                heading.level === 3 && "pl-6",
                 activeId === heading.id
-                  ? "text-ink font-medium"
+                  ? "border-accent-warm text-ink font-medium"
                   : heading.level === 2
-                    ? "text-mid-gray hover:text-ink"
-                    : "text-mid-gray/60 hover:text-ink"
+                    ? "border-transparent text-mid-gray hover:text-ink"
+                    : "border-transparent text-mid-gray/60 hover:text-ink"
               )}
             >
               {heading.text}

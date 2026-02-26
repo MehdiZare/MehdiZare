@@ -23,6 +23,10 @@
   --font-mono: var(--font-jetbrains, ui-monospace, SFMono-Regular, monospace);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--color-paper);
   color: var(--color-ink);
