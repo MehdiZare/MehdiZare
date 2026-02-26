@@ -28,7 +28,10 @@ function extractText(children: unknown): string {
     typeof children === "object" &&
     "props" in (children as Record<string, unknown>)
   ) {
-    const el = children as { props?: { children?: unknown } };
+    const el = children as { props?: { children?: unknown; text?: unknown } };
+    if (typeof el.props?.text === "string") {
+      return el.props.text;
+    }
     if (el.props?.children) {
       return extractText(el.props.children);
     }
