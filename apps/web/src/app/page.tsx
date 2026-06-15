@@ -20,7 +20,10 @@ import type { SEO } from "@/types/strapi";
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteProfile = await getSiteProfile();
-  const homeMetadataTitle = `${siteProfile.authorRole} · CFA Charterholder`;
+  // Lead with the name so the homepage ranks for the owner's name query
+  // (was authorRole-only → "mehdi zare" ranked ~p11). See MehdiZare#8.
+  const homeMetadataTitle =
+    `${siteProfile.siteName} — ${siteProfile.authorRole} · CFA Charterholder`;
 
   try {
     const response = await getHomePage();
