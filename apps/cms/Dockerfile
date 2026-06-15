@@ -1,6 +1,6 @@
 FROM node:24-alpine AS base
 
-RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
+RUN corepack enable && corepack prepare pnpm@11.7.0 --activate
 RUN apk add --no-cache build-base gcc autoconf automake libtool zlib-dev libpng-dev vips-dev
 
 WORKDIR /app
@@ -29,7 +29,7 @@ RUN pnpm --filter cms build
 # --- Production stage ---
 FROM node:24-alpine AS production
 
-RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
+RUN corepack enable && corepack prepare pnpm@11.7.0 --activate
 RUN apk add --no-cache vips-dev
 
 WORKDIR /app
@@ -48,7 +48,6 @@ RUN pnpm install --frozen-lockfile --prod
 
 # Copy built Strapi from build stage
 COPY --from=base /app/apps/cms/dist ./apps/cms/dist
-COPY --from=base /app/apps/cms/build ./apps/cms/build
 COPY --from=base /app/apps/cms/src ./apps/cms/src
 COPY --from=base /app/apps/cms/config ./apps/cms/config
 COPY --from=base /app/apps/cms/tsconfig.json ./apps/cms/tsconfig.json
