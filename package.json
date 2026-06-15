@@ -2,6 +2,9 @@
   "name": "mehdi-zare-site",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=22.13.0 <25"
+  },
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
@@ -14,27 +17,7 @@
   },
   "devDependencies": {
     "husky": "^9.1.7",
-    "turbo": "^2.8.11"
+    "turbo": "^2.9.18"
   },
-  "packageManager": "pnpm@10.28.2",
-  "pnpm": {
-    "overrides": {
-      "fast-xml-parser": ">=5.3.6",
-      "minimatch": ">=10.2.1",
-      "rollup": ">=4.59.0",
-      "tar": ">=7.5.8"
-    },
-    "packageExtensions": {
-      "framer-motion": {
-        "peerDependencies": {
-          "@types/react": "*"
-        }
-      },
-      "@strapi/blocks-react-renderer": {
-        "peerDependencies": {
-          "@types/react": "*"
-        }
-      }
-    }
-  }
+  "packageManager": "pnpm@11.7.0+sha512.19cc852c120c7125760f2443ee6be0ca5b40f9f50598de1a09a1f177503e010e57c23c77646e01e761de59bf874fb22a3398c33ab9691fc13eb946b6f0f4d620"
 }

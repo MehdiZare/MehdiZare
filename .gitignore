@@ -44,3 +44,5 @@ pnpm-debug.log*
 
 # Package manager
 .pnpm-store/
+# apps/web runs pnpm status checks from its own workspace config; the root lockfile remains authoritative.
+apps/web/pnpm-lock.yaml
