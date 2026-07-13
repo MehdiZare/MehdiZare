@@ -30,4 +30,4 @@ I write about AI + finance on [Seeking Alpha](https://seekingalpha.com/author/me
 
 ## Connect
 
-[LinkedIn](https://linkedin.com/in/mehdizare) · [𝕏](https://twitter.com/mehdizarem) · [mehdi-zare.com](https://mehdi-zare.com)
+[LinkedIn](https://linkedin.com/in/mehdizare) · [𝕏](https://twitter.com/mehdizare) · [mehdi-zare.com](https://mehdi-zare.com)
