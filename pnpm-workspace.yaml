@@ -43,6 +43,7 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - '@posthog/core@1.40.2'
-  - '@posthog/types@1.393.0'
-  - posthog-js@1.399.2
+  - '@posthog/types@1.393.0 || 1.402.3'
+  - posthog-js@1.399.2 || 1.415.5
   - tar@7.5.20
+  - '@posthog/browser-common@0.5.0'
