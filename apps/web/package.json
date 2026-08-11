@@ -14,11 +14,11 @@
     "@calcom/embed-react": "^1.5.3",
     "@strapi/blocks-react-renderer": "^1.0.2",
     "clsx": "^2.1.1",
-    "framer-motion": "^12.42.2",
-    "next": "16.2.10",
-    "posthog-js": "^1.399.2",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
+    "framer-motion": "^13.1.0",
+    "next": "16.3.0",
+    "posthog-js": "^1.415.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "react-syntax-highlighter": "^16.1.1",
     "tailwind-merge": "^3.6.0"
   },
@@ -26,14 +26,14 @@
     "node": ">=22.13.0 <25"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.2",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24.13.3",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "@types/react-syntax-highlighter": "^15.5.13",
     "eslint": "^9.39.5",
-    "eslint-config-next": "16.2.10",
-    "tailwindcss": "^4.3.2",
+    "eslint-config-next": "16.3.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3"
   }
 }

@@ -4,20 +4,28 @@ packages:
 
 overrides:
   "@uiw/react-codemirror>codemirror": "^6.0.2"
+  brace-expansion: "5.0.9"
   esbuild: "0.28.1"
-  fast-uri: "3.1.3"
+  fast-uri: "3.1.5"
   fast-xml-parser: "5.10.0"
   flatted: "3.4.2"
   handlebars: "4.7.9"
+  ip-address: "10.5.0"
+  js-yaml: "4.3.1"
+  linkify-it: "5.0.2"
   lodash: "4.18.1"
   lodash-es: "4.18.1"
   minimatch: "10.2.5"
+  "nanoid@^3": "3.3.18"
   "picomatch@<3": "2.3.2"
   "picomatch@>=4 <4.0.4": "4.0.4"
+  postcss: "8.5.26"
   rollup: "4.62.2"
+  sharp: "0.35.3"
   shell-quote: "1.10.0"
   tar: "7.5.20"
   tmp: "0.2.7"
+  vite: "6.4.3"
   zod: "3.25.76"
 
 packageExtensions:
@@ -43,6 +51,7 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - '@posthog/core@1.40.2'
-  - '@posthog/types@1.393.0'
-  - posthog-js@1.399.2
+  - '@posthog/types@1.393.0 || 1.402.3'
+  - posthog-js@1.399.2 || 1.415.5
   - tar@7.5.20
+  - '@posthog/browser-common@0.5.0'
