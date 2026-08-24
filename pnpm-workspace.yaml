@@ -2,6 +2,9 @@ packages:
   - "apps/*"
   - "packages/*"
 
+# Latest-compatible floors. Keep majors that Strapi/admin still require
+# (vite 6, zod 3, js-yaml 4, hono 4 / @hono/node-server 1, yaml 1).
+#
 # Dependency override policy (issue #13):
 # - Temporary (drop after the next Strapi/MCP release that ships the floor):
 #   hono, @hono/node-server, tar, vite, sharp
@@ -14,10 +17,10 @@ overrides:
   "@hono/node-server": "1.19.17"
   "@uiw/react-codemirror>codemirror": "^6.0.2"
   brace-expansion: "5.0.9"
-  esbuild: "0.28.1"
+  esbuild: "0.28.2"
   fast-uri: "3.1.5"
-  fast-xml-parser: "5.10.0"
-  flatted: "3.4.2"
+  fast-xml-parser: "5.11.0"
+  flatted: "3.4.4"
   handlebars: "4.7.9"
   hono: "4.13.4"
   ip-address: "10.5.0"
@@ -25,15 +28,15 @@ overrides:
   linkify-it: "5.0.2"
   lodash: "4.18.1"
   lodash-es: "4.18.1"
-  minimatch: "10.2.5"
+  minimatch: "10.2.6"
   "nanoid@^3": "3.3.18"
   "picomatch@<3": "2.3.2"
   "picomatch@>=4 <4.0.4": "4.0.4"
   postcss: "8.5.26"
-  rollup: "4.62.2"
+  rollup: "4.62.5"
   sharp: "0.35.3"
   shell-quote: "1.10.0"
-  tar: "7.5.21"
+  tar: "7.5.22"
   tmp: "0.2.7"
   vite: "6.4.3"
   "yaml@1": "1.10.3"
@@ -61,10 +64,10 @@ allowBuilds:
   unrs-resolver: true
 
 minimumReleaseAgeExclude:
-  - '@posthog/core@1.40.2'
-  - '@posthog/types@1.393.0 || 1.402.3'
-  - posthog-js@1.399.2 || 1.415.5
-  - tar@7.5.21
+  - '@posthog/core@1.48.8'
+  - '@posthog/types@1.405.1'
+  - posthog-js@1.418.11
+  - tar@7.5.22
   - '@posthog/browser-common@0.5.0'
   - '@strapi/plugin-cloud@5.52.1'
   - '@strapi/plugin-users-permissions@5.52.1'
@@ -72,3 +75,4 @@ minimumReleaseAgeExclude:
   - hono@4.13.4
   - '@hono/node-server@1.19.17'
   - yaml@1.10.3
+  - '@types/react-dom@19.2.5'
