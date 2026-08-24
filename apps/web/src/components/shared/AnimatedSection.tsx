@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface AnimatedSectionProps {
@@ -42,14 +42,11 @@ export function AnimatedSection({
   delay = 0,
   stagger = false,
 }: AnimatedSectionProps) {
-  const shouldReduceMotion = useReducedMotion();
-  const initial = shouldReduceMotion ? false : "hidden";
-
   if (stagger) {
     return (
       <motion.div
         variants={staggerContainerVariants}
-        initial={initial}
+        initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-100px" }}
         className={cn(className)}
@@ -63,7 +60,7 @@ export function AnimatedSection({
     <motion.div
       variants={sectionVariants}
       custom={delay}
-      initial={initial}
+      initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: "-100px" }}
       className={cn(className)}

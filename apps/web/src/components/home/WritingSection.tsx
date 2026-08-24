@@ -57,7 +57,7 @@ export async function WritingSection() {
     })),
     mediumPublications
   );
-  const hasCmsArticles = articles.some((article) => article.slug && article.title);
+  const hasCmsArticles = cards.some((card) => !card.external);
 
   return (
     <section id="writing" className="bg-paper py-24">

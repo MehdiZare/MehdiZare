@@ -5,6 +5,33 @@ import { resolve } from "node:path";
 
 const { buildHomeWritingCards } = await import("../src/content/fallbacks/home.ts");
 
+const mediumFallbacks = [
+  {
+    title: "Medium one",
+    href: "https://medium.com/one",
+    excerpt: "Fallback one",
+    eyebrow: "Towards AI",
+    meta: "Apr 8, 2025",
+    external: true,
+  },
+  {
+    title: "Medium two",
+    href: "https://medium.com/two",
+    excerpt: "Fallback two",
+    eyebrow: "Python in Plain English",
+    meta: "Apr 10, 2025",
+    external: true,
+  },
+  {
+    title: "Medium three",
+    href: "https://medium.com/three",
+    excerpt: "Fallback three",
+    eyebrow: "Towards AI",
+    meta: "Apr 14, 2025",
+    external: true,
+  },
+];
+
 function readSource(relativePath: string): string {
   return readFileSync(resolve(process.cwd(), relativePath), "utf8");
 }
@@ -24,24 +51,7 @@ test("homepage writing cards pad CMS results with fallbacks to fill the grid", (
         href: "",
       },
     ],
-    [
-      {
-        title: "Medium one",
-        href: "https://medium.com/one",
-        excerpt: "Fallback one",
-        eyebrow: "Towards AI",
-        meta: "Apr 8, 2025",
-        external: true,
-      },
-      {
-        title: "Medium two",
-        href: "https://medium.com/two",
-        excerpt: "Fallback two",
-        eyebrow: "Python in Plain English",
-        meta: "Apr 10, 2025",
-        external: true,
-      },
-    ]
+    mediumFallbacks
   );
 
   assert.equal(cards.length, 3);
@@ -52,11 +62,29 @@ test("homepage writing cards pad CMS results with fallbacks to fill the grid", (
   assert.equal(cards[2]?.href, "https://medium.com/two");
 });
 
-test("homepage writing cards skip untitled or duplicate sources", () => {
+test("homepage writing cards fill the grid from fallbacks when CMS is empty", () => {
+  const cards = buildHomeWritingCards([], mediumFallbacks);
+
+  assert.equal(cards.length, 3);
+  assert.deepEqual(
+    cards.map((card) => card.href),
+    ["https://medium.com/one", "https://medium.com/two", "https://medium.com/three"]
+  );
+  assert.ok(cards.every((card) => card.external));
+});
+
+test("homepage writing cards return no cards when CMS and fallbacks are empty", () => {
+  assert.deepEqual(buildHomeWritingCards([], []), []);
+});
+
+test("homepage writing cards skip untitled, whitespace-only, or duplicate sources", () => {
   const cards = buildHomeWritingCards(
     [
       { title: "Same title", href: "/blog/same" },
       { title: "", href: "/blog/empty-title" },
+      { title: "   ", href: "/blog/whitespace-title" },
+      { title: null, href: "/blog/null-title" },
+      { title: "Whitespace href", href: "   " },
     ],
     [
       { title: "Same title again", href: "/blog/same" },
@@ -71,6 +99,25 @@ test("homepage writing cards skip untitled or duplicate sources", () => {
   );
 });
 
+test("homepage writing cards cap at the limit and do not pad a full CMS grid", () => {
+  const cards = buildHomeWritingCards(
+    [
+      { title: "One", href: "/blog/one" },
+      { title: "Two", href: "/blog/two" },
+      { title: "Three", href: "/blog/three" },
+      { title: "Four should not appear", href: "/blog/four" },
+    ],
+    mediumFallbacks,
+    3
+  );
+
+  assert.deepEqual(
+    cards.map((card) => card.href),
+    ["/blog/one", "/blog/two", "/blog/three"]
+  );
+  assert.ok(cards.every((card) => !card.external));
+});
+
 test("homepage motion reveal variants do not hide content at opacity 0", () => {
   const sources = [
     readSource("src/components/shared/AnimatedSection.tsx"),
@@ -82,22 +129,47 @@ test("homepage motion reveal variants do not hide content at opacity 0", () => {
   ];
 
   for (const source of sources) {
-    assert.doesNotMatch(source, /hidden:\s*\{\s*opacity:\s*0/);
+    assert.doesNotMatch(source, /opacity:\s*0/);
     assert.match(source, /hidden:\s*\{/);
   }
 });
 
-test("AnimatedSection keeps a stable motion element instead of swapping to a div", () => {
+test("AnimatedSection keeps a stable motion element and a hydration-safe initial state", () => {
   const source = readSource("src/components/shared/AnimatedSection.tsx");
 
-  assert.doesNotMatch(source, /return <div className=\{cn\(className\)\}>\{children\}<\/div>/);
-  assert.match(source, /initial = shouldReduceMotion \? false : "hidden"/);
+  assert.doesNotMatch(source, /useReducedMotion/);
+  assert.doesNotMatch(source, /<div className=\{cn\(className\)\}>\{children\}<\/div>/);
+  assert.match(source, /<motion\.div/);
+  assert.match(source, /initial="hidden"/);
 });
 
-test("CSP allows nested PostHog ingest and asset hosts", () => {
+test("WritingSection pads CMS rows through the shared helper and keys the CTA off rendered cards", () => {
+  const source = readSource("src/components/home/WritingSection.tsx");
+
+  assert.match(source, /try \{/);
+  assert.match(source, /Array\.isArray\(response\.data\)/);
+  assert.match(source, /buildHomeWritingCards\(/);
+  assert.match(source, /mediumPublications/);
+  assert.match(source, /cards\.some\(\(card\) => !card\.external\)/);
+});
+
+test("CSP allows nested PostHog ingest and asset hosts on script, connect, and images", () => {
   const source = readSource("next.config.ts");
 
   assert.match(source, /https:\/\/\*\.posthog\.com/);
   assert.match(source, /https:\/\/\*\.i\.posthog\.com/);
   assert.match(source, /worker-src 'self' blob: data:/);
+  assert.equal([...source.matchAll(/\.\.\.posthogCspOrigins/g)].length, 2);
+  assert.match(
+    source,
+    /script-src 'self' 'unsafe-inline' " \+ cspConnectOrigins\.join\(" "\)/
+  );
+  assert.match(
+    source,
+    /connect-src 'self' " \+ cspConnectOrigins\.join\(" "\)/
+  );
+  assert.match(
+    source,
+    /img-src 'self' data: blob: " \+ cspImageOrigins\.join\(" "\)/
+  );
 });
