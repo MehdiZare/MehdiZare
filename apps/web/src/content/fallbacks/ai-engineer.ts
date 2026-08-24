@@ -108,8 +108,7 @@ export function buildAiEngineerFallback(
     title: aiEngineerMetadataTitle,
     headline: aiEngineerMetadataTitle,
     subtitle: `${siteProfile.authorName} is an AI engineer who ships production systems in finance — from prototype to something operations can run.`,
-    description:
-      "AI engineer Mehdi Zare ships production AI systems for financial services: LLM products, architecture, and delivery from prototype to production.",
+    description: `AI engineer ${siteProfile.siteName} ships production AI systems for financial services: LLM products, architecture, and delivery from prototype to production.`,
     capabilities: aiEngineerCapabilities,
     proofPoints: aiEngineerProofPoints,
     faq: aiEngineerFaqs,

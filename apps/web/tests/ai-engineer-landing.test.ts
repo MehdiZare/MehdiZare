@@ -24,6 +24,8 @@ test("AI engineer landing is a dedicated non-blog route titled to the query", ()
   assert.match(page, /title: aiEngineerMetadataTitle/);
   assert.match(page, /getSiteProfile/);
   assert.match(fallback, /export const aiEngineerMetadataTitle = "AI Engineer"/);
+  assert.match(fallback, /`AI engineer \$\{siteProfile\.siteName\}/);
+  assert.doesNotMatch(fallback, /AI engineer Mehdi Zare/);
   assert.doesNotMatch(page, /\/blog\//);
   assert.match(readSource("src/components/layout/Footer.tsx"), /href: "\/ai-engineer"/);
   assert.match(readSource("src/components/home/ServicesGrid.tsx"), /href: "\/ai-engineer"/);
