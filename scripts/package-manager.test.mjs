@@ -97,16 +97,39 @@ test("corepack-prepare-pnpm --check accepts the repo packageManager field withou
   );
 });
 
-test("each CMS Docker stage copies package.json and runs the Corepack helper", () => {
+test("CMS Docker prepares pnpm in a shared stage from package.json#packageManager", () => {
+  const dockerfile = readFileSync(resolve(root, "apps/cms/Dockerfile"), "utf8");
+  const stages = dockerStages(dockerfile);
+  const pnpm = stages.pnpm;
+  assert.ok(pnpm, "missing stage pnpm");
+  assert.match(pnpm, /^FROM node:24-alpine AS pnpm/m);
+  assert.match(
+    pnpm,
+    /npm install -g corepack/,
+    "shared stage must install Corepack explicitly (unbundled after Node 24)",
+  );
+  assert.match(pnpm, /COPY package\.json \.\//);
+  assert.match(pnpm, /package-manager\.mjs/);
+  assert.match(pnpm, /corepack-prepare-pnpm\.mjs/);
+  assert.match(pnpm, /RUN node scripts\/corepack-prepare-pnpm\.mjs/);
+  assert.doesNotMatch(
+    pnpm,
+    /corepack prepare pnpm@\d/,
+    "pnpm stage must not hardcode corepack prepare pnpm@version",
+  );
+});
+
+test("base and production inherit the shared pnpm stage", () => {
   const dockerfile = readFileSync(resolve(root, "apps/cms/Dockerfile"), "utf8");
   const stages = dockerStages(dockerfile);
   for (const name of ["base", "production"]) {
     const stage = stages[name];
     assert.ok(stage, `missing stage ${name}`);
-    assert.match(stage, /COPY package\.json \.\//);
-    assert.match(stage, /package-manager\.mjs/);
-    assert.match(stage, /corepack-prepare-pnpm\.mjs/);
-    assert.match(stage, /RUN node scripts\/corepack-prepare-pnpm\.mjs/);
+    assert.match(
+      stage,
+      new RegExp(`^FROM pnpm AS ${name}`, "m"),
+      `${name} must inherit FROM pnpm`,
+    );
     assert.doesNotMatch(
       stage,
       /corepack prepare pnpm@\d/,
