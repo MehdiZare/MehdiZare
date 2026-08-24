@@ -12,6 +12,7 @@ test("llms.txt route returns text content with canonical host and sitemap", asyn
   const body = await response.text();
   assert.match(body, /canonical_host:\s+https:\/\/www\.mehdi-zare\.com/);
   assert.match(body, /sitemap:\s+https:\/\/www\.mehdi-zare\.com\/sitemap\.xml/);
+  assert.match(body, /https:\/\/www\.mehdi-zare\.com\/ai-engineer/);
 });
 
 test(".well-known llms.txt route mirrors main llms.txt content", async () => {

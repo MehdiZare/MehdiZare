@@ -21,7 +21,7 @@ const services: ServiceCard[] = [
     title: "Production AI Engineering",
     description:
       "Your AI system needs to work on Monday morning, not just in a Thursday demo. I build LLM-powered products—agents, search, and document intelligence—that run in production with monitoring and governance.",
-    href: "/consulting",
+    href: "/ai-engineer",
   },
   {
     number: "02",

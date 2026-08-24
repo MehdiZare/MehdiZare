@@ -190,6 +190,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     about: now,
     binaPrint: now,
     consulting: now,
+    aiEngineer: now,
     blog: now,
   };
 
@@ -229,6 +230,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     {
       url: `${SITE_URL}/consulting`,
       lastModified: pageTimestamps.consulting,
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/ai-engineer`,
+      lastModified: pageTimestamps.aiEngineer,
       changeFrequency: "monthly",
       priority: 0.9,
     },

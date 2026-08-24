@@ -12,6 +12,7 @@ test("sitemap includes fallback category/tag entries when CMS is disabled", asyn
   assert.ok(entries.length > 5);
   assert.ok(urls.includes("https://www.mehdi-zare.com"));
   assert.ok(urls.includes("https://www.mehdi-zare.com/blog"));
+  assert.ok(urls.includes("https://www.mehdi-zare.com/ai-engineer"));
   assert.ok(urls.includes("https://www.mehdi-zare.com/blog/category/ai-engineering"));
   assert.ok(urls.includes("https://www.mehdi-zare.com/blog/tag/llms"));
   assert.ok(urls.some((url) => url.startsWith("https://www.mehdi-zare.com/author/")));

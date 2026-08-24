@@ -12,6 +12,7 @@ export type AnalyticsProperties = Record<string, AnalyticsPropertyValue>;
 export type AnalyticsPageType =
   | "home"
   | "consulting"
+  | "ai_engineer"
   | "contact"
   | "blog"
   | "blog_post"
@@ -87,6 +88,9 @@ export function resolvePageType(pathname: string): AnalyticsPageType {
   if (normalized === "/") return "home";
   if (normalized === "/consulting" || normalized.startsWith("/consulting/")) {
     return "consulting";
+  }
+  if (normalized === "/ai-engineer" || normalized.startsWith("/ai-engineer/")) {
+    return "ai_engineer";
   }
   if (normalized === "/contact" || normalized.startsWith("/contact/")) {
     return "contact";
