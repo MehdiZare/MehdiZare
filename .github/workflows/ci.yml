@@ -1,5 +1,9 @@
 name: CI
 
+# Runner policy: GitHub-hosted ubuntu-latest (see .github/CI.md).
+# Namespace.so (namespace-profile-default) queued jobs indefinitely (#18 / #21).
+# Do not switch runs-on in a product or dependency PR.
+
 on:
   push:
     branches:
@@ -11,7 +15,7 @@ on:
 jobs:
   quality:
     name: Lint, Typecheck, Test, Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # GitHub-hosted; see .github/CI.md (#21)
     permissions:
       contents: read
     steps:
@@ -46,7 +50,7 @@ jobs:
 
   security:
     name: Dependency Audit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # GitHub-hosted; see .github/CI.md (#21)
     permissions:
       contents: read
     steps:
@@ -70,7 +74,7 @@ jobs:
 
   secret-scan:
     name: Secret Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # GitHub-hosted; see .github/CI.md (#21)
     permissions:
       contents: read
       pull-requests: read
