@@ -1,4 +1,13 @@
+import Link from "next/link";
 import type { SocialLink } from "@/types/strapi";
+
+const footerLinks = [
+  { href: "/ai-engineer", label: "AI Engineer" },
+  { href: "/consulting", label: "Consulting" },
+  { href: "/about", label: "About" },
+  { href: "/blog", label: "Writing" },
+  { href: "/contact", label: "Contact" },
+] as const;
 
 interface FooterProps {
   siteName: string;
@@ -71,7 +80,21 @@ export function Footer({
       </div>
 
       <div className="border-t border-warm-gray">
-        <div className="mx-auto max-w-7xl px-6 py-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+          <nav aria-label="Footer">
+            <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              {footerLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-mid-gray transition-colors hover:text-ink"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
           <p className="text-xs text-mid-gray">
             {footerText} {new Date().getFullYear()}
           </p>

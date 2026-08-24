@@ -179,6 +179,23 @@ export default async function ConsultingPage() {
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">Consulting</p>
             <h1 className="mt-4 font-serif text-4xl leading-tight text-ink sm:text-5xl">{data.title}</h1>
             <p className="mt-6 max-w-3xl text-xl leading-relaxed text-mid-gray">{data.subtitle}</p>
+            <p className="mt-4 max-w-3xl text-sm text-mid-gray">
+              Looking for the{" "}
+              <TrackedLink
+                href="/ai-engineer"
+                eventName="funnel_cta_click"
+                eventProperties={{
+                  section: "consulting_hero",
+                  cta_label: "AI engineer landing",
+                  destination: "/ai-engineer",
+                  interaction_type: "link_click",
+                }}
+                className="text-ink underline underline-offset-4 transition-colors hover:text-mid-gray"
+              >
+                AI engineer
+              </TrackedLink>{" "}
+              profile instead?
+            </p>
           </AnimatedSection>
         </div>
       </section>

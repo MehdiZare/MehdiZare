@@ -98,6 +98,7 @@ function installBrowserMocks(url: string, referrer = ""): {
 test("resolvePageType classifies core routes correctly", () => {
   assert.equal(resolvePageType("/"), "home");
   assert.equal(resolvePageType("/consulting"), "consulting");
+  assert.equal(resolvePageType("/ai-engineer"), "ai_engineer");
   assert.equal(resolvePageType("/contact"), "contact");
   assert.equal(resolvePageType("/author/mehdi-zare"), "author");
   assert.equal(resolvePageType("/blog"), "blog");

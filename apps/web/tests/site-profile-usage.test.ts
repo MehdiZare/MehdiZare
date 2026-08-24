@@ -8,6 +8,7 @@ const pageFiles = [
   "src/app/page.tsx",
   "src/app/about/page.tsx",
   "src/app/consulting/page.tsx",
+  "src/app/ai-engineer/page.tsx",
   "src/app/contact/page.tsx",
   "src/app/blog/page.tsx",
   "src/app/blog/[slug]/page.tsx",

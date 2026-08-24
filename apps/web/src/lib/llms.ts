@@ -18,6 +18,7 @@ export function buildLlmsTxtContent(): string {
     `- ${siteUrl}`,
     `- ${buildAbsolutePath("/about", siteUrl)}`,
     `- ${buildAbsolutePath("/consulting", siteUrl)}`,
+    `- ${buildAbsolutePath("/ai-engineer", siteUrl)}`,
     `- ${buildAbsolutePath("/blog", siteUrl)}`,
     `- ${buildAbsolutePath("/author/mehdi-zare", siteUrl)}`,
     `- ${buildAbsolutePath("/contact", siteUrl)}`,
