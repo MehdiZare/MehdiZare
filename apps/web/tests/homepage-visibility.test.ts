@@ -153,23 +153,5 @@ test("WritingSection pads CMS rows through the shared helper and keys the CTA of
   assert.match(source, /cards\.some\(\(card\) => !card\.external\)/);
 });
 
-test("CSP allows nested PostHog ingest and asset hosts on script, connect, and images", () => {
-  const source = readSource("next.config.ts");
-
-  assert.match(source, /https:\/\/\*\.posthog\.com/);
-  assert.match(source, /https:\/\/\*\.i\.posthog\.com/);
-  assert.match(source, /worker-src 'self' blob: data:/);
-  assert.equal([...source.matchAll(/\.\.\.posthogCspOrigins/g)].length, 2);
-  assert.match(
-    source,
-    /script-src 'self' 'unsafe-inline' " \+ cspConnectOrigins\.join\(" "\)/
-  );
-  assert.match(
-    source,
-    /connect-src 'self' " \+ cspConnectOrigins\.join\(" "\)/
-  );
-  assert.match(
-    source,
-    /img-src 'self' data: blob: " \+ cspImageOrigins\.join\(" "\)/
-  );
-});
+// The CSP is asserted against the built header in csp-contract.test.ts rather
+// than by grepping next.config.ts for the expressions that produce it.
