@@ -1,5 +1,9 @@
 name: CI
 
+# Runner policy: GitHub-hosted ubuntu-latest (see .github/CI.md).
+# Namespace.so queued jobs indefinitely on namespace-profile-default (#18).
+# Do not switch runs-on in a product or dependency PR.
+
 on:
   push:
     branches:
