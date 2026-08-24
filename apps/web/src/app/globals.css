@@ -48,3 +48,23 @@ code,
 pre {
   font-family: var(--font-mono), monospace;
 }
+
+/* Score bars carry their final width in the markup via --score-bar-width, so
+   they read correctly with no JS at all. The keyframe only replays the growth
+   on top of that; `both` leaves the bar at its declared width when it ends. */
+.score-bar {
+  width: var(--score-bar-width);
+  animation: score-bar-grow 0.9s ease-out both;
+}
+
+@keyframes score-bar-grow {
+  from {
+    width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .score-bar {
+    animation: none;
+  }
+}
