@@ -11,11 +11,11 @@ Strapi 5 backend that powers site content and contact submissions.
 
 ## Docker / Corepack pnpm pin
 
-The CMS Dockerfile does **not** hardcode a pnpm version. Both stages copy `package.json`, `scripts/package-manager.mjs`, and `scripts/corepack-prepare-pnpm.mjs`, then run the prepare script so Corepack activates `package.json#packageManager`.
+The CMS Dockerfile does **not** hardcode a pnpm version. A shared `pnpm` stage copies `package.json`, `scripts/package-manager.mjs`, and `scripts/corepack-prepare-pnpm.mjs`, installs Corepack (`npm install -g corepack`), and runs the prepare script so Corepack activates `package.json#packageManager`. `base` and `production` inherit that stage.
 
 `packageManager` integrity **must be hex SHA-512** (`pnpm@<version>+sha512.<128 hex chars>`), not npm's SRI form (`sha512-...`). Corepack treats `+…` as semver build metadata and compares a hex digest, so base64 hashes are rejected.
 
-Root `pnpm test` runs `node --test 'scripts/*.test.mjs'` and fails CI if a Docker stage stops using the helper or the hash is not hex.
+Root `pnpm test` runs `node --test 'scripts/*.test.mjs'` and fails CI if the shared stage stops using the helper, `base`/`production` stop inheriting it, or the hash is not hex.
 
 To bump pnpm: run `corepack use pnpm@<version>` at the repo root (writes hex integrity) and rebuild the image. Do not edit `pnpm@…` inside `apps/cms/Dockerfile`.
 

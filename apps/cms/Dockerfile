@@ -1,6 +1,8 @@
-FROM node:24-alpine AS base
+FROM node:24-alpine AS pnpm
 
-RUN apk add --no-cache build-base gcc autoconf automake libtool zlib-dev libpng-dev vips-dev
+# Corepack is unbundled from Node 25+. Install it here so this stage
+# still works when the CMS image leaves Node 24.
+RUN npm install -g corepack
 
 WORKDIR /app
 
@@ -8,6 +10,10 @@ WORKDIR /app
 COPY package.json ./
 COPY scripts/package-manager.mjs scripts/corepack-prepare-pnpm.mjs ./scripts/
 RUN node scripts/corepack-prepare-pnpm.mjs
+
+FROM pnpm AS base
+
+RUN apk add --no-cache build-base gcc autoconf automake libtool zlib-dev libpng-dev vips-dev
 
 # Remaining root workspace manifests (lockfile + pnpm-workspace).
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -31,17 +37,11 @@ COPY packages/shared/ ./packages/shared/
 RUN pnpm --filter cms build
 
 # --- Production stage ---
-FROM node:24-alpine AS production
+FROM pnpm AS production
 
 RUN apk add --no-cache vips-dev
 
-WORKDIR /app
-
-# pnpm from package.json#packageManager (Corepack-safe hex integrity).
-COPY package.json ./
-COPY scripts/package-manager.mjs scripts/corepack-prepare-pnpm.mjs ./scripts/
-RUN node scripts/corepack-prepare-pnpm.mjs
-
+# Remaining root workspace manifests (lockfile + pnpm-workspace).
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Copy cms package.json
