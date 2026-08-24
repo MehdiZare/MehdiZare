@@ -65,19 +65,28 @@ const imageRemotePatterns = imageHosts.flatMap((hostname) => {
   return [{ protocol: "https" as const, hostname }];
 });
 
+// PostHog loads ingest + assets from nested subdomains (us.i / us-assets.i).
+// `*.posthog.com` does not cover those, so both wildcards are required.
+// https://posthog.com/docs/advanced/content-security-policy
+const posthogCspOrigins = [
+  posthogUrl.origin,
+  "https://*.posthog.com",
+  "https://*.i.posthog.com",
+];
+
 const cspConnectOrigins = Array.from(
   new Set([
     siteUrl.origin,
-    posthogUrl.origin,
     calUrl.origin,
     calAppUrl.origin,
+    ...posthogCspOrigins,
   ])
 );
 const cspFrameOrigins = Array.from(
   new Set([beehiivUrl.origin, calUrl.origin, calAppUrl.origin])
 );
 const cspImageOrigins = Array.from(
-  new Set([siteUrl.origin, posthogUrl.origin])
+  new Set([siteUrl.origin, ...posthogCspOrigins])
 );
 
 const cspDirectives = [
@@ -93,6 +102,7 @@ const cspDirectives = [
   "connect-src 'self' " + cspConnectOrigins.join(" "),
   "media-src 'self' data: blob: " + cspImageOrigins.join(" "),
   "frame-src 'self' " + cspFrameOrigins.join(" "),
+  "worker-src 'self' blob: data:",
 ];
 
 if (process.env.NODE_ENV === "production") {

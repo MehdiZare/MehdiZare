@@ -99,9 +99,8 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, x: -20 },
+  hidden: { x: -12 },
   visible: {
-    opacity: 1,
     x: 0,
     transition: { duration: 0.5, ease: "easeOut" as const },
   },
