@@ -4,12 +4,12 @@ RUN apk add --no-cache build-base gcc autoconf automake libtool zlib-dev libpng-
 
 WORKDIR /app
 
-# Activate pnpm from package.json#packageManager (hex SHA-512 required; Corepack splits on +).
+# pnpm from package.json#packageManager (Corepack-safe hex integrity).
 COPY package.json ./
 COPY scripts/package-manager.mjs scripts/corepack-prepare-pnpm.mjs ./scripts/
 RUN node scripts/corepack-prepare-pnpm.mjs
 
-# Copy remaining workspace files
+# Remaining root workspace manifests (lockfile + pnpm-workspace).
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Copy cms package.json for dependency resolution
@@ -37,7 +37,7 @@ RUN apk add --no-cache vips-dev
 
 WORKDIR /app
 
-# Activate pnpm from package.json#packageManager (hex SHA-512 required; Corepack splits on +).
+# pnpm from package.json#packageManager (Corepack-safe hex integrity).
 COPY package.json ./
 COPY scripts/package-manager.mjs scripts/corepack-prepare-pnpm.mjs ./scripts/
 RUN node scripts/corepack-prepare-pnpm.mjs

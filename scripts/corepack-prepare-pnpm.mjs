@@ -2,13 +2,15 @@
 /**
  * Enable Corepack and activate the pnpm version from package.json#packageManager.
  *
- * Integrity must be hex SHA-512 (`sha512.<hex>`). npm base64 hashes contain `+`,
- * and Corepack splits the packageManager field on `+`.
+ * Integrity must be hex SHA-512 (`sha512.` plus 128 hex chars). npm SRI
+ * (`sha512-…`) can contain `+`/`/`, and Corepack treats `+` as semver
+ * build metadata.
  *
  * Usage:
  *   node scripts/corepack-prepare-pnpm.mjs          # corepack enable + prepare
- *   node scripts/corepack-prepare-pnpm.mjs --check  # validate only
+ *   node scripts/corepack-prepare-pnpm.mjs --check  # validate packageManager shape only
  */
+
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -24,16 +26,28 @@ if (process.argv.includes("--check")) {
   process.exit(0);
 }
 
+// Disable Corepack's TTY download prompt so Docker/CI cannot hang.
 const env = { ...process.env, COREPACK_ENABLE_DOWNLOAD_PROMPT: "0" };
 
-const enable = spawnSync("corepack", ["enable"], { stdio: "inherit", env });
-if (enable.status !== 0) {
-  process.exit(enable.status ?? 1);
+function runCorepack(args) {
+  const result = spawnSync("corepack", args, {
+    stdio: "inherit",
+    env,
+    cwd: root,
+  });
+  const command = `corepack ${args.join(" ")}`;
+  if (result.error) {
+    console.error(`${command} failed: ${result.error.message}`);
+    process.exit(1);
+  }
+  if (result.signal) {
+    console.error(`${command} killed by ${result.signal}`);
+    process.exit(1);
+  }
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1);
+  }
 }
 
-const prepare = spawnSync(
-  "corepack",
-  ["prepare", parsed.spec, "--activate"],
-  { stdio: "inherit", env },
-);
-process.exit(prepare.status ?? 1);
+runCorepack(["enable"]);
+runCorepack(["prepare", parsed.spec, "--activate"]);
