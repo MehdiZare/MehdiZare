@@ -1,6 +1,6 @@
 FROM node:24-alpine AS base
 
-RUN corepack enable && corepack prepare pnpm@11.7.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.23.0 --activate
 RUN apk add --no-cache build-base gcc autoconf automake libtool zlib-dev libpng-dev vips-dev
 
 WORKDIR /app
@@ -29,7 +29,7 @@ RUN pnpm --filter cms build
 # --- Production stage ---
 FROM node:24-alpine AS production
 
-RUN corepack enable && corepack prepare pnpm@11.7.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.23.0 --activate
 RUN apk add --no-cache vips-dev
 
 WORKDIR /app
