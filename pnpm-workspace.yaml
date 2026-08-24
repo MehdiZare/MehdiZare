@@ -2,7 +2,16 @@ packages:
   - "apps/*"
   - "packages/*"
 
+# Dependency override policy (issue #13):
+# - Temporary (drop after the next Strapi/MCP release that ships the floor):
+#   hono, @hono/node-server, tar, vite, sharp
+# - Floor pins kept even when current Strapi already matches, so a transitive
+#   rollback cannot reintroduce a high finding: fast-uri, nanoid, ip-address
+# - Broader supply-chain floors (keep until unused in `pnpm why`):
+#   brace-expansion, esbuild, lodash, postcss, js-yaml, etc.
+# Do not weaken CI `pnpm audit --audit-level high` without a written exception.
 overrides:
+  "@hono/node-server": "1.19.17"
   "@uiw/react-codemirror>codemirror": "^6.0.2"
   brace-expansion: "5.0.9"
   esbuild: "0.28.1"
@@ -10,6 +19,7 @@ overrides:
   fast-xml-parser: "5.10.0"
   flatted: "3.4.2"
   handlebars: "4.7.9"
+  hono: "4.13.4"
   ip-address: "10.5.0"
   js-yaml: "4.3.1"
   linkify-it: "5.0.2"
@@ -26,6 +36,7 @@ overrides:
   tar: "7.5.21"
   tmp: "0.2.7"
   vite: "6.4.3"
+  "yaml@1": "1.10.3"
   zod: "3.25.76"
 
 packageExtensions:
@@ -55,3 +66,9 @@ minimumReleaseAgeExclude:
   - posthog-js@1.399.2 || 1.415.5
   - tar@7.5.21
   - '@posthog/browser-common@0.5.0'
+  - '@strapi/plugin-cloud@5.52.1'
+  - '@strapi/plugin-users-permissions@5.52.1'
+  - '@strapi/strapi@5.52.1'
+  - hono@4.13.4
+  - '@hono/node-server@1.19.17'
+  - yaml@1.10.3
