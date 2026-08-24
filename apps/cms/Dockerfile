@@ -1,12 +1,16 @@
 FROM node:24-alpine AS base
 
-RUN corepack enable && corepack prepare pnpm@11.23.0 --activate
 RUN apk add --no-cache build-base gcc autoconf automake libtool zlib-dev libpng-dev vips-dev
 
 WORKDIR /app
 
-# Copy root workspace files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Activate pnpm from package.json#packageManager (hex SHA-512 required; Corepack splits on +).
+COPY package.json ./
+COPY scripts/package-manager.mjs scripts/corepack-prepare-pnpm.mjs ./scripts/
+RUN node scripts/corepack-prepare-pnpm.mjs
+
+# Copy remaining workspace files
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Copy cms package.json for dependency resolution
 COPY apps/cms/package.json ./apps/cms/
@@ -29,13 +33,16 @@ RUN pnpm --filter cms build
 # --- Production stage ---
 FROM node:24-alpine AS production
 
-RUN corepack enable && corepack prepare pnpm@11.23.0 --activate
 RUN apk add --no-cache vips-dev
 
 WORKDIR /app
 
-# Copy root workspace files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Activate pnpm from package.json#packageManager (hex SHA-512 required; Corepack splits on +).
+COPY package.json ./
+COPY scripts/package-manager.mjs scripts/corepack-prepare-pnpm.mjs ./scripts/
+RUN node scripts/corepack-prepare-pnpm.mjs
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Copy cms package.json
 COPY apps/cms/package.json ./apps/cms/
