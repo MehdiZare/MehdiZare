@@ -11,7 +11,7 @@ on:
 jobs:
   quality:
     name: Lint, Typecheck, Test, Build
-    runs-on: namespace-profile-default
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
@@ -46,7 +46,7 @@ jobs:
 
   security:
     name: Dependency Audit
-    runs-on: namespace-profile-default
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
@@ -70,7 +70,7 @@ jobs:
 
   secret-scan:
     name: Secret Scan
-    runs-on: namespace-profile-default
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
