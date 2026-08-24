@@ -20,9 +20,8 @@ const containerVariants = {
 };
 
 const lineVariants = {
-  hidden: { opacity: 0, x: -10 },
+  hidden: { x: -8 },
   visible: {
-    opacity: 1,
     x: 0,
     transition: { duration: 0.5, ease: "easeOut" as const },
   },

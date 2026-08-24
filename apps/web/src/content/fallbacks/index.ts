@@ -6,4 +6,4 @@ export {
 } from "./ai-engineer";
 export { fallbackBinaPrintData } from "./bina-print";
 export { buildConsultingFallback } from "./consulting";
-export { buildHomeFallback, splitIndustries } from "./home";
+export { buildHomeFallback, buildHomeWritingCards, splitIndustries } from "./home";

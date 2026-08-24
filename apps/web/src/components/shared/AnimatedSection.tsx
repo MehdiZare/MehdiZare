@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface AnimatedSectionProps {
@@ -11,18 +11,16 @@ interface AnimatedSectionProps {
 }
 
 const sectionVariants = {
-  hidden: { opacity: 0, y: 30 },
+  hidden: { y: 24 },
   visible: (delay: number) => ({
-    opacity: 1,
     y: 0,
     transition: { duration: 0.6, ease: "easeOut" as const, delay },
   }),
 };
 
 const staggerContainerVariants = {
-  hidden: { opacity: 0 },
+  hidden: {},
   visible: {
-    opacity: 1,
     transition: {
       staggerChildren: 0.1,
       delayChildren: 0.2,
@@ -31,9 +29,8 @@ const staggerContainerVariants = {
 };
 
 export const staggerChildVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { y: 16 },
   visible: {
-    opacity: 1,
     y: 0,
     transition: { duration: 0.5, ease: "easeOut" as const },
   },
@@ -45,12 +42,6 @@ export function AnimatedSection({
   delay = 0,
   stagger = false,
 }: AnimatedSectionProps) {
-  const shouldReduceMotion = useReducedMotion();
-
-  if (shouldReduceMotion) {
-    return <div className={cn(className)}>{children}</div>;
-  }
-
   if (stagger) {
     return (
       <motion.div
