@@ -25,7 +25,7 @@ overrides:
   rollup: 4.62.2
   sharp: 0.35.3
   shell-quote: 1.10.0
-  tar: 7.5.20
+  tar: 7.5.21
   tmp: 0.2.7
   vite: 6.4.3
   zod: 3.25.76
@@ -6956,8 +6956,8 @@ packages:
     resolution: {integrity: sha512-ujeqbceABgwMZxEJnk2HDY2DlnUZ+9oEcb1KzTVfYHio0UE6dG71n60d8D2I4qNvleWrrXpmjpt7vZeF1LnMZQ==}
     engines: {node: '>=6'}
 
-  tar@7.5.20:
-    resolution: {integrity: sha512-9FcyK4PA6+WbzlTM9WhQm6vB5W7cP7dUiPsv1g7YDwEQnQ1CGpK3MGlKk/ITVWMk05kHZuBhmVhiv8LZoy/PFQ==}
+  tar@7.5.21:
+    resolution: {integrity: sha512-XdhtCvlMywwxpCW8YEq3lOXBJpUPTR2OHHcwLPO3HwsJqOHa2Ok/oJ7ruGzp+JrKoRPVCzJwAdEjqLW/vNRPHA==}
     engines: {node: '>=18'}
 
   tarn@3.0.2:
@@ -9768,7 +9768,7 @@ snapshots:
       open: 8.4.2
       ora: 5.4.1
       pkg-up: 3.1.0
-      tar: 7.5.20
+      tar: 7.5.21
       xdg-app-paths: 8.3.0
       yup: 0.32.9
     transitivePeerDependencies:
@@ -10059,7 +10059,7 @@ snapshots:
       semver: 7.7.4
       stream-chain: 2.2.5
       stream-json: 1.9.1
-      tar: 7.5.20
+      tar: 7.5.21
       tar-stream: 2.2.0
       ws: 8.21.1
     transitivePeerDependencies:
@@ -15943,7 +15943,7 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 3.6.2
 
-  tar@7.5.20:
+  tar@7.5.21:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0
