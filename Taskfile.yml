@@ -44,8 +44,8 @@ tasks:
     cmd: pnpm --filter=web exec tsc --noEmit
 
   test:
-    desc: Run web test suite
-    cmd: pnpm --filter=web test
+    desc: Run web and repo script tests
+    cmd: pnpm test
 
   posthog:push-dashboard:
     desc: Create/update the managed PostHog funnel dashboard via API
@@ -56,7 +56,7 @@ tasks:
     cmds:
       - pnpm --filter=web lint
       - pnpm --filter=web exec tsc --noEmit
-      - pnpm --filter=web test
+      - pnpm test
       - pnpm --filter=web build
 
   prepush:
