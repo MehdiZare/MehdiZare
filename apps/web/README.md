@@ -31,7 +31,6 @@ Next.js App Router frontend for the public portfolio.
 - `POSTHOG_ENVIRONMENT_ID` (optional, defaults to `@current`)
 - `POSTHOG_APP_HOST` (optional, defaults to `https://us.posthog.com`)
 - `POSTHOG_DRY_RUN` (optional, `true` to preview API actions)
-- `NEXT_PUBLIC_BEEHIIV_EMBED_URL` (defaults to `https://embeds.beehiiv.com`)
 
 ## CMS Cache Invalidation
 
