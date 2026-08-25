@@ -13,13 +13,11 @@ const COMPONENTS_DIR = resolve(process.cwd(), "src/components");
 
 const ZERO_LITERAL = String.raw`(?:0(?:\.0+)?(?![.\d])|["'\`]0(?:px|%|rem|em)?["'\`])`;
 
-const HIDING_VALUE = String.raw`(?:${ZERO_LITERAL}|[^,{}]{0,120}\?\s*${ZERO_LITERAL}|[^,{}]{0,120}:\s*${ZERO_LITERAL})`;
-
 const HIDING_PROPS = [
-  { name: "opacity", pattern: new RegExp(String.raw`\bopacity\s*:\s*${HIDING_VALUE}`) },
-  { name: "width", pattern: new RegExp(String.raw`\bwidth\s*:\s*${HIDING_VALUE}`) },
-  { name: "height", pattern: new RegExp(String.raw`\bheight\s*:\s*${HIDING_VALUE}`) },
-  { name: "scale", pattern: new RegExp(String.raw`\bscale[XY]?\s*:\s*${HIDING_VALUE}`) },
+  { name: "opacity", pattern: new RegExp(String.raw`\bopacity\s*:\s*${ZERO_LITERAL}`) },
+  { name: "width", pattern: new RegExp(String.raw`\bwidth\s*:\s*${ZERO_LITERAL}`) },
+  { name: "height", pattern: new RegExp(String.raw`\bheight\s*:\s*${ZERO_LITERAL}`) },
+  { name: "scale", pattern: new RegExp(String.raw`\bscale[XY]?\s*:\s*${ZERO_LITERAL}`) },
   { name: "visibility", pattern: /\bvisibility\s*:\s*["']hidden["']/ },
 ];
 
@@ -45,66 +43,6 @@ function skipQuoted(source: string, index: number): number {
     i += source[i] === "\\" ? 2 : 1;
   }
   return i < source.length ? i + 1 : i;
-}
-
-/** Index of the opening quote for the quoted span whose closer is `closeIndex`. */
-function skipQuotedBack(source: string, closeIndex: number): number {
-  const quote = source[closeIndex];
-  let i = closeIndex - 1;
-  while (i >= 0) {
-    if (source[i] === quote) {
-      let slashes = 0;
-      let j = i - 1;
-      while (j >= 0 && source[j] === "\\") {
-        slashes += 1;
-        j -= 1;
-      }
-      if (slashes % 2 === 0) return i;
-    }
-    i -= 1;
-  }
-  return 0;
-}
-
-/** Expression immediately before `&&` or `?`, starting after the nearest `{`. */
-function readExpressionBefore(source: string, opIndex: number): string {
-  let end = opIndex;
-  while (end > 0 && /\s/.test(source[end - 1] ?? "")) end -= 1;
-
-  let i = end - 1;
-  let paren = 0;
-  let brace = 0;
-  let bracket = 0;
-
-  while (i >= 0) {
-    const ch = source[i];
-    if (ch === "'" || ch === '"' || ch === "`") {
-      i = skipQuotedBack(source, i) - 1;
-      continue;
-    }
-    if (ch === ")") paren += 1;
-    else if (ch === "]") bracket += 1;
-    else if (ch === "}") brace += 1;
-    else if (ch === "(") {
-      if (paren === 0) break;
-      paren -= 1;
-    } else if (ch === "[") {
-      if (bracket === 0) break;
-      bracket -= 1;
-    } else if (ch === "{") {
-      if (brace === 0 && paren === 0 && bracket === 0) {
-        return source.slice(i + 1, end).trim();
-      }
-      brace -= 1;
-    }
-    i -= 1;
-  }
-
-  return source.slice(Math.max(0, i + 1), end).trim();
-}
-
-function conditionLooksLikeSsrCollection(condition: string): boolean {
-  return /\.length\b|\.size\b|Object\.keys\s*\(|Array\.isArray\s*\(/.test(condition);
 }
 
 /** Returns the balanced `open...close` slice starting at `openIndex`. */
@@ -451,17 +389,12 @@ function isInsideAnimatePresence(source: string, index: number): boolean {
 
 /**
  * Hiding initials are ignored only when they sit in a conditional mount
- * *and* under AnimatePresence (the Navbar/FAQ shape), and the condition is
- * not a collection/length check that can be true during SSR.
+ * *and* under AnimatePresence (the Navbar/FAQ shape). This is still a
+ * syntax contract: `{items.length && (...)}` under AnimatePresence is
+ * exempt even if `items` is non-empty during SSR.
  */
 function isExemptHidingInitial(source: string, index: number): boolean {
-  if (!isInsideAnimatePresence(source, index)) return false;
-  const range = collectConditionalRanges(source).find(
-    (candidate) => index >= candidate.start && index < candidate.end
-  );
-  if (!range) return false;
-  if (conditionLooksLikeSsrCollection(range.condition)) return false;
-  return true;
+  return isInsideConditionalMount(source, index) && isInsideAnimatePresence(source, index);
 }
 
 function hidingHits(state: string): string[] {
