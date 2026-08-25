@@ -261,6 +261,11 @@ function collectInitialVariantNames(source: string): Set<string> {
 
   for (const match of source.matchAll(/initial\s*=\s*\{/g)) {
     const exprBrace = match.index + match[0].lastIndexOf("{");
+    const inner = skipWs(source, exprBrace + 1);
+    // Inline `initial={{ ... }}` objects can contain string values that are
+    // not variant names (`content: "hidden"`). Only mine names from
+    // expression forms such as `initial={reduced ? "hidden" : "visible"}`.
+    if (source[inner] === "{") continue;
     const expr = readBalanced(source, exprBrace, "{", "}");
     for (const name of collectStringNames(expr)) names.add(name);
   }
@@ -306,11 +311,6 @@ function collectNamedVariantObjects(source: string, name: string): InitialState[
   return states;
 }
 
-/**
- * Every initial state a motion element can resolve during SSR: an inline
- * `initial={{ ... }}` object (whitespace-tolerant), and named variant
- * objects referenced by `initial="name"` / `initial={"name"}`.
- */
 /**
  * Every initial state a motion element can resolve during SSR: an inline
  * `initial={{ ... }}` object, a same-file `initial={ident}` object, and
@@ -505,12 +505,6 @@ function isInsideAnimatePresence(source: string, index: number): boolean {
   return collectAnimatePresenceRanges(source).some(([start, end]) => index >= start && index < end);
 }
 
-/**
- * Hiding initials are ignored only when they sit in a conditional mount
- * *and* under AnimatePresence (the Navbar/FAQ shape). This is still a
- * syntax contract: `{items.length && (...)}` under AnimatePresence is
- * exempt even if `items` is non-empty during SSR.
- */
 /**
  * Hiding initials are ignored only when they sit in a conditional mount
  * and under AnimatePresence, and the condition is not a collection/length
@@ -750,23 +744,41 @@ test("a hiding zero on either side of a ternary property is collected", () => {
   assert.equal(hidingHits("{ opacity: visible ? 1 : 1 }").length, 0);
 });
 
-test("collection .length under AnimatePresence is not exempt", () => {
+test("quoted strings inside inline initial objects are not variant names", () => {
   const source = `
-    <AnimatePresence>
-      {items.length && (
-        <motion.div initial={{ opacity: 0 }} />
-      )}
-    </AnimatePresence>
+    const css = { hidden: { opacity: 0 } };
+    <motion.div initial={{ content: "hidden", y: 24 }} />
   `;
-  const states = collectInitialStates(source);
-  assert.equal(states.length, 1);
-  assert.equal(isInsideConditionalMount(source, states[0].index), true);
-  assert.equal(isInsideAnimatePresence(source, states[0].index), true);
   assert.equal(
-    isExemptHidingInitial(source, states[0].index),
-    false,
-    "{items.length && (...)} can be true during SSR; AnimatePresence does not hide it"
+    collectInitialStates(source).filter((state) => hidingHits(state.text).includes("opacity"))
+      .length,
+    0,
+    'content: "hidden" must not collect a stray hidden: { opacity: 0 } object'
   );
+});
+
+test("collection .length under AnimatePresence is not exempt", () => {
+  const cases = [
+    "{items.length && (<motion.div initial={{ opacity: 0 }} />)}",
+    "{items.length && <motion.div initial={{ opacity: 0 }} />}",
+    "{items.length ? (<motion.div initial={{ opacity: 0 }} />) : null}",
+    "{Object.keys(items).length && (<motion.div initial={{ opacity: 0 }} />)}",
+    "{items.size && (<motion.div initial={{ opacity: 0 }} />)}",
+    "{Array.isArray(items) && (<motion.div initial={{ opacity: 0 }} />)}",
+  ];
+
+  for (const mount of cases) {
+    const source = `<AnimatePresence>${mount}</AnimatePresence>`;
+    const states = collectInitialStates(source);
+    assert.equal(states.length, 1, mount);
+    assert.equal(isInsideConditionalMount(source, states[0].index), true, mount);
+    assert.equal(isInsideAnimatePresence(source, states[0].index), true, mount);
+    assert.equal(
+      isExemptHidingInitial(source, states[0].index),
+      false,
+      `${mount} can be true during SSR; AnimatePresence does not hide it`
+    );
+  }
 });
 
 test("no component ships an SSR initial state that hides its content", () => {
