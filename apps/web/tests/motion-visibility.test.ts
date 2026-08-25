@@ -282,7 +282,7 @@ function collectInitialVariantNames(source: string): Set<string> {
 function findSameFileObjectLiteral(source: string, ident: string): string | null {
   if (!/^[A-Za-z_$][\w$]*$/.test(ident)) return null;
   const pattern = new RegExp(
-    String.raw`\b(?:export\s+)?(?:const|let|var)\s+${escapeRegExp(ident)}\s*=\s*\{`
+    String.raw`\b(?:export\s+)?(?:const|let|var)\s+${escapeRegExp(ident)}(?:\s*:[^=;{]+)?\s*=\s*\{`
   );
   const match = pattern.exec(source);
   if (!match) return null;
@@ -312,10 +312,151 @@ function collectNamedVariantObjects(source: string, name: string): InitialState[
 }
 
 /**
+ * Index of the `<` that opens the JSX tag containing `attrIndex`.
+ * `-1` if this `variants=` is not on a tag (`const variants = {` at module scope).
+ */
+function findJsxTagStart(source: string, attrIndex: number): number {
+  let i = attrIndex - 1;
+  let brace = 0;
+
+  while (i >= 0) {
+    const ch = source[i];
+    if (ch === "'" || ch === '"' || ch === "`") {
+      i = skipQuotedBack(source, i) - 1;
+      continue;
+    }
+    if (ch === "}") brace += 1;
+    else if (ch === "{") {
+      if (brace > 0) brace -= 1;
+    } else if (ch === "<" && brace === 0 && !source.startsWith("</", i)) {
+      return i;
+    }
+    i -= 1;
+  }
+
+  return -1;
+}
+
+function findOpeningTagEnd(source: string, ltIndex: number): number {
+  let i = ltIndex + 1;
+  while (i < source.length) {
+    if (source[i] === "{") {
+      const expr = readBalanced(source, i, "{", "}");
+      i += expr.length;
+      continue;
+    }
+    if (source[i] === "'" || source[i] === '"' || source[i] === "`") {
+      i = skipQuoted(source, i);
+      continue;
+    }
+    if (source.startsWith("/>", i)) return i + 2;
+    if (source[i] === ">") return i + 1;
+    i += 1;
+  }
+  return source.length;
+}
+
+const VARIANT_EXPR_KEYWORDS = new Set([
+  "as",
+  "satisfies",
+  "typeof",
+  "new",
+  "void",
+  "await",
+  "const",
+  "let",
+  "var",
+]);
+
+function collectIdentNamesFromExpr(expr: string): string[] {
+  const names: string[] = [];
+  for (const match of expr.matchAll(/[A-Za-z_$][\w$]*/g)) {
+    if (NON_VARIANT_INITIAL.has(match[0]) || VARIANT_EXPR_KEYWORDS.has(match[0])) continue;
+    names.push(match[0]);
+  }
+  return names;
+}
+
+interface VariantsBinding {
+  objectText: string;
+  elementStart: number;
+  openingTagEnd: number;
+}
+
+/**
+ * Every `variants={ident}` / `variants={{ ... }}` object in the file, tied to
+ * the JSX element that carries the attribute.
+ */
+function collectVariantsBindings(source: string): VariantsBinding[] {
+  const bindings: VariantsBinding[] = [];
+
+  for (const match of source.matchAll(/variants\s*=\s*\{/g)) {
+    const exprBrace = match.index + match[0].lastIndexOf("{");
+    const inner = skipWs(source, exprBrace + 1);
+    const objectTexts: string[] = [];
+
+    if (source[inner] === "{") {
+      objectTexts.push(readBalanced(source, exprBrace, "{", "}"));
+    } else {
+      const expr = readBalanced(source, exprBrace, "{", "}");
+      for (const ident of collectIdentNamesFromExpr(expr)) {
+        const obj = findSameFileObjectLiteral(source, ident);
+        if (obj) objectTexts.push(obj);
+      }
+    }
+
+    if (objectTexts.length === 0) continue;
+
+    const elementStart = findJsxTagStart(source, match.index);
+    if (elementStart < 0) continue;
+    const openingTagEnd = findOpeningTagEnd(source, elementStart);
+
+    for (const objectText of objectTexts) {
+      bindings.push({ objectText, elementStart, openingTagEnd });
+    }
+  }
+
+  return bindings;
+}
+
+/** File index of `initial=` on this opening tag that names `name`, if any. */
+function findInitialUsageIndexInTag(
+  source: string,
+  ltIndex: number,
+  openingTagEnd: number,
+  name: string
+): number | null {
+  const tag = source.slice(ltIndex, openingTagEnd);
+
+  for (const match of tag.matchAll(/initial\s*=\s*(["'`])(\w+)\1/g)) {
+    if (match[2] === name && match.index !== undefined) return ltIndex + match.index;
+  }
+
+  for (const match of tag.matchAll(/initial\s*=\s*\{/g)) {
+    if (match.index === undefined) continue;
+    const exprBrace = match.index + match[0].lastIndexOf("{");
+    const absBrace = ltIndex + exprBrace;
+    const inner = skipWs(source, absBrace + 1);
+    if (source[inner] === "{") continue;
+    const expr = readBalanced(source, absBrace, "{", "}");
+    if (collectStringNames(expr).includes(name)) return ltIndex + match.index;
+    const identMatch = /^\{\s*([A-Za-z_$][\w$]*)\s*\}$/.exec(expr);
+    if (identMatch && identMatch[1] === name && !NON_VARIANT_INITIAL.has(name)) {
+      return ltIndex + match.index;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Every initial state a motion element can resolve during SSR: an inline
  * `initial={{ ... }}` object, a same-file `initial={ident}` object, and
- * named variant objects referenced by `initial="name"`, `initial={"name"}`,
- * `initial={ident}`, or a string literal in that expression.
+ * named variant objects from a `variants=` binding referenced by
+ * `initial="name"`, `initial={"name"}`, `initial={ident}`, or a string
+ * literal in that expression. Exemption is keyed at the `initial=` usage
+ * when that tag names the variant; otherwise at the `variants=` element
+ * (stagger children have no `initial=` of their own).
  */
 function collectInitialStates(source: string): InitialState[] {
   const states: InitialState[] = [];
@@ -338,8 +479,23 @@ function collectInitialStates(source: string): InitialState[] {
     }
   }
 
-  for (const name of collectInitialVariantNames(source)) {
-    states.push(...collectNamedVariantObjects(source, name));
+  const names = collectInitialVariantNames(source);
+  const bindings = collectVariantsBindings(source);
+  for (const name of names) {
+    for (const binding of bindings) {
+      const objects = collectNamedVariantObjects(binding.objectText, name);
+      if (objects.length === 0) continue;
+      const usageIndex = findInitialUsageIndexInTag(
+        source,
+        binding.elementStart,
+        binding.openingTagEnd,
+        name
+      );
+      const index = usageIndex ?? binding.elementStart;
+      for (const obj of objects) {
+        states.push({ text: obj.text, index });
+      }
+    }
   }
 
   return states;
@@ -522,6 +678,10 @@ function isExemptHidingInitial(source: string, index: number): boolean {
 
 function hidingHits(state: string): string[] {
   return HIDING_PROPS.filter((prop) => prop.pattern.test(state)).map((prop) => prop.name);
+}
+
+function hidingOpacityStates(source: string): InitialState[] {
+  return collectInitialStates(source).filter((state) => hidingHits(state.text).includes("opacity"));
 }
 
 function readSource(relativePath: string): string {
@@ -736,6 +896,155 @@ test("computed variant keys matching initial= are collected", () => {
     collectInitialStates(source).some((state) => hidingHits(state.text).includes("opacity")),
     '["hidden"]: { opacity: 0 } must be visible when initial="hidden"'
   );
+});
+
+test("module-scope named variants key exemption off initial= usage, not the definition", () => {
+  const source = `
+    const variants = { hidden: { opacity: 0 } };
+    <AnimatePresence>
+      {open && (
+        <motion.div initial="hidden" variants={variants} />
+      )}
+    </AnimatePresence>
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(hiding.length, 1);
+  assert.equal(
+    isExemptHidingInitial(source, hiding[0].index),
+    true,
+    "the definition is module-scope; the initial=\"hidden\" usage is the conditional mount"
+  );
+});
+
+test("a leftover CSS hidden map is not collected when initial= references a variants= object", () => {
+  const source = `
+    const css = { hidden: { opacity: 0 } };
+    const variants = { hidden: { opacity: 0 } };
+    <AnimatePresence>
+      {open && (
+        <motion.div initial="hidden" variants={variants} />
+      )}
+    </AnimatePresence>
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(
+    hiding.length,
+    1,
+    "style-map hidden: { opacity: 0 } must not be treated as a motion initial"
+  );
+  assert.equal(isExemptHidingInitial(source, hiding[0].index), true);
+});
+
+test("always-rendered and conditional initial= usages are keyed separately", () => {
+  const source = `
+    const variants = { hidden: { opacity: 0 } };
+    <motion.div initial="hidden" variants={variants} />
+    <AnimatePresence>
+      {open && <motion.div initial="hidden" variants={variants} />}
+    </AnimatePresence>
+  `;
+  const hiding = hidingOpacityStates(source);
+  const exempt = hiding.filter((state) => isExemptHidingInitial(source, state.index));
+  const offenders = hiding.filter((state) => !isExemptHidingInitial(source, state.index));
+  assert.equal(offenders.length, 1, "the always-rendered initial=\"hidden\" stays an offender");
+  assert.equal(exempt.length, 1, "the conditional usage must not inherit the definition index");
+});
+
+test("variants={cardVariants} is collected, not only const variants =", () => {
+  const source = `
+    const cardVariants = { hidden: { opacity: 0 } };
+    <AnimatePresence>
+      {open && (
+        <motion.div initial="hidden" variants={cardVariants} />
+      )}
+    </AnimatePresence>
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(hiding.length, 1);
+  assert.equal(isExemptHidingInitial(source, hiding[0].index), true);
+});
+
+test("typed const variants objects are still collected", () => {
+  const source = `
+    const cardVariants: Variants = { hidden: { opacity: 0 } };
+    <motion.div initial="hidden" variants={cardVariants} />
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(
+    hiding.length,
+    1,
+    "const cardVariants: Variants = { hidden: { opacity: 0 } } must resolve through variants={cardVariants}"
+  );
+  assert.equal(isExemptHidingInitial(source, hiding[0].index), false);
+});
+
+test("always-rendered named hiding variants stay offenders", () => {
+  const source = `
+    const cardVariants = { hidden: { opacity: 0 } };
+    <motion.div initial="hidden" variants={cardVariants} />
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(hiding.length, 1);
+  assert.equal(isExemptHidingInitial(source, hiding[0].index), false);
+});
+
+test("stagger children inherit named-variant collection from a parent initial=", () => {
+  const source = `
+    const containerVariants = { hidden: {} };
+    const childVariants = { hidden: { opacity: 0 } };
+    <motion.div variants={containerVariants} initial="hidden">
+      <AnimatePresence>
+        {open && <motion.div variants={childVariants} />}
+      </AnimatePresence>
+    </motion.div>
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(hiding.length, 1);
+  assert.equal(
+    isExemptHidingInitial(source, hiding[0].index),
+    true,
+    "childVariants.hidden is used via parent initial=\"hidden\"; exemption keys off the child element"
+  );
+});
+
+test("always-rendered stagger children with hiding named variants stay offenders", () => {
+  const source = `
+    const containerVariants = { hidden: {} };
+    const childVariants = { hidden: { opacity: 0 } };
+    <motion.div variants={containerVariants} initial="hidden">
+      <motion.div variants={childVariants} />
+    </motion.div>
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(hiding.length, 1);
+  assert.equal(
+    isExemptHidingInitial(source, hiding[0].index),
+    false,
+    "Hero/ClientLogos-style children have no initial=; collection keys off the child tag, which is always rendered"
+  );
+});
+
+test("inline variants={{}} hiding objects follow the element's initial= usage", () => {
+  const source = `
+    <AnimatePresence>
+      {open && <motion.div initial="hidden" variants={{ hidden: { opacity: 0 } }} />}
+    </AnimatePresence>
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(hiding.length, 1);
+  assert.equal(isExemptHidingInitial(source, hiding[0].index), true);
+});
+
+test("variants={ { ... } } with space or newline is still collected", () => {
+  const space = `<motion.div initial="hidden" variants={ { hidden: { opacity: 0 } } } />`;
+  const newline = `<motion.div initial="hidden" variants={\n  { hidden: { opacity: 0 } }\n} />`;
+
+  const spaceHiding = hidingOpacityStates(space);
+  const newlineHiding = hidingOpacityStates(newline);
+  assert.equal(spaceHiding.length, 1, "space after variants={ must still see hidden: { opacity: 0 }");
+  assert.equal(newlineHiding.length, 1, "newline after variants={ must still see hidden: { opacity: 0 }");
+  assert.equal(isExemptHidingInitial(space, spaceHiding[0].index), false);
+  assert.equal(isExemptHidingInitial(newline, newlineHiding[0].index), false);
 });
 
 test("a hiding zero on either side of a ternary property is collected", () => {
