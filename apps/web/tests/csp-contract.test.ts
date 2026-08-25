@@ -153,6 +153,10 @@ test("violations are reported through both the legacy and Reporting API paths", 
     buildReportingEndpoints("https://www.mehdi-zare.com/api/csp-report"),
     'csp-endpoint="https://www.mehdi-zare.com/api/csp-report"'
   );
+  assert.throws(
+    () => buildReportingEndpoints("/api/csp-report"),
+    /absolute URL/
+  );
 });
 
 test("reporting directives are omitted when no collector is configured", () => {

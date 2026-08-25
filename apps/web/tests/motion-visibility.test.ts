@@ -27,7 +27,7 @@ function listTsxFiles(dir: string): string[] {
   });
 }
 
-/** Returns the balanced `{...}` slice starting at `openIndex`. */
+/** Returns the balanced `open...close` slice starting at `openIndex`. */
 function readBalanced(source: string, openIndex: number, open: string, close: string): string {
   let depth = 0;
 
@@ -41,7 +41,7 @@ function readBalanced(source: string, openIndex: number, open: string, close: st
     }
   }
 
-  return source.slice(openIndex);
+  throw new Error(`unbalanced ${open}...${close} starting at index ${openIndex}`);
 }
 
 interface InitialState {
@@ -117,7 +117,7 @@ test("the hiding-initial scanner still sees Navbar's interaction-only panel", ()
   const hits = collectInitialStates(navbar).filter((state) => hidingHits(state.text).length > 0);
   assert.ok(
     hits.some((state) => /opacity\s*:\s*0/.test(state.text) && /height\s*:\s*0/.test(state.text)),
-    "scanner no longer sees Navbar's hiding initial; exemptions are now a blind skip"
+    "scanner no longer sees Navbar's hiding initial; the per-node helper is now a blind skip"
   );
 });
 
@@ -136,6 +136,26 @@ test("conditionally mounted hiding initials are ignored; always-rendered ones ar
   assert.ok(always && conditional);
   assert.equal(isInsideConditionalMount(source, always.index), false);
   assert.equal(isInsideConditionalMount(source, conditional.index), true);
+});
+
+test("unparenthesized && JSX and ternaries are not treated as conditional mounts", () => {
+  // Fail closed: only `{cond && ( ... )}` is exempt. Other SSR-safe shapes
+  // still fail the scanner so authors add parens rather than us guessing JSX.
+  const unparen = `
+    {mobileMenuOpen && <motion.div initial={{ opacity: 0 }} />}
+  `;
+  const unparenStates = collectInitialStates(unparen);
+  assert.equal(unparenStates.length, 1);
+  assert.equal(isInsideConditionalMount(unparen, unparenStates[0].index), false);
+
+  const ternary = `
+    {isOpen ? (
+      <motion.div initial={{ opacity: 0 }} />
+    ) : null}
+  `;
+  const ternaryStates = collectInitialStates(ternary);
+  assert.equal(ternaryStates.length, 1);
+  assert.equal(isInsideConditionalMount(ternary, ternaryStates[0].index), false);
 });
 
 test("no component ships an SSR initial state that hides its content", () => {
@@ -172,7 +192,7 @@ test("Navbar and FAQ hiding initials sit on conditionally mounted nodes", () => 
     for (const state of hiding) {
       assert.ok(
         isInsideConditionalMount(source, state.index),
-        `${key} hiding initial is not behind \`{cond && (}\`; it will SSR-hide:\n  ${state.text}`
+        `${key} hiding initial is not behind \`{cond && (}\`. Only that parenthesized form is exempt; add parens or drop the hiding initial:\n  ${state.text}`
       );
     }
   }
@@ -196,6 +216,7 @@ test("ProofOfWork score bars carry their real width in the markup", () => {
   const source = readSource("src/components/home/ProofOfWork.tsx");
 
   assert.doesNotMatch(source, /initial=\{\{/);
+  assert.match(source, /<section\s+id="proof-of-work"/);
   assert.match(source, /--score-bar-width/);
   assert.match(source, /className=\{`score-bar/);
   assert.match(source, /"--score-bar-width":\s*`\$\{score\.value\}%`/);
@@ -213,23 +234,29 @@ test("score bar growth is CSS, ends at the declared width, and respects reduced 
   assert.match(source, /animation:\s*score-bar-grow[^;]*both/);
   assert.match(source, /@keyframes\s*score-bar-grow[\s\S]*from\s*\{\s*width:\s*0%/);
   assert.match(source, /@keyframes\s*score-bar-grow[\s\S]*to\s*\{\s*width:\s*var\(--score-bar-width\)/);
-  assert.match(source, /#proof-of-work\s*\{[^}]*view-timeline-name:\s*--proof-of-work/);
-  assert.match(source, /@supports\s*\(animation-timeline:\s*view\(\)\)/);
-  assert.match(
-    source,
-    /@supports\s*\(animation-timeline:\s*view\(\)\)\s*\{\s*\.score-bar\s*\{[^}]*animation-timeline:\s*--proof-of-work/
+
+  const namedTimeline = source.match(
+    /#proof-of-work\s*\{[^}]*view-timeline-name:\s*(--[A-Za-z0-9-]+)/
   );
-  assert.match(
-    source,
-    /@supports\s*\(animation-timeline:\s*view\(\)\)\s*\{\s*\.score-bar\s*\{[^}]*animation-range:\s*entry\s+0%\s+cover\s+40%/
+  assert.ok(namedTimeline, "#proof-of-work must declare a named view timeline");
+
+  const supportsBody = source.match(
+    /@supports\s*\(animation-timeline:\s*view\(\)\)\s*\{\s*\.score-bar\s*\{([^}]*)\}/
   );
-  assert.match(
-    source,
-    /@supports\s*\(animation-timeline:\s*view\(\)\)\s*\{\s*\.score-bar\s*\{[^}]*animation-duration:\s*auto/
+  assert.ok(supportsBody, "@supports (animation-timeline: view()) must retarget .score-bar");
+  const consumedTimeline = supportsBody[1].match(/animation-timeline:\s*(--[A-Za-z0-9-]+)/);
+  assert.ok(consumedTimeline, ".score-bar must consume a named timeline");
+  assert.equal(
+    consumedTimeline[1],
+    namedTimeline[1],
+    "the bar must consume the same timeline the section names"
   );
+  assert.match(supportsBody[1], /animation-range:\s*entry\s+0%\s+cover\s+40%/);
+  assert.match(supportsBody[1], /animation-duration:\s*auto/);
+
   assert.match(
     source,
-    /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{\s*\.score-bar\s*\{\s*animation:\s*none/
+    /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{\s*\.score-bar\s*\{\s*animation:\s*none;\s*animation-timeline:\s*auto/
   );
 });
 

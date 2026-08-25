@@ -156,5 +156,6 @@ test("WritingSection pads CMS rows through the shared helper and keys the CTA of
   assert.match(source, /cards\.some\(\(card\) => !card\.external\)/);
 });
 
-// The CSP is asserted against the built header in csp-contract.test.ts rather
-// than by grepping next.config.ts for the expressions that produce it.
+// CSP source lists are asserted against the built header in csp-contract.test.ts.
+// next.config.ts is grepped only for the reporting-endpoint wiring that is not
+// in buildCsp().
