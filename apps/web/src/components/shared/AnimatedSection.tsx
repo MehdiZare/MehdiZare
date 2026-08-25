@@ -7,7 +7,6 @@ interface AnimatedSectionProps {
   children: React.ReactNode;
   className?: string;
   delay?: number;
-  stagger?: boolean;
 }
 
 const sectionVariants = {
@@ -18,44 +17,11 @@ const sectionVariants = {
   }),
 };
 
-const staggerContainerVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-    },
-  },
-};
-
-export const staggerChildVariants = {
-  hidden: { y: 16 },
-  visible: {
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" as const },
-  },
-};
-
 export function AnimatedSection({
   children,
   className,
   delay = 0,
-  stagger = false,
 }: AnimatedSectionProps) {
-  if (stagger) {
-    return (
-      <motion.div
-        variants={staggerContainerVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
-        className={cn(className)}
-      >
-        {children}
-      </motion.div>
-    );
-  }
-
   return (
     <motion.div
       variants={sectionVariants}

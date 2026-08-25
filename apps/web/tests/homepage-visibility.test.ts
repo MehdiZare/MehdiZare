@@ -141,6 +141,9 @@ test("AnimatedSection keeps a stable motion element and a hydration-safe initial
   assert.doesNotMatch(source, /<div className=\{cn\(className\)\}>\{children\}<\/div>/);
   assert.match(source, /<motion\.div/);
   assert.match(source, /initial="hidden"/);
+  assert.doesNotMatch(source, /staggerChildVariants/);
+  assert.doesNotMatch(source, /staggerContainerVariants/);
+  assert.doesNotMatch(source, /stagger\?:/);
 });
 
 test("WritingSection pads CMS rows through the shared helper and keys the CTA off rendered cards", () => {
