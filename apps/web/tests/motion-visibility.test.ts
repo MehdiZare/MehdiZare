@@ -13,11 +13,13 @@ const COMPONENTS_DIR = resolve(process.cwd(), "src/components");
 
 const ZERO_LITERAL = String.raw`(?:0(?:\.0+)?(?![.\d])|["'\`]0(?:px|%|rem|em)?["'\`])`;
 
+const HIDING_VALUE = String.raw`(?:${ZERO_LITERAL}|[^,{}]{0,120}\?\s*${ZERO_LITERAL}|[^,{}]{0,120}:\s*${ZERO_LITERAL})`;
+
 const HIDING_PROPS = [
-  { name: "opacity", pattern: new RegExp(String.raw`\bopacity\s*:\s*${ZERO_LITERAL}`) },
-  { name: "width", pattern: new RegExp(String.raw`\bwidth\s*:\s*${ZERO_LITERAL}`) },
-  { name: "height", pattern: new RegExp(String.raw`\bheight\s*:\s*${ZERO_LITERAL}`) },
-  { name: "scale", pattern: new RegExp(String.raw`\bscale[XY]?\s*:\s*${ZERO_LITERAL}`) },
+  { name: "opacity", pattern: new RegExp(String.raw`\bopacity\s*:\s*${HIDING_VALUE}`) },
+  { name: "width", pattern: new RegExp(String.raw`\bwidth\s*:\s*${HIDING_VALUE}`) },
+  { name: "height", pattern: new RegExp(String.raw`\bheight\s*:\s*${HIDING_VALUE}`) },
+  { name: "scale", pattern: new RegExp(String.raw`\bscale[XY]?\s*:\s*${HIDING_VALUE}`) },
   { name: "visibility", pattern: /\bvisibility\s*:\s*["']hidden["']/ },
 ];
 
@@ -43,6 +45,66 @@ function skipQuoted(source: string, index: number): number {
     i += source[i] === "\\" ? 2 : 1;
   }
   return i < source.length ? i + 1 : i;
+}
+
+/** Index of the opening quote for the quoted span whose closer is `closeIndex`. */
+function skipQuotedBack(source: string, closeIndex: number): number {
+  const quote = source[closeIndex];
+  let i = closeIndex - 1;
+  while (i >= 0) {
+    if (source[i] === quote) {
+      let slashes = 0;
+      let j = i - 1;
+      while (j >= 0 && source[j] === "\\") {
+        slashes += 1;
+        j -= 1;
+      }
+      if (slashes % 2 === 0) return i;
+    }
+    i -= 1;
+  }
+  return 0;
+}
+
+/** Expression immediately before `&&` or `?`, starting after the nearest `{`. */
+function readExpressionBefore(source: string, opIndex: number): string {
+  let end = opIndex;
+  while (end > 0 && /\s/.test(source[end - 1] ?? "")) end -= 1;
+
+  let i = end - 1;
+  let paren = 0;
+  let brace = 0;
+  let bracket = 0;
+
+  while (i >= 0) {
+    const ch = source[i];
+    if (ch === "'" || ch === '"' || ch === "`") {
+      i = skipQuotedBack(source, i) - 1;
+      continue;
+    }
+    if (ch === ")") paren += 1;
+    else if (ch === "]") bracket += 1;
+    else if (ch === "}") brace += 1;
+    else if (ch === "(") {
+      if (paren === 0) break;
+      paren -= 1;
+    } else if (ch === "[") {
+      if (bracket === 0) break;
+      bracket -= 1;
+    } else if (ch === "{") {
+      if (brace === 0 && paren === 0 && bracket === 0) {
+        return source.slice(i + 1, end).trim();
+      }
+      brace -= 1;
+    }
+    i -= 1;
+  }
+
+  return source.slice(Math.max(0, i + 1), end).trim();
+}
+
+function conditionLooksLikeSsrCollection(condition: string): boolean {
+  return /\.length\b|\.size\b|Object\.keys\s*\(|Array\.isArray\s*\(/.test(condition);
 }
 
 /** Returns the balanced `open...close` slice starting at `openIndex`. */
@@ -186,15 +248,23 @@ interface InitialState {
 
 const NON_VARIANT_INITIAL = new Set(["false", "true", "null", "undefined"]);
 
+function collectStringNames(text: string): string[] {
+  return [...text.matchAll(/(["'`])(\w+)\1/g)].map((match) => match[2]);
+}
+
 function collectInitialVariantNames(source: string): Set<string> {
   const names = new Set<string>();
 
   for (const match of source.matchAll(/initial\s*=\s*(["'`])(\w+)\1/g)) {
     names.add(match[2]);
   }
-  for (const match of source.matchAll(/initial\s*=\s*\{\s*(["'`])(\w+)\1\s*\}/g)) {
-    names.add(match[2]);
+
+  for (const match of source.matchAll(/initial\s*=\s*\{/g)) {
+    const exprBrace = match.index + match[0].lastIndexOf("{");
+    const expr = readBalanced(source, exprBrace, "{", "}");
+    for (const name of collectStringNames(expr)) names.add(name);
   }
+
   // `initial={start}` names the variants key `start`. Skip `false`/`true` so
   // `<AnimatePresence initial={false}>` does not search for `false: {`.
   for (const match of source.matchAll(/initial\s*=\s*\{\s*([A-Za-z_$][\w$]*)\s*\}/g)) {
@@ -204,28 +274,28 @@ function collectInitialVariantNames(source: string): Set<string> {
   return names;
 }
 
-/**
- * Every initial state a motion element can resolve during SSR: an inline
- * `initial={{ ... }}` object (whitespace-tolerant), and named variant
- * objects referenced by `initial="name"` / `initial={"name"}`.
- */
-function collectInitialStates(source: string): InitialState[] {
+function findSameFileObjectLiteral(source: string, ident: string): string | null {
+  if (!/^[A-Za-z_$][\w$]*$/.test(ident)) return null;
+  const pattern = new RegExp(
+    String.raw`\b(?:export\s+)?(?:const|let|var)\s+${escapeRegExp(ident)}\s*=\s*\{`
+  );
+  const match = pattern.exec(source);
+  if (!match) return null;
+  const braceIndex = source.indexOf("{", match.index + match[0].length - 1);
+  return readBalanced(source, braceIndex, "{", "}");
+}
+
+function collectNamedVariantObjects(source: string, name: string): InitialState[] {
   const states: InitialState[] = [];
+  const identKey = new RegExp(String.raw`\b${escapeRegExp(name)}\s*:\s*\{`, "g");
+  const computedKey = new RegExp(
+    String.raw`\[\s*(["'\`])${escapeRegExp(name)}\1\s*\]\s*:\s*\{`,
+    "g"
+  );
 
-  for (const match of source.matchAll(/initial\s*=\s*\{/g)) {
-    const exprBrace = match.index + match[0].lastIndexOf("{");
-    const inner = skipWs(source, exprBrace + 1);
-    if (source[inner] !== "{") continue;
-    states.push({
-      text: readBalanced(source, exprBrace, "{", "}"),
-      index: match.index,
-    });
-  }
-
-  for (const name of collectInitialVariantNames(source)) {
-    const pattern = new RegExp(String.raw`\b${escapeRegExp(name)}\s*:\s*\{`, "g");
+  for (const pattern of [identKey, computedKey]) {
     for (const match of source.matchAll(pattern)) {
-      const braceIndex = source.indexOf("{", match.index);
+      const braceIndex = source.indexOf("{", match.index + match[0].length - 1);
       states.push({
         text: readBalanced(source, braceIndex, "{", "}"),
         index: match.index,
@@ -236,18 +306,63 @@ function collectInitialStates(source: string): InitialState[] {
   return states;
 }
 
-function collectConditionalRanges(source: string): Array<[number, number]> {
-  const ranges: Array<[number, number]> = [];
+/**
+ * Every initial state a motion element can resolve during SSR: an inline
+ * `initial={{ ... }}` object (whitespace-tolerant), and named variant
+ * objects referenced by `initial="name"` / `initial={"name"}`.
+ */
+/**
+ * Every initial state a motion element can resolve during SSR: an inline
+ * `initial={{ ... }}` object, a same-file `initial={ident}` object, and
+ * named variant objects referenced by `initial="name"`, `initial={"name"}`,
+ * `initial={ident}`, or a string literal in that expression.
+ */
+function collectInitialStates(source: string): InitialState[] {
+  const states: InitialState[] = [];
 
-  const pushJsxOrGroup = (start: number): number => {
+  for (const match of source.matchAll(/initial\s*=\s*\{/g)) {
+    const exprBrace = match.index + match[0].lastIndexOf("{");
+    const inner = skipWs(source, exprBrace + 1);
+    if (source[inner] === "{") {
+      states.push({
+        text: readBalanced(source, exprBrace, "{", "}"),
+        index: match.index,
+      });
+      continue;
+    }
+    const identMatch = /^[A-Za-z_$][\w$]*/.exec(source.slice(inner));
+    if (!identMatch || NON_VARIANT_INITIAL.has(identMatch[0])) continue;
+    const obj = findSameFileObjectLiteral(source, identMatch[0]);
+    if (obj) {
+      states.push({ text: obj, index: match.index });
+    }
+  }
+
+  for (const name of collectInitialVariantNames(source)) {
+    states.push(...collectNamedVariantObjects(source, name));
+  }
+
+  return states;
+}
+
+interface ConditionalRange {
+  start: number;
+  end: number;
+  condition: string;
+}
+
+function collectConditionalRanges(source: string): ConditionalRange[] {
+  const ranges: ConditionalRange[] = [];
+
+  const pushJsxOrGroup = (start: number, condition: string): number => {
     if (source[start] === "(") {
       const group = readBalanced(source, start, "(", ")");
-      ranges.push([start, start + group.length]);
+      ranges.push({ start, end: start + group.length, condition });
       return start + group.length;
     }
     if (source[start] === "<") {
       const jsx = readJsxElement(source, start);
-      ranges.push([start, start + jsx.length]);
+      ranges.push({ start, end: start + jsx.length, condition });
       return start + jsx.length;
     }
     return start + 1;
@@ -259,7 +374,7 @@ function collectConditionalRanges(source: string): Array<[number, number]> {
     if (and === -1) break;
     const next = skipWs(source, and + 2);
     if (source[next] === "(" || source[next] === "<") {
-      searchFrom = pushJsxOrGroup(next);
+      searchFrom = pushJsxOrGroup(next, readExpressionBefore(source, and));
     } else {
       searchFrom = and + 2;
     }
@@ -275,10 +390,11 @@ function collectConditionalRanges(source: string): Array<[number, number]> {
       searchFrom = q + 1;
       continue;
     }
+    const condition = readExpressionBefore(source, q);
     const trueStart = skipWs(source, q + 1);
     let afterTrue: number;
     if (source[trueStart] === "(" || source[trueStart] === "<") {
-      afterTrue = pushJsxOrGroup(trueStart);
+      afterTrue = pushJsxOrGroup(trueStart, condition);
     } else {
       const colonAt = findTopLevelColon(source, trueStart);
       if (colonAt === -1) {
@@ -291,7 +407,7 @@ function collectConditionalRanges(source: string): Array<[number, number]> {
     if (source[colon] === ":") {
       const falseStart = skipWs(source, colon + 1);
       if (source[falseStart] === "(" || source[falseStart] === "<") {
-        searchFrom = pushJsxOrGroup(falseStart);
+        searchFrom = pushJsxOrGroup(falseStart, condition);
         continue;
       }
     }
@@ -307,7 +423,9 @@ function collectConditionalRanges(source: string): Array<[number, number]> {
  * that starts with `(` or `<`.
  */
 function isInsideConditionalMount(source: string, index: number): boolean {
-  return collectConditionalRanges(source).some(([start, end]) => index >= start && index < end);
+  return collectConditionalRanges(source).some(
+    (range) => index >= range.start && index < range.end
+  );
 }
 
 function collectAnimatePresenceRanges(source: string): Array<[number, number]> {
@@ -393,8 +511,19 @@ function isInsideAnimatePresence(source: string, index: number): boolean {
  * syntax contract: `{items.length && (...)}` under AnimatePresence is
  * exempt even if `items` is non-empty during SSR.
  */
+/**
+ * Hiding initials are ignored only when they sit in a conditional mount
+ * and under AnimatePresence, and the condition is not a collection/length
+ * check that can be true during SSR.
+ */
 function isExemptHidingInitial(source: string, index: number): boolean {
-  return isInsideConditionalMount(source, index) && isInsideAnimatePresence(source, index);
+  if (!isInsideAnimatePresence(source, index)) return false;
+  const range = collectConditionalRanges(source).find(
+    (candidate) => index >= candidate.start && index < candidate.end
+  );
+  if (!range) return false;
+  if (conditionLooksLikeSsrCollection(range.condition)) return false;
+  return true;
 }
 
 function hidingHits(state: string): string[] {
@@ -579,6 +708,64 @@ test("braces inside strings do not truncate an initial object", () => {
   assert.ok(
     hidingHits(states[0].text).includes("opacity"),
     "a quoted } before opacity: 0 must not hide the rest of the object from the scanner"
+  );
+});
+
+test("initial={ident} resolves a same-file object literal", () => {
+  const source = `
+    const hidden = { opacity: 0 };
+    <motion.div initial={hidden} />
+  `;
+  assert.ok(
+    collectInitialStates(source).some((state) => hidingHits(state.text).includes("opacity")),
+    "const hidden = { opacity: 0 } plus initial={hidden} must be visible"
+  );
+});
+
+test("ternary initial= collects string variant names", () => {
+  const source = `
+    const variants = { hidden: { opacity: 0 }, visible: { y: 0 } };
+    <motion.div initial={reduced ? "hidden" : "visible"} variants={variants} />
+  `;
+  assert.ok(
+    collectInitialStates(source).some((state) => hidingHits(state.text).includes("opacity")),
+    "initial={reduced ? \"hidden\" : \"visible\"} must collect hidden: { opacity: 0 }"
+  );
+});
+
+test("computed variant keys matching initial= are collected", () => {
+  const source = `
+    const variants = { ["hidden"]: { opacity: 0 } };
+    <motion.div initial="hidden" variants={variants} />
+  `;
+  assert.ok(
+    collectInitialStates(source).some((state) => hidingHits(state.text).includes("opacity")),
+    '["hidden"]: { opacity: 0 } must be visible when initial="hidden"'
+  );
+});
+
+test("a hiding zero on either side of a ternary property is collected", () => {
+  assert.ok(hidingHits("{ opacity: visible ? 1 : 0 }").includes("opacity"));
+  assert.ok(hidingHits("{ opacity: visible ? 0 : 1 }").includes("opacity"));
+  assert.equal(hidingHits("{ opacity: visible ? 1 : 1 }").length, 0);
+});
+
+test("collection .length under AnimatePresence is not exempt", () => {
+  const source = `
+    <AnimatePresence>
+      {items.length && (
+        <motion.div initial={{ opacity: 0 }} />
+      )}
+    </AnimatePresence>
+  `;
+  const states = collectInitialStates(source);
+  assert.equal(states.length, 1);
+  assert.equal(isInsideConditionalMount(source, states[0].index), true);
+  assert.equal(isInsideAnimatePresence(source, states[0].index), true);
+  assert.equal(
+    isExemptHidingInitial(source, states[0].index),
+    false,
+    "{items.length && (...)} can be true during SSR; AnimatePresence does not hide it"
   );
 });
 
