@@ -282,7 +282,7 @@ function collectInitialVariantNames(source: string): Set<string> {
 function findSameFileObjectLiteral(source: string, ident: string): string | null {
   if (!/^[A-Za-z_$][\w$]*$/.test(ident)) return null;
   const pattern = new RegExp(
-    String.raw`\b(?:export\s+)?(?:const|let|var)\s+${escapeRegExp(ident)}\s*=\s*\{`
+    String.raw`\b(?:export\s+)?(?:const|let|var)\s+${escapeRegExp(ident)}(?:\s*:[^=;{]+)?\s*=\s*\{`
   );
   const match = pattern.exec(source);
   if (!match) return null;
@@ -311,7 +311,10 @@ function collectNamedVariantObjects(source: string, name: string): InitialState[
   return states;
 }
 
-/** Index of the `<` that opens the JSX tag containing `attrIndex`. */
+/**
+ * Index of the `<` that opens the JSX tag containing `attrIndex`.
+ * `-1` if this `variants=` is not on a tag (`const variants = {` at module scope).
+ */
 function findJsxTagStart(source: string, attrIndex: number): number {
   let i = attrIndex - 1;
   let brace = 0;
@@ -451,8 +454,9 @@ function findInitialUsageIndexInTag(
  * `initial={{ ... }}` object, a same-file `initial={ident}` object, and
  * named variant objects from a `variants=` binding referenced by
  * `initial="name"`, `initial={"name"}`, `initial={ident}`, or a string
- * literal in that expression. Exemption is keyed at the usage (or the
- * child element for stagger inheritance), not the object-literal definition.
+ * literal in that expression. Exemption is keyed at the `initial=` usage
+ * when that tag names the variant; otherwise at the `variants=` element
+ * (stagger children have no `initial=` of their own).
  */
 function collectInitialStates(source: string): InitialState[] {
   const states: InitialState[] = [];
@@ -960,6 +964,20 @@ test("variants={cardVariants} is collected, not only const variants =", () => {
   assert.equal(isExemptHidingInitial(source, hiding[0].index), true);
 });
 
+test("typed const variants objects are still collected", () => {
+  const source = `
+    const cardVariants: Variants = { hidden: { opacity: 0 } };
+    <motion.div initial="hidden" variants={cardVariants} />
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(
+    hiding.length,
+    1,
+    "const cardVariants: Variants = { hidden: { opacity: 0 } } must resolve through variants={cardVariants}"
+  );
+  assert.equal(isExemptHidingInitial(source, hiding[0].index), false);
+});
+
 test("always-rendered named hiding variants stay offenders", () => {
   const source = `
     const cardVariants = { hidden: { opacity: 0 } };
@@ -989,6 +1007,23 @@ test("stagger children inherit named-variant collection from a parent initial=",
   );
 });
 
+test("always-rendered stagger children with hiding named variants stay offenders", () => {
+  const source = `
+    const containerVariants = { hidden: {} };
+    const childVariants = { hidden: { opacity: 0 } };
+    <motion.div variants={containerVariants} initial="hidden">
+      <motion.div variants={childVariants} />
+    </motion.div>
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(hiding.length, 1);
+  assert.equal(
+    isExemptHidingInitial(source, hiding[0].index),
+    false,
+    "Hero/ClientLogos-style children have no initial=; collection keys off the child tag, which is always rendered"
+  );
+});
+
 test("inline variants={{}} hiding objects follow the element's initial= usage", () => {
   const source = `
     <AnimatePresence>
@@ -998,6 +1033,18 @@ test("inline variants={{}} hiding objects follow the element's initial= usage", 
   const hiding = hidingOpacityStates(source);
   assert.equal(hiding.length, 1);
   assert.equal(isExemptHidingInitial(source, hiding[0].index), true);
+});
+
+test("variants={ { ... } } with space or newline is still collected", () => {
+  const space = `<motion.div initial="hidden" variants={ { hidden: { opacity: 0 } } } />`;
+  const newline = `<motion.div initial="hidden" variants={\n  { hidden: { opacity: 0 } }\n} />`;
+
+  const spaceHiding = hidingOpacityStates(space);
+  const newlineHiding = hidingOpacityStates(newline);
+  assert.equal(spaceHiding.length, 1, "space after variants={ must still see hidden: { opacity: 0 }");
+  assert.equal(newlineHiding.length, 1, "newline after variants={ must still see hidden: { opacity: 0 }");
+  assert.equal(isExemptHidingInitial(space, spaceHiding[0].index), false);
+  assert.equal(isExemptHidingInitial(newline, newlineHiding[0].index), false);
 });
 
 test("a hiding zero on either side of a ternary property is collected", () => {
