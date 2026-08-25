@@ -29,12 +29,32 @@ function listTsxFiles(dir: string): string[] {
   });
 }
 
+function skipWs(source: string, index: number): number {
+  let i = index;
+  while (i < source.length && /\s/.test(source[i] ?? "")) i += 1;
+  return i;
+}
+
+/** Index just past a `'`, `"`, or `` ` ``-quoted span starting at `index`. */
+function skipQuoted(source: string, index: number): number {
+  const quote = source[index];
+  let i = index + 1;
+  while (i < source.length && source[i] !== quote) {
+    i += source[i] === "\\" ? 2 : 1;
+  }
+  return i < source.length ? i + 1 : i;
+}
+
 /** Returns the balanced `open...close` slice starting at `openIndex`. */
 function readBalanced(source: string, openIndex: number, open: string, close: string): string {
   let depth = 0;
 
   for (let i = openIndex; i < source.length; i += 1) {
     const char = source[i];
+    if (char === "'" || char === '"' || char === "`") {
+      i = skipQuoted(source, i) - 1;
+      continue;
+    }
     if (char === open) {
       depth += 1;
     } else if (char === close) {
@@ -46,12 +66,6 @@ function readBalanced(source: string, openIndex: number, open: string, close: st
   throw new Error(`unbalanced ${open}...${close} starting at index ${openIndex}`);
 }
 
-function skipWs(source: string, index: number): number {
-  let i = index;
-  while (i < source.length && /\s/.test(source[i] ?? "")) i += 1;
-  return i;
-}
-
 /** Index of the next `:` not nested in `()`, `{}`, `[]`, or quotes. */
 function findTopLevelColon(source: string, start: number): number {
   let paren = 0;
@@ -61,11 +75,7 @@ function findTopLevelColon(source: string, start: number): number {
   for (let i = start; i < source.length; i += 1) {
     const ch = source[i];
     if (ch === "'" || ch === '"' || ch === "`") {
-      const quote = ch;
-      i += 1;
-      while (i < source.length && source[i] !== quote) {
-        i += source[i] === "\\" ? 2 : 1;
-      }
+      i = skipQuoted(source, i) - 1;
       continue;
     }
     if (ch === "(") paren += 1;
@@ -107,14 +117,6 @@ function readJsxElement(source: string, ltIndex: number): string {
   const tagName = isFragment ? "" : nameMatch![0];
   let i = ltIndex + (isFragment ? 2 : 1 + tagName.length);
 
-  const skipQuoted = (quote: string) => {
-    i += 1;
-    while (i < source.length && source[i] !== quote) {
-      i += source[i] === "\\" ? 2 : 1;
-    }
-    i += 1;
-  };
-
   const skipExpr = () => {
     const expr = readBalanced(source, i, "{", "}");
     i += expr.length;
@@ -127,12 +129,8 @@ function readJsxElement(source: string, ltIndex: number): string {
         skipExpr();
         continue;
       }
-      if (ch === "'" || ch === '"') {
-        skipQuoted(ch);
-        continue;
-      }
-      if (ch === "`") {
-        skipQuoted("`");
+      if (ch === "'" || ch === '"' || ch === "`") {
+        i = skipQuoted(source, i);
         continue;
       }
       if (source.startsWith("/>", i)) {
@@ -328,6 +326,10 @@ function collectAnimatePresenceRanges(source: string): Array<[number, number]> {
         i += expr.length;
         continue;
       }
+      if (source[i] === "'" || source[i] === '"' || source[i] === "`") {
+        i = skipQuoted(source, i);
+        continue;
+      }
       if (source.startsWith("/>", i)) {
         selfClosing = true;
         i += 2;
@@ -379,9 +381,10 @@ function isInsideAnimatePresence(source: string, index: number): boolean {
 }
 
 /**
- * Hiding initials are ignored only when they cannot appear in the SSR HTML:
- * they sit in a conditional mount *and* under AnimatePresence. Syntax-only
- * `{cond && ( ... )}` is not enough — `cond` may be true on the server.
+ * Hiding initials are ignored only when they sit in a conditional mount
+ * *and* under AnimatePresence (the Navbar/FAQ shape). This is still a
+ * syntax contract: `{items.length && (...)}` under AnimatePresence is
+ * exempt even if `items` is non-empty during SSR.
  */
 function isExemptHidingInitial(source: string, index: number): boolean {
   return isInsideConditionalMount(source, index) && isInsideAnimatePresence(source, index);
@@ -399,7 +402,10 @@ test("the hiding-initial scanner still sees Navbar's interaction-only panel", ()
   const navbar = readSource("src/components/layout/Navbar.tsx");
   const hits = collectInitialStates(navbar).filter((state) => hidingHits(state.text).length > 0);
   assert.ok(
-    hits.some((state) => /opacity\s*:\s*0/.test(state.text) && /height\s*:\s*0/.test(state.text)),
+    hits.some((state) => {
+      const props = hidingHits(state.text);
+      return props.includes("opacity") && props.includes("height");
+    }),
     "scanner no longer sees Navbar's hiding initial; the per-node helper is now a blind skip"
   );
 });
@@ -542,6 +548,16 @@ test("opacity 0.0 and quoted zero count as hiding", () => {
   assert.equal(hidingHits("{ scale: 0.25 }").length, 0);
 });
 
+test("braces inside strings do not truncate an initial object", () => {
+  const source = `<motion.div initial={{ content: "}", opacity: 0 }} />`;
+  const states = collectInitialStates(source);
+  assert.equal(states.length, 1);
+  assert.ok(
+    hidingHits(states[0].text).includes("opacity"),
+    "a quoted } before opacity: 0 must not hide the rest of the object from the scanner"
+  );
+});
+
 test("no component ships an SSR initial state that hides its content", () => {
   const offenders: string[] = [];
 
@@ -586,7 +602,7 @@ test("Navbar and FAQ hiding initials sit on conditionally mounted nodes under An
 test("CareerTimeline reveals by transform through named variants", () => {
   const source = readSource("src/components/about/CareerTimeline.tsx");
 
-  assert.doesNotMatch(source, /opacity:\s*0/);
+  assert.ok(!hidingHits(source).includes("opacity"));
   assert.match(source, /hidden:\s*\{/);
   assert.match(source, /initial="hidden"/);
   // Always a motion element: swapping to a plain div for some clients is the
@@ -600,14 +616,18 @@ test("CareerTimeline reveals by transform through named variants", () => {
 test("ProofOfWork score bars carry their real width in the markup", () => {
   const source = readSource("src/components/home/ProofOfWork.tsx");
 
-  assert.doesNotMatch(source, /initial=\{\{/);
+  assert.equal(
+    collectInitialStates(source).length,
+    0,
+    "ProofOfWork must not use a motion initial; bar width lives in markup"
+  );
   assert.match(source, /<section\s+id="proof-of-work"/);
   assert.match(source, /--score-bar-width/);
   assert.match(source, /className=\{`score-bar/);
   assert.match(source, /"--score-bar-width":\s*`\$\{score\.value\}%`/);
   assert.match(source, /<CountUp\s+end=\{overallScore\}/);
   assert.match(source, /<CountUp\s+end=\{score\.value\}/);
-  assert.doesNotMatch(source, /\bwidth\s*:\s*0/);
+  assert.ok(!hidingHits(source).includes("width"));
 });
 
 test("score bar growth is CSS, ends at the declared width, and respects reduced motion", () => {
