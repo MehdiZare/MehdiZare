@@ -64,6 +64,7 @@ test("forwards a Reporting API violation to PostHog", async () => {
   assert.equal(sent.length, 1);
   assert.equal(sent[0]?.url, "https://t.example.com/i/v0/e/");
   assert.equal(sent[0]?.body.event, "csp_violation");
+  assert.equal(sent[0]?.body.api_key, "phc_test_key");
 
   const properties = sent[0]?.body.properties as Record<string, unknown>;
   assert.equal(properties.directive, "connect-src");
@@ -147,7 +148,7 @@ test("caps how many distinct violations one window forwards", async () => {
   }
 
   assert.ok(forwarded > 0, "some reports get through");
-  assert.ok(forwarded <= 60, `a report storm is capped, forwarded ${forwarded}`);
+  assert.equal(forwarded, 60, `a report storm is capped, forwarded ${forwarded}`);
 });
 
 test("never fails the request on a malformed body", async () => {

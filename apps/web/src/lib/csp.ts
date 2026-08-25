@@ -35,9 +35,15 @@ export const CSP_REPORT_ENDPOINT_NAME = "csp-endpoint";
 type Source = string | null | undefined;
 
 function sources(...values: (Source | readonly Source[])[]): string {
-  return Array.from(
+  const tokens = Array.from(
     new Set(values.flat().filter((value): value is string => Boolean(value)))
-  ).join(" ");
+  );
+  for (const token of tokens) {
+    if (token.includes("*") || token.includes(";")) {
+      throw new Error(`Illegal CSP source: ${token}`);
+    }
+  }
+  return tokens.join(" ");
 }
 
 /**

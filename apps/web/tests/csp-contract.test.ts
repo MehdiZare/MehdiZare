@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 const { buildCsp, buildReportingEndpoints, posthogAssetsOrigin, CAL_ORIGINS } =
   await import("../src/lib/csp.ts");
@@ -65,6 +67,16 @@ test("a PostHog-hosted origin also allows the assets origin it loads from", () =
   }
 
   assert.ok(!policy({ posthogOrigin: "https://us.i.posthog.com" }).includes(PROXY));
+
+  const hosted = "https://us.i.posthog.com";
+  const hostedAssets = "https://us-assets.i.posthog.com";
+  const hostedPolicy = directives(policy({ posthogOrigin: hosted }));
+  assert.ok(hostedPolicy.get("img-src")?.includes(hosted));
+  assert.ok(!hostedPolicy.get("img-src")?.includes(hostedAssets));
+  assert.ok(!hostedPolicy.get("media-src")?.includes(hosted));
+  assert.ok(!hostedPolicy.get("media-src")?.includes(hostedAssets));
+  assert.ok(!hostedPolicy.get("frame-src")?.includes(hosted));
+  assert.doesNotMatch(policy({ posthogOrigin: hosted }), /\*/);
 });
 
 test("the assets origin is derived per region, and not at all for a proxy", () => {
@@ -123,6 +135,10 @@ test("the baseline hardening directives stay put", () => {
   assert.deepEqual(parsed.get("form-action"), ["'self'"]);
   // PostHog's session recorder builds its compression worker from a blob URL.
   assert.deepEqual(parsed.get("worker-src"), ["'self'", "blob:"]);
+  // Next's inline bootstrap still needs these; removing them blanks production.
+  assert.ok(parsed.get("script-src")?.includes("'unsafe-inline'"));
+  assert.ok(parsed.get("style-src")?.includes("'unsafe-inline'"));
+  assert.deepEqual(parsed.get("media-src"), ["'self'", "data:", "blob:"]);
 });
 
 test("violations are reported through both the legacy and Reporting API paths", () => {
@@ -147,6 +163,23 @@ test("reporting directives are omitted when no collector is configured", () => {
 test("upgrade-insecure-requests is production only", () => {
   assert.ok(policy({ isProduction: true }).includes("upgrade-insecure-requests"));
   assert.ok(!policy({ isProduction: false }).includes("upgrade-insecure-requests"));
+});
+
+test("next.config.ts ships buildCsp with image origins and reporting", () => {
+  const source = readFileSync(resolve(process.cwd(), "next.config.ts"), "utf8");
+  assert.match(source, /from "\.\/src\/lib\/csp"/);
+  assert.match(source, /buildCsp\(/);
+  assert.match(source, /imageOrigins:\s*cspImageOrigins/);
+  assert.match(source, /reportPath:\s*CSP_REPORT_PATH/);
+  assert.match(source, /buildReportingEndpoints\(CSP_REPORT_PATH\)/);
+  assert.match(source, /cspImageOrigins = imageRemotePatterns\.map/);
+});
+
+test("buildCsp refuses wildcard hosts", () => {
+  assert.throws(
+    () => policy({ posthogOrigin: "https://*.posthog.com" }),
+    /Illegal CSP source/
+  );
 });
 
 test("the joined header is a single well-formed policy", () => {
