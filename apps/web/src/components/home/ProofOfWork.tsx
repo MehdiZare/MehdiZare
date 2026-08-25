@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import type { CSSProperties } from "react";
 import { Label } from "@/components/shared/Label";
 import { CountUp } from "@/components/shared/CountUp";
 
@@ -70,12 +70,16 @@ export function ProofOfWork() {
                     />
                   </div>
                   <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-warm-gray">
-                    <motion.div
-                      className={`h-full rounded-full ${score.color}`}
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${score.value}%` }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+                    {/* The width lives in the markup, not in a motion initial
+                        state, so the bar reads correctly before JS runs. The
+                        growth is a CSS keyframe (see .score-bar). */}
+                    <div
+                      className={`score-bar h-full rounded-full ${score.color}`}
+                      style={
+                        {
+                          "--score-bar-width": `${score.value}%`,
+                        } as CSSProperties
+                      }
                     />
                   </div>
                 </div>
