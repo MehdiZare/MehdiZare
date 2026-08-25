@@ -77,6 +77,17 @@ function readSource(relativePath: string): string {
   return readFileSync(resolve(process.cwd(), relativePath), "utf8");
 }
 
+test("the hiding-initial scanner still sees Navbar's interaction-only panel", () => {
+  const navbar = readSource("src/components/layout/Navbar.tsx");
+  const hits = collectInitialStates(navbar).filter((state) =>
+    HIDING_PROPS.some((prop) => prop.pattern.test(state))
+  );
+  assert.ok(
+    hits.some((state) => /opacity\s*:\s*0/.test(state) && /height\s*:\s*0/.test(state)),
+    "scanner no longer sees Navbar's hiding initial; exemptions are now a blind skip"
+  );
+});
+
 test("no component ships an SSR initial state that hides its content", () => {
   const offenders: string[] = [];
 
@@ -135,15 +146,21 @@ test("ProofOfWork score bars carry their real width in the markup", () => {
   assert.doesNotMatch(source, /initial=\{\{/);
   assert.match(source, /--score-bar-width/);
   assert.match(source, /className=\{`score-bar/);
+  assert.match(source, /"--score-bar-width":\s*`\$\{score\.value\}%`/);
+  assert.match(source, /<CountUp\s+end=\{overallScore\}/);
+  assert.match(source, /<CountUp\s+end=\{score\.value\}/);
+  assert.doesNotMatch(source, /\bwidth\s*:\s*0/);
 });
 
 test("score bar growth is CSS, ends at the declared width, and respects reduced motion", () => {
   const source = readSource("src/app/globals.css");
 
-  // `both` keeps the final keyframe applied, so the bar rests at the width the
-  // markup declared rather than snapping back.
+  // `both` fills backwards so the bar does not flash at full width before the
+  // animation starts. The declared width is what it rests at after.
   assert.match(source, /\.score-bar\s*\{[^}]*width:\s*var\(--score-bar-width\)/);
   assert.match(source, /animation:\s*score-bar-grow[^;]*both/);
+  assert.match(source, /@keyframes\s*score-bar-grow[\s\S]*from\s*\{\s*width:\s*0%/);
+  assert.match(source, /@keyframes\s*score-bar-grow[\s\S]*to\s*\{\s*width:\s*var\(--score-bar-width\)/);
   assert.match(
     source,
     /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{\s*\.score-bar\s*\{\s*animation:\s*none/
@@ -157,6 +174,9 @@ test("CountUp renders its final value on the server", () => {
   assert.doesNotMatch(source, /useState\(0\)/);
   assert.match(source, /useState\(end\)/);
   assert.match(source, /prefers-reduced-motion:\s*reduce/);
+  assert.match(source, /if\s*\(!armed\)/);
+  assert.match(source, /setCount\(0\)/);
+  assert.match(source, /rootMargin:\s*"0px 0px 10% 0px"/);
 });
 
 test("CSS smooth scroll is disabled for reduced-motion users", () => {

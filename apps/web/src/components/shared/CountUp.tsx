@@ -26,7 +26,9 @@ export function CountUp({ end, duration = 1.5, className }: CountUpProps) {
     let started = false;
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
+      (entries) => {
+        const entry = entries[entries.length - 1];
+        if (!entry) return;
         // The observer reports current state on its first callback. If the
         // number is already on screen when we hydrate, animating would mean
         // resetting a value the reader can see back to zero, so leave it be and
