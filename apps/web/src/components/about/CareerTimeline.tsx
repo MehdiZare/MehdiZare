@@ -8,6 +8,20 @@ interface CareerTimelineProps {
   experiences: Experience[];
 }
 
+// Reveal by translation only. A zero-opacity initial state gets inlined into
+// the SSR markup, so timeline cards would stay invisible whenever JS is delayed
+// or hydration fails. `MotionProvider` wraps the tree in
+// `MotionConfig reducedMotion="user"`, which turns the transform into an
+// instant jump for reduced-motion clients, so `initial` stays the same on every
+// client and hydration never mismatches.
+const cardVariants = {
+  hidden: { y: 24 },
+  visible: (delay: number) => ({
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" as const, delay },
+  }),
+};
+
 export function CareerTimeline({ experiences }: CareerTimelineProps) {
   return (
     <div className="relative">
@@ -21,14 +35,11 @@ export function CareerTimeline({ experiences }: CareerTimelineProps) {
           return (
             <motion.div
               key={experience.id}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              variants={cardVariants}
+              custom={index * 0.15}
+              initial="hidden"
+              whileInView="visible"
               viewport={{ once: true, margin: "-50px" }}
-              transition={{
-                duration: 0.5,
-                ease: "easeOut",
-                delay: index * 0.15,
-              }}
               className={cn(
                 "relative flex items-start",
                 "pl-12 md:pl-0",

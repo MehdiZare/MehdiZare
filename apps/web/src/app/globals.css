@@ -27,6 +27,16 @@ html {
   scroll-behavior: smooth;
 }
 
+/* `MotionConfig reducedMotion="user"` only reaches Framer Motion components, so
+   CSS-driven motion needs its own guard. Without this, in-page anchors (the skip
+   link, the blog table of contents, the homepage section links) animate the
+   scroll for users who asked not to see motion. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
   background: var(--color-paper);
   color: var(--color-ink);
