@@ -11,16 +11,6 @@ import { join, relative, resolve } from "node:path";
 
 const COMPONENTS_DIR = resolve(process.cwd(), "src/components");
 
-// Components whose hiding initial state is only ever mounted in response to a
-// user interaction. They live inside `AnimatePresence` and render nothing at
-// all during SSR, so there is no content to hide. The `AnimatePresence`
-// assertion below keeps each exemption honest: if one of these ever becomes a
-// plain always-rendered motion element, the exemption stops applying.
-const INTERACTION_ONLY = new Map([
-  ["layout/Navbar.tsx", "mobile menu panel, mounted only while the menu is open"],
-  ["consulting/FAQ.tsx", "accordion answer, mounted only while an item is open"],
-]);
-
 const HIDING_PROPS = [
   { name: "opacity", pattern: /\bopacity\s*:\s*0(?![.\d])/ },
   { name: "width", pattern: /\bwidth\s*:\s*(?:0(?![.\d])|["'`]0(?:px|%|rem|em)?["'`])/ },
@@ -37,21 +27,26 @@ function listTsxFiles(dir: string): string[] {
   });
 }
 
-/** Returns the balanced `{...}` slice starting at `openIndex`. */
-function readBalancedBraces(source: string, openIndex: number): string {
+/** Returns the balanced `open...close` slice starting at `openIndex`. */
+function readBalanced(source: string, openIndex: number, open: string, close: string): string {
   let depth = 0;
 
   for (let i = openIndex; i < source.length; i += 1) {
     const char = source[i];
-    if (char === "{") {
+    if (char === open) {
       depth += 1;
-    } else if (char === "}") {
+    } else if (char === close) {
       depth -= 1;
       if (depth === 0) return source.slice(openIndex, i + 1);
     }
   }
 
-  return source.slice(openIndex);
+  throw new Error(`unbalanced ${open}...${close} starting at index ${openIndex}`);
+}
+
+interface InitialState {
+  text: string;
+  index: number;
 }
 
 /**
@@ -59,18 +54,58 @@ function readBalancedBraces(source: string, openIndex: number): string {
  * `initial={{ ... }}` object, and the `hidden:` branch of a variants object
  * referenced by `initial="hidden"`.
  */
-function collectInitialStates(source: string): string[] {
-  const states: string[] = [];
+function collectInitialStates(source: string): InitialState[] {
+  const states: InitialState[] = [];
 
   for (const match of source.matchAll(/initial=\{\{/g)) {
-    states.push(readBalancedBraces(source, match.index + "initial=".length));
+    const braceIndex = match.index + "initial=".length;
+    states.push({
+      text: readBalanced(source, braceIndex, "{", "}"),
+      index: match.index,
+    });
   }
 
   for (const match of source.matchAll(/\bhidden\s*:\s*\{/g)) {
-    states.push(readBalancedBraces(source, source.indexOf("{", match.index)));
+    const braceIndex = source.indexOf("{", match.index);
+    states.push({
+      text: readBalanced(source, braceIndex, "{", "}"),
+      index: match.index,
+    });
   }
 
   return states;
+}
+
+/**
+ * True when `index` sits inside the `(...)` of a `{cond && ( ... )}` mount.
+ * That is the SSR gate: a closed default means the node is not in the HTML.
+ * `AnimatePresence` only handles exit; it does not keep `initial` off the page.
+ */
+function isInsideConditionalMount(source: string, index: number): boolean {
+  let searchFrom = 0;
+
+  while (searchFrom < index) {
+    const and = source.indexOf("&&", searchFrom);
+    if (and === -1 || and >= index) return false;
+
+    let j = and + 2;
+    while (j < source.length && /\s/.test(source[j] ?? "")) j += 1;
+
+    if (source[j] === "(") {
+      const group = readBalanced(source, j, "(", ")");
+      const end = j + group.length;
+      if (index >= j && index < end) return true;
+      searchFrom = Math.max(end, and + 2);
+    } else {
+      searchFrom = and + 2;
+    }
+  }
+
+  return false;
+}
+
+function hidingHits(state: string): string[] {
+  return HIDING_PROPS.filter((prop) => prop.pattern.test(state)).map((prop) => prop.name);
 }
 
 function readSource(relativePath: string): string {
@@ -79,13 +114,48 @@ function readSource(relativePath: string): string {
 
 test("the hiding-initial scanner still sees Navbar's interaction-only panel", () => {
   const navbar = readSource("src/components/layout/Navbar.tsx");
-  const hits = collectInitialStates(navbar).filter((state) =>
-    HIDING_PROPS.some((prop) => prop.pattern.test(state))
-  );
+  const hits = collectInitialStates(navbar).filter((state) => hidingHits(state.text).length > 0);
   assert.ok(
-    hits.some((state) => /opacity\s*:\s*0/.test(state) && /height\s*:\s*0/.test(state)),
-    "scanner no longer sees Navbar's hiding initial; exemptions are now a blind skip"
+    hits.some((state) => /opacity\s*:\s*0/.test(state.text) && /height\s*:\s*0/.test(state.text)),
+    "scanner no longer sees Navbar's hiding initial; the per-node helper is now a blind skip"
   );
+});
+
+test("conditionally mounted hiding initials are ignored; always-rendered ones are not", () => {
+  const source = `
+    <motion.div initial={{ opacity: 0 }} />
+    {mobileMenuOpen && (
+      <motion.div initial={{ opacity: 0, height: 0 }} />
+    )}
+  `;
+  const states = collectInitialStates(source);
+  assert.equal(states.length, 2);
+
+  const always = states.find((state) => !/height/.test(state.text));
+  const conditional = states.find((state) => /height/.test(state.text));
+  assert.ok(always && conditional);
+  assert.equal(isInsideConditionalMount(source, always.index), false);
+  assert.equal(isInsideConditionalMount(source, conditional.index), true);
+});
+
+test("unparenthesized && JSX and ternaries are not treated as conditional mounts", () => {
+  // Fail closed: only `{cond && ( ... )}` is exempt. Other SSR-safe shapes
+  // still fail the scanner so authors add parens rather than us guessing JSX.
+  const unparen = `
+    {mobileMenuOpen && <motion.div initial={{ opacity: 0 }} />}
+  `;
+  const unparenStates = collectInitialStates(unparen);
+  assert.equal(unparenStates.length, 1);
+  assert.equal(isInsideConditionalMount(unparen, unparenStates[0].index), false);
+
+  const ternary = `
+    {isOpen ? (
+      <motion.div initial={{ opacity: 0 }} />
+    ) : null}
+  `;
+  const ternaryStates = collectInitialStates(ternary);
+  assert.equal(ternaryStates.length, 1);
+  assert.equal(isInsideConditionalMount(ternary, ternaryStates[0].index), false);
 });
 
 test("no component ships an SSR initial state that hides its content", () => {
@@ -93,14 +163,13 @@ test("no component ships an SSR initial state that hides its content", () => {
 
   for (const file of listTsxFiles(COMPONENTS_DIR)) {
     const key = relative(COMPONENTS_DIR, file);
-    if (INTERACTION_ONLY.has(key)) continue;
-
     const source = readFileSync(file, "utf8");
+
     for (const state of collectInitialStates(source)) {
-      for (const prop of HIDING_PROPS) {
-        if (prop.pattern.test(state)) {
-          offenders.push(`${key}: ${prop.name} in ${state.replace(/\s+/g, " ")}`);
-        }
+      if (isInsideConditionalMount(source, state.index)) continue;
+
+      for (const prop of hidingHits(state.text)) {
+        offenders.push(`${key}: ${prop} in ${state.text.replace(/\s+/g, " ")}`);
       }
     }
   }
@@ -114,15 +183,18 @@ test("no component ships an SSR initial state that hides its content", () => {
   );
 });
 
-test("interaction-only exemptions really are mounted behind AnimatePresence", () => {
-  for (const [key, reason] of INTERACTION_ONLY) {
-    const source = readFileSync(join(COMPONENTS_DIR, key), "utf8");
-    assert.match(
-      source,
-      /<AnimatePresence/,
-      `${key} is exempt because of its ${reason}, but it no longer uses ` +
-        "AnimatePresence, so its initial state now ships in the SSR markup."
-    );
+test("Navbar and FAQ hiding initials sit on conditionally mounted nodes", () => {
+  for (const key of ["layout/Navbar.tsx", "consulting/FAQ.tsx"]) {
+    const source = readSource(`src/components/${key}`);
+    const hiding = collectInitialStates(source).filter((state) => hidingHits(state.text).length > 0);
+
+    assert.ok(hiding.length > 0, `${key} should still have a detectable hiding initial`);
+    for (const state of hiding) {
+      assert.ok(
+        isInsideConditionalMount(source, state.index),
+        `${key} hiding initial is not behind \`{cond && (}\`. Only that parenthesized form is exempt; add parens or drop the hiding initial:\n  ${state.text}`
+      );
+    }
   }
 });
 
@@ -144,6 +216,7 @@ test("ProofOfWork score bars carry their real width in the markup", () => {
   const source = readSource("src/components/home/ProofOfWork.tsx");
 
   assert.doesNotMatch(source, /initial=\{\{/);
+  assert.match(source, /<section\s+id="proof-of-work"/);
   assert.match(source, /--score-bar-width/);
   assert.match(source, /className=\{`score-bar/);
   assert.match(source, /"--score-bar-width":\s*`\$\{score\.value\}%`/);
@@ -161,9 +234,29 @@ test("score bar growth is CSS, ends at the declared width, and respects reduced 
   assert.match(source, /animation:\s*score-bar-grow[^;]*both/);
   assert.match(source, /@keyframes\s*score-bar-grow[\s\S]*from\s*\{\s*width:\s*0%/);
   assert.match(source, /@keyframes\s*score-bar-grow[\s\S]*to\s*\{\s*width:\s*var\(--score-bar-width\)/);
+
+  const namedTimeline = source.match(
+    /#proof-of-work\s*\{[^}]*view-timeline-name:\s*(--[A-Za-z0-9-]+)/
+  );
+  assert.ok(namedTimeline, "#proof-of-work must declare a named view timeline");
+
+  const supportsBody = source.match(
+    /@supports\s*\(animation-timeline:\s*view\(\)\)\s*\{\s*\.score-bar\s*\{([^}]*)\}/
+  );
+  assert.ok(supportsBody, "@supports (animation-timeline: view()) must retarget .score-bar");
+  const consumedTimeline = supportsBody[1].match(/animation-timeline:\s*(--[A-Za-z0-9-]+)/);
+  assert.ok(consumedTimeline, ".score-bar must consume a named timeline");
+  assert.equal(
+    consumedTimeline[1],
+    namedTimeline[1],
+    "the bar must consume the same timeline the section names"
+  );
+  assert.match(supportsBody[1], /animation-range:\s*entry\s+0%\s+cover\s+40%/);
+  assert.match(supportsBody[1], /animation-duration:\s*auto/);
+
   assert.match(
     source,
-    /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{\s*\.score-bar\s*\{\s*animation:\s*none/
+    /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{\s*\.score-bar\s*\{\s*animation:\s*none;\s*animation-timeline:\s*auto/
   );
 });
 

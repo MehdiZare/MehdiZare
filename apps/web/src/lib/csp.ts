@@ -117,6 +117,21 @@ export function buildCsp({
 }
 
 /** Value for the `Reporting-Endpoints` header that `report-to` refers to. */
-export function buildReportingEndpoints(reportPath: string): string {
-  return `${CSP_REPORT_ENDPOINT_NAME}="${reportPath}"`;
+export function buildReportingEndpoints(endpoint: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(endpoint);
+  } catch {
+    throw new Error(
+      `Reporting-Endpoints requires an absolute URL, got ${JSON.stringify(endpoint)}`
+    );
+  }
+
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new Error(
+      `Reporting-Endpoints requires an http(s) URL, got ${JSON.stringify(endpoint)}`
+    );
+  }
+
+  return `${CSP_REPORT_ENDPOINT_NAME}="${endpoint}"`;
 }

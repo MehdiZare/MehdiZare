@@ -61,6 +61,8 @@ const contentSecurityPolicy = buildCsp({
   reportPath: CSP_REPORT_PATH,
 });
 
+const reportingEndpoint = new URL(CSP_REPORT_PATH, siteUrl.origin).href;
+
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
@@ -68,7 +70,7 @@ const securityHeaders = [
   },
   {
     key: "Reporting-Endpoints",
-    value: buildReportingEndpoints(CSP_REPORT_PATH),
+    value: buildReportingEndpoints(reportingEndpoint),
   },
   {
     key: "Referrer-Policy",

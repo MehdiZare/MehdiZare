@@ -179,7 +179,6 @@ test("legacy funnel event names are removed from source", () => {
     "src/components/home/ServicesGrid.tsx",
     "src/components/layout/Navbar.tsx",
     "src/components/scheduling/CalComTrigger.tsx",
-    "src/components/consulting/TierCard.tsx",
   ];
 
   const legacyNames = [

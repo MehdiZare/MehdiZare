@@ -144,12 +144,18 @@ test("the baseline hardening directives stay put", () => {
 test("violations are reported through both the legacy and Reporting API paths", () => {
   const parsed = directives(policy({ reportPath: "/api/csp-report" }));
 
-  // Firefox and Safari only implement report-uri; Chrome only report-to.
+  // Firefox and Safari only implement report-uri (path form is valid there).
+  // Chrome ignores report-uri when report-to is present, and Reporting API v1
+  // examples all use an absolute URL.
   assert.deepEqual(parsed.get("report-uri"), ["/api/csp-report"]);
   assert.deepEqual(parsed.get("report-to"), ["csp-endpoint"]);
   assert.equal(
-    buildReportingEndpoints("/api/csp-report"),
-    'csp-endpoint="/api/csp-report"'
+    buildReportingEndpoints("https://www.mehdi-zare.com/api/csp-report"),
+    'csp-endpoint="https://www.mehdi-zare.com/api/csp-report"'
+  );
+  assert.throws(
+    () => buildReportingEndpoints("/api/csp-report"),
+    /absolute URL/
   );
 });
 
@@ -171,8 +177,18 @@ test("next.config.ts ships buildCsp with image origins and reporting", () => {
   assert.match(source, /buildCsp\(/);
   assert.match(source, /imageOrigins:\s*cspImageOrigins/);
   assert.match(source, /reportPath:\s*CSP_REPORT_PATH/);
-  assert.match(source, /buildReportingEndpoints\(CSP_REPORT_PATH\)/);
+  assert.match(source, /new URL\(CSP_REPORT_PATH, siteUrl\.origin\)\.href/);
+  assert.match(source, /buildReportingEndpoints\(reportingEndpoint\)/);
   assert.match(source, /cspImageOrigins = imageRemotePatterns\.map/);
+});
+
+test("PostHog client config does not point a toolbar ui_host at posthog.com", () => {
+  const source = readFileSync(resolve(process.cwd(), "src/components/analytics/PostHogScripts.tsx"), "utf8");
+
+  // Visitor analytics use api_host only. ui_host would load the toolbar from
+  // us.posthog.com, which the CSP no longer allows after dropping wildcards.
+  assert.doesNotMatch(source, /ui_host/);
+  assert.match(source, /api_host:\s*posthogHost/);
 });
 
 test("buildCsp refuses wildcard hosts", () => {

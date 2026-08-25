@@ -69,8 +69,25 @@ pre {
   }
 }
 
+/* The bar sits in an overflow-hidden track, so `animation-timeline: view()`
+   on the bar itself is always "in view" of that track and finishes on load.
+   Drive the animation from the section's view timeline instead. */
+#proof-of-work {
+  view-timeline-name: --proof-of-work;
+  view-timeline-axis: block;
+}
+
+@supports (animation-timeline: view()) {
+  .score-bar {
+    animation-timeline: --proof-of-work;
+    animation-range: entry 0% cover 40%;
+    animation-duration: auto;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .score-bar {
     animation: none;
+    animation-timeline: auto;
   }
 }
