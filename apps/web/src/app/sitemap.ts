@@ -56,23 +56,28 @@ const SITEMAP_ARTICLE_FIELDS = {
   populate: { featuredImage: { fields: ["url"] } },
 } as const;
 
-function getAllArticlesForSitemap(): Promise<Article[]> {
-  return fetchAllPages(getArticles, "articles", {
-    ...SITEMAP_ARTICLE_FIELDS,
-    sort: "publishedAt:desc",
-  });
+function getAllArticlesForSitemap(deadlineMs?: number): Promise<Article[]> {
+  return fetchAllPages(
+    getArticles,
+    "articles",
+    {
+      ...SITEMAP_ARTICLE_FIELDS,
+      sort: "publishedAt:desc",
+    },
+    { deadlineMs }
+  );
 }
 
-function getAllAuthorsForSitemap(): Promise<Author[]> {
-  return fetchAllPages(getAuthors, "authors", { sort: "updatedAt:desc" });
+function getAllAuthorsForSitemap(deadlineMs?: number): Promise<Author[]> {
+  return fetchAllPages(getAuthors, "authors", { sort: "updatedAt:desc" }, { deadlineMs });
 }
 
-function getAllCategoriesForSitemap(): Promise<Category[]> {
-  return fetchAllPages(getCategories, "categories", { sort: "order:asc" });
+function getAllCategoriesForSitemap(deadlineMs?: number): Promise<Category[]> {
+  return fetchAllPages(getCategories, "categories", { sort: "order:asc" }, { deadlineMs });
 }
 
-function getAllTagsForSitemap(): Promise<Tag[]> {
-  return fetchAllPages(getTags, "tags", { sort: "name:asc" });
+function getAllTagsForSitemap(deadlineMs?: number): Promise<Tag[]> {
+  return fetchAllPages(getTags, "tags", { sort: "name:asc" }, { deadlineMs });
 }
 
 interface TaxonomyCategoryNode {
@@ -286,6 +291,7 @@ function mapAuthorPages(authors: Author[], now: Date): MetadataRoute.Sitemap {
 }
 
 async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<MetadataRoute.Sitemap> {
+  const deadlineMs = Date.now() + SITEMAP_DEADLINE_MS;
   const degradedSources: string[] = [];
   const pageTimestamps = {
     home: now,
@@ -316,10 +322,10 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
   const [timestampResult, articlesResult, authorsResult, categoriesResult, tagsResult] =
     await Promise.allSettled([
       timestampWork,
-      getAllArticlesForSitemap(),
-      getAllAuthorsForSitemap(),
-      getAllCategoriesForSitemap(),
-      getAllTagsForSitemap(),
+      getAllArticlesForSitemap(deadlineMs),
+      getAllAuthorsForSitemap(deadlineMs),
+      getAllCategoriesForSitemap(deadlineMs),
+      getAllTagsForSitemap(deadlineMs),
     ]);
 
   if (timestampResult.status === "rejected") {

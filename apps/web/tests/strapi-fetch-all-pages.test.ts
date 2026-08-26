@@ -4,7 +4,9 @@ import assert from "node:assert/strict";
 process.env.DISABLE_STRAPI_CMS = "false";
 process.env.STRAPI_URL = "http://localhost:1337";
 
-const { fetchAllPages, STRAPI_MAX_PAGES } = await import("../src/lib/strapi.ts");
+const { fetchAllPages, STRAPI_MAX_PAGES, STRAPI_TIMEOUT_MS } = await import(
+  "../src/lib/strapi.ts"
+);
 
 test("fetchAllPages stops when Strapi reports no further pages", async () => {
   const pages: number[] = [];
@@ -67,6 +69,56 @@ test("fetchAllPages forces withCount so pageCount is requested", async () => {
   );
 
   assert.equal(withCount, true);
+});
+
+test("fetchAllPages returns earlier pages when a later page fails", async (t) => {
+  const warnings: string[] = [];
+  t.mock.method(console, "warn", (...args: unknown[]) => {
+    warnings.push(String(args[0] ?? ""));
+  });
+
+  const items = await fetchAllPages(
+    async (params) => {
+      const page = params.pagination?.page ?? 0;
+      if (page >= 2) {
+        throw new Error("page 2 timed out");
+      }
+      return {
+        data: [{ id: page, slug: "page-one" }],
+        meta: { pagination: { page, pageSize: 100, pageCount: 3, total: 3 } },
+      };
+    },
+    "articles"
+  );
+
+  assert.deepEqual(items, [{ id: 1, slug: "page-one" }]);
+  assert.match(warnings.join("\n"), /page 2 failed after 1 row\(s\); returning partial results/);
+});
+
+test("fetchAllPages does not start another page that cannot finish before deadlineMs", async (t) => {
+  const pages: number[] = [];
+  const warnings: string[] = [];
+  t.mock.method(console, "warn", (...args: unknown[]) => {
+    warnings.push(String(args[0] ?? ""));
+  });
+
+  const items = await fetchAllPages(
+    async (params) => {
+      const page = params.pagination?.page ?? 0;
+      pages.push(page);
+      return {
+        data: [{ id: page }],
+        meta: { pagination: { page, pageSize: 100, pageCount: 5, total: 5 } },
+      };
+    },
+    "articles",
+    {},
+    { deadlineMs: Date.now() + STRAPI_TIMEOUT_MS - 1 }
+  );
+
+  assert.deepEqual(pages, [1], "page 2 would need a full STRAPI_TIMEOUT_MS and must not start");
+  assert.deepEqual(items, [{ id: 1 }]);
+  assert.match(warnings.join("\n"), /stopping pagination to honor caller deadline/);
 });
 
 test("fetchAllPages rejects non-array collection data", async () => {
