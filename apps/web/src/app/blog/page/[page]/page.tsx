@@ -9,7 +9,7 @@ import {
 } from "@/lib/blog-listing";
 import { getSiteProfile } from "@/lib/site-profile";
 import { getArticles } from "@/lib/strapi";
-import { buildPageMetadata, toPersonId } from "@/lib/seo";
+import { buildNoIndexMetadata, buildPageMetadata, toPersonId } from "@/lib/seo";
 
 interface BlogArchivePageProps {
   params: Promise<{ page: string }>;
@@ -39,7 +39,18 @@ export async function generateMetadata({ params }: BlogArchivePageProps): Promis
   const { page: rawPage } = await params;
   const currentPage = parsePositivePageNumber(rawPage);
 
-  const pageNumberLabel = currentPage && currentPage > 1 ? ` - Page ${currentPage}` : "";
+  if (!currentPage) {
+    return buildNoIndexMetadata("Blog Page Not Found");
+  }
+
+  if (currentPage > 1) {
+    const { pagination } = await getBlogListingData(currentPage);
+    if (pagination && currentPage > pagination.pageCount) {
+      return buildNoIndexMetadata("Blog Page Not Found");
+    }
+  }
+
+  const pageNumberLabel = currentPage > 1 ? ` - Page ${currentPage}` : "";
   const metadata = buildPageMetadata({
     pathname: "/blog",
     title: `Blog${pageNumberLabel}`,

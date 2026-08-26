@@ -10,10 +10,12 @@ const {
   buildBlogPostingJsonLd,
   buildBlogJsonLd,
   buildFAQJsonLd,
+  buildNoIndexMetadata,
   buildPageMetadata,
   composeDocumentTitle,
   resolveCanonicalUrl,
 } = await import("../src/lib/seo.ts");
+import { DEFAULT_SITE_PROFILE } from "../src/lib/site-profile-defaults.ts";
 
 // ── WebSite JSON-LD ────────────────────────────────────────────────────
 
@@ -107,6 +109,35 @@ test("buildPageMetadata ignores blank CMS metaTitle and composes the page title"
   });
   assert.deepEqual(metadata.title, { absolute: "About | Mehdi Zare" });
   assert.equal(metadata.openGraph?.title, "About | Mehdi Zare");
+});
+
+test("buildPageMetadata ignores blank CMS metaDescription", () => {
+  const metadata = buildPageMetadata({
+    pathname: "/blog/tag/empty-intro-tag",
+    title: "Empty Intro Tag",
+    description: "Articles tagged Empty Intro Tag.",
+    seo: {
+      id: 1,
+      metaDescription: "   ",
+    },
+  });
+  assert.equal(metadata.description, "Articles tagged Empty Intro Tag.");
+  assert.equal(metadata.openGraph?.description, "Articles tagged Empty Intro Tag.");
+  assert.equal(metadata.twitter?.description, "Articles tagged Empty Intro Tag.");
+});
+
+test("buildNoIndexMetadata sets noindex and composed titles on document, Open Graph, and Twitter", () => {
+  const metadata = buildNoIndexMetadata("Post Not Found");
+  assert.deepEqual(metadata.title, { absolute: "Post Not Found | Mehdi Zare" });
+  assert.equal(metadata.openGraph?.title, "Post Not Found | Mehdi Zare");
+  assert.equal(metadata.twitter?.title, "Post Not Found | Mehdi Zare");
+  assert.deepEqual(metadata.robots, { index: false, follow: false });
+  assert.equal(metadata.description, "Post Not Found");
+  assert.equal(metadata.openGraph?.description, "Post Not Found");
+  assert.equal(metadata.twitter?.description, "Post Not Found");
+  assert.equal(metadata.alternates?.canonical, null);
+  assert.equal(metadata.openGraph?.url, null);
+  assert.notEqual(metadata.description, DEFAULT_SITE_PROFILE.siteDescription);
 });
 
 // ── Person JSON-LD ─────────────────────────────────────────────────────
