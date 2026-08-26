@@ -4,7 +4,7 @@ export const cardVariants = {
 };
 
 const defaultVariants = {
-  hidden: { opacity: 0 },
+  hidden: { opacity: 0, scale: 0 },
 };
 
 export default defaultVariants;
