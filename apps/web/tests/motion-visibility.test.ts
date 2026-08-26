@@ -228,16 +228,16 @@ function readJsxElement(source: string, ltIndex: number): string {
     }
     if (isFragment) {
       if (source.startsWith("<>", i)) {
-        depth += 1;
-        i += 2;
+        const nested = readJsxElement(source, i);
+        i += nested.length;
         continue;
       }
     } else if (
       source.startsWith(nestedOpen, i) &&
       /[\s>/]/.test(source[i + nestedOpen.length] ?? "")
     ) {
-      depth += 1;
-      i += nestedOpen.length;
+      const nested = readJsxElement(source, i);
+      i += nested.length;
       continue;
     }
     i += 1;
@@ -560,7 +560,7 @@ function tryJsxElementEnd(source: string, ltIndex: number): number {
   try {
     return ltIndex + readJsxElement(source, ltIndex).length;
   } catch {
-    return source.length;
+    return findOpeningTagEnd(source, ltIndex);
   }
 }
 
@@ -1269,6 +1269,25 @@ test("unrelated sibling variants= leftover is not collected from a file-global n
     hidingOpacityStates(source).length,
     0,
     "leftover is not a stagger child of the initial=\"hidden\" node"
+  );
+});
+
+test("leftover sibling after a stagger parent with self-closing same-name child is not collected", () => {
+  const source = `
+    const leftover = { hidden: { opacity: 0 } };
+    const containerVariants = { hidden: {} };
+    const childVariants = { hidden: { opacity: 0 } };
+    <motion.div variants={containerVariants} initial="hidden">
+      <motion.div variants={childVariants} />
+    </motion.div>
+    <motion.div variants={leftover} />
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(hiding.length, 1, "stagger child remains an offender; leftover sibling is not");
+  assert.equal(
+    isExemptHidingInitial(source, hiding[0].index),
+    false,
+    "Hero/ClientLogos-style children have no initial=; collection keys off the child tag"
   );
 });
 
