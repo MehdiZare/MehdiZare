@@ -25,6 +25,7 @@ test("metadata builder keeps canonical URL + social metadata defaults", () => {
   assert.match(source, /alternates:\s*{\s*canonical/);
   assert.match(source, /composeDocumentTitle/);
   assert.match(source, /title:\s*\{\s*absolute:\s*documentTitle/);
+  assert.match(source, /seo\?\.metaDescription\?\.trim\(\) \|\| description/);
 });
 
 test("noindex metadata helper composes titles and disables indexing", () => {
@@ -32,6 +33,8 @@ test("noindex metadata helper composes titles and disables indexing", () => {
   assert.match(source, /const documentTitle = composeDocumentTitle\(title\)/);
   assert.match(source, /index:\s*false/);
   assert.match(source, /follow:\s*false/);
+  assert.match(source, /canonical:\s*null/);
+  assert.match(source, /url:\s*null/);
 });
 
 test("not-found generateMetadata call sites use buildNoIndexMetadata", () => {
@@ -50,13 +53,15 @@ test("not-found generateMetadata call sites use buildNoIndexMetadata", () => {
 test("author metadata does not fall back to the homepage site description", () => {
   const pageSource = readSource("src/app/author/[slug]/page.tsx");
   assert.doesNotMatch(pageSource, /siteDescription/);
-  assert.match(pageSource, /author\.bioShort \?\? `Articles by \$\{author\.name\}\.`/);
+  assert.match(pageSource, /authorListingDescription\(author\.name, author\.bioShort\)/);
+  assert.match(pageSource, /bioShort\?\.trim\(\)/);
+  assert.match(pageSource, /Articles by \$\{name\}\./);
 });
 
 test("article metadata does not fall back to the homepage site description", () => {
   const pageSource = readSource("src/app/blog/[slug]/page.tsx");
   assert.doesNotMatch(pageSource, /siteDescription/);
-  assert.match(pageSource, /article\.excerpt \|\| article\.title/);
+  assert.match(pageSource, /article\.excerpt\?\.trim\(\) \|\| article\.title/);
 });
 
 test("bina-print metadata does not fall back to the homepage site description", () => {
@@ -70,7 +75,7 @@ test("bina-print metadata does not fall back to the homepage site description", 
 test("tag listing metadata shares the listing copy helper and never uses the site blurb", () => {
   const pageSource = readSource("src/app/blog/tag/[slug]/page.tsx");
   assert.match(pageSource, /resolveTagListingCopy/);
-  assert.match(pageSource, /tag\?\.seo\?\.metaDescription \?\? pageDescription/);
+  assert.match(pageSource, /description:\s*pageDescription/);
   assert.doesNotMatch(pageSource, /siteDescription/);
   assert.doesNotMatch(pageSource, /getSiteProfile/);
 });

@@ -45,6 +45,10 @@ test("tag listing copy with empty intro and description does not use the homepag
     pathname: "/blog/tag/empty-intro-tag",
     title: metadataCopy.tagName,
     description: metadataCopy.pageDescription,
+    seo: {
+      id: 1,
+      metaDescription: "",
+    },
   });
   assert.equal(metadata.description, visibleCopy.pageDescription);
   assert.equal(

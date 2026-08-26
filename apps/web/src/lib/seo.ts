@@ -329,7 +329,7 @@ export function buildPageMetadata({
 }: BuildPageMetadataOptions): Metadata {
   const resolvedTitle = seo?.metaTitle?.trim() || title;
   const documentTitle = composeDocumentTitle(resolvedTitle);
-  const resolvedDescription = seo?.metaDescription ?? description;
+  const resolvedDescription = seo?.metaDescription?.trim() || description;
   const canonical = resolveCanonicalUrl(pathname, seo?.canonicalURL);
   const robots = normalizeRobotsValue(seo?.metaRobots);
   const resolvedImage = seo?.metaImage ?? image;
@@ -380,7 +380,8 @@ export function buildPageMetadata({
  * Titles + robots for not-found metadata. Absolute composed titles keep
  * document / Open Graph / Twitter in sync. A short page-specific description
  * (the route title) prevents the root layout homepage blurb from inheriting
- * onto 404s.
+ * onto 404s. Canonical and og:url are explicitly unset so Next does not
+ * merge the layout homepage `/` values onto noindex routes.
  */
 export function buildNoIndexMetadata(title: string): Metadata {
   const documentTitle = composeDocumentTitle(title);
@@ -392,9 +393,13 @@ export function buildNoIndexMetadata(title: string): Metadata {
       index: false,
       follow: false,
     },
+    alternates: {
+      canonical: null,
+    },
     openGraph: {
       title: documentTitle,
       description: title,
+      url: null,
     },
     twitter: {
       title: documentTitle,

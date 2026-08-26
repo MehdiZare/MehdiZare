@@ -66,7 +66,7 @@ export async function generateMetadata({
     const metadata = buildPageMetadata({
       pathname: `/blog/${slug}`,
       title: article.title,
-      description: article.excerpt || article.title,
+      description: article.excerpt?.trim() || article.title,
       seo: article.seo,
       image: article.featuredImage,
       type: "article",
@@ -165,7 +165,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const authorLinkedIn = articleAuthor?.linkedinUrl ?? siteProfile.author.linkedinUrl;
   const authorInitials = buildInitials(authorName);
   const articleDescription =
-    article.excerpt || article.title;
+    article.excerpt?.trim() || article.title;
   const primaryImage =
     toAbsoluteMediaUrl(article.seo?.metaImage?.url) ??
     toAbsoluteMediaUrl(article.featuredImage?.url);

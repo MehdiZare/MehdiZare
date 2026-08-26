@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
     return buildPageMetadata({
       pathname: `/blog/tag/${slug}`,
       title: tag?.seo?.metaTitle ?? tag?.headline ?? tag?.name ?? fallbackTitle,
-      description: tag?.seo?.metaDescription ?? pageDescription,
+      description: pageDescription,
       seo: tag?.seo,
     });
   } catch {

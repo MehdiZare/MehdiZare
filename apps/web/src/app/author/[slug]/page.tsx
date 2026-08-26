@@ -25,6 +25,11 @@ interface AuthorPageProps {
 
 type AuthorList = Awaited<ReturnType<typeof getAuthors>>["data"];
 
+function authorListingDescription(name: string, bioShort?: string | null): string {
+  const bio = bioShort?.trim();
+  return bio ? bio : `Articles by ${name}.`;
+}
+
 function getAllAuthors(): Promise<AuthorList> {
   // Shared STRAPI_MAX_PAGES cap. Extra slugs still render on demand
   // (dynamicParams defaults to true).
@@ -55,7 +60,7 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
 
     const role = author.jobTitle ?? author.headline ?? siteProfile.authorRole;
     const title = `${author.name} | ${role}`;
-    const description = author.bioShort ?? `Articles by ${author.name}.`;
+    const description = authorListingDescription(author.name, author.bioShort);
 
     return buildPageMetadata({
       pathname: `/author/${author.slug}`,
@@ -144,7 +149,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
   const authorPath = `/author/${author.slug}`;
   const personId = toPersonId(authorPath);
   const role = author.jobTitle ?? author.headline ?? siteProfile.authorRole;
-  const description = author.bioShort ?? `Articles by ${author.name}.`;
+  const description = authorListingDescription(author.name, author.bioShort);
   const websiteUrl =
     normalizeIdentityUrl(author.websiteUrl, CANONICAL_IDENTITY_ORIGIN) ??
     siteProfile.author.websiteUrl;
