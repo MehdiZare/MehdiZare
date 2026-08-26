@@ -30,23 +30,24 @@ test("AI engineer landing is a dedicated non-blog route titled to the query", ()
   assert.match(readSource("src/components/layout/Footer.tsx"), /href: "\/ai-engineer"/);
   assert.match(readSource("src/components/home/ServicesGrid.tsx"), /href: "\/ai-engineer"/);
   assert.match(readSource("src/app/about/page.tsx"), /AiEngineerProfileLink/);
+  assert.match(readSource("src/app/about/page.tsx"), /section="about_hero"/);
+  const blogPage = readSource("src/app/blog/[slug]/page.tsx");
+  assert.match(blogPage, /how-ai-works-from-data-to-decisions/);
   assert.match(
-    readSource("src/app/blog/[slug]/page.tsx"),
-    /how-ai-works-from-data-to-decisions/
-  );
-  assert.match(
-    readSource("src/app/blog/[slug]/page.tsx"),
+    blogPage,
     /why-most-ai-projects-die-before-production-and-it-s-not-a-tech-problem/
   );
-  assert.match(readSource("src/app/blog/[slug]/page.tsx"), /AiEngineerProfileLink/);
-  assert.match(
-    readSource("src/components/seo/AiEngineerProfileLink.tsx"),
-    /href="\/ai-engineer"/
-  );
-  assert.doesNotMatch(
-    readSource("src/app/consulting/page.tsx"),
-    /AiEngineerProfileLink/
-  );
+  assert.match(blogPage, /AiEngineerProfileLink/);
+  assert.match(blogPage, /AI_ENGINEER_IN_CONTENT_BLOG_SLUGS\.has\(article\.slug\)/);
+  assert.match(blogPage, /section="blog_body"/);
+  const profileLink = readSource("src/components/seo/AiEngineerProfileLink.tsx");
+  assert.match(profileLink, /href="\/ai-engineer"/);
+  assert.match(profileLink, /TrackedLink/);
+  assert.match(profileLink, /eventName="funnel_cta_click"/);
+  assert.match(profileLink, /cta_label: "AI engineer landing"/);
+  assert.match(profileLink, /destination: "\/ai-engineer"/);
+  assert.doesNotMatch(readSource("src/app/consulting/page.tsx"), /AiEngineerProfileLink/);
+  assert.doesNotMatch(readSource("src/app/page.tsx"), /AiEngineerProfileLink/);
 });
 
 test("AI engineer landing copy stays AI/finance and omits government/CISA", () => {

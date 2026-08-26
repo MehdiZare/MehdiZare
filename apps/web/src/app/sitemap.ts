@@ -32,6 +32,18 @@ function safeDate(input: string | undefined, fallback: Date): Date {
   return Number.isNaN(parsed.getTime()) ? fallback : parsed;
 }
 
+/** Newest parseable timestamp in `values`, or `fallback` when none are valid. */
+export function maxValidDate(values: Array<string | undefined>, fallback: Date): Date {
+  let latest: Date | null = null;
+  for (const value of values) {
+    if (!value) continue;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) continue;
+    if (!latest || parsed > latest) latest = parsed;
+  }
+  return latest ?? fallback;
+}
+
 async function getAllArticlesForSitemap(): Promise<Article[]> {
   const pageSize = 100;
   let page = 1;
@@ -380,12 +392,10 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
   let articlePages: MetadataRoute.Sitemap = [];
   if (articlesResult.status === "fulfilled") {
     const articles = articlesResult.value;
-    for (const article of articles) {
-      const updated = safeDate(article.updatedAt, pageTimestamps.blog);
-      if (updated > pageTimestamps.blog) {
-        pageTimestamps.blog = updated;
-      }
-    }
+    pageTimestamps.blog = maxValidDate(
+      articles.map((article) => article.updatedAt),
+      pageTimestamps.blog
+    );
     articlePages = mapArticlePages(articles, now);
   } else {
     degradedSources.push("articles");
