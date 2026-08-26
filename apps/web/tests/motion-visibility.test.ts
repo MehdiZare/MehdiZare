@@ -228,16 +228,16 @@ function readJsxElement(source: string, ltIndex: number): string {
     }
     if (isFragment) {
       if (source.startsWith("<>", i)) {
-        depth += 1;
-        i += 2;
+        const nested = readJsxElement(source, i);
+        i += nested.length;
         continue;
       }
     } else if (
       source.startsWith(nestedOpen, i) &&
       /[\s>/]/.test(source[i + nestedOpen.length] ?? "")
     ) {
-      depth += 1;
-      i += nestedOpen.length;
+      const nested = readJsxElement(source, i);
+      i += nested.length;
       continue;
     }
     i += 1;
@@ -556,14 +556,71 @@ function findInitialUsageIndexInTag(
   return null;
 }
 
+function tryJsxElementEnd(source: string, ltIndex: number): number {
+  try {
+    return ltIndex + readJsxElement(source, ltIndex).length;
+  } catch {
+    return findOpeningTagEnd(source, ltIndex);
+  }
+}
+
+function collectInitialNameTagStarts(source: string, name: string): number[] {
+  const starts: number[] = [];
+  for (const match of source.matchAll(/initial\s*=/g)) {
+    const tagStart = findJsxTagStart(source, match.index);
+    if (tagStart < 0) continue;
+    const openingTagEnd = findOpeningTagEnd(source, tagStart);
+    if (findInitialUsageIndexInTag(source, tagStart, openingTagEnd, name) != null) {
+      starts.push(tagStart);
+    }
+  }
+  return [...new Set(starts)];
+}
+
+function tagOptsOutOfVariantInherit(
+  source: string,
+  ltIndex: number,
+  openingTagEnd: number
+): boolean {
+  const tag = source.slice(ltIndex, openingTagEnd);
+  return (
+    /\binherit\s*=\s*\{\s*false\s*\}/.test(tag) || /\binitial\s*=\s*\{\s*false\s*\}/.test(tag)
+  );
+}
+
+function namedVariantUsageIndex(
+  source: string,
+  binding: VariantsBinding,
+  name: string,
+  nameTagStarts: number[]
+): number | null {
+  const ownUsage = findInitialUsageIndexInTag(
+    source,
+    binding.elementStart,
+    binding.openingTagEnd,
+    name
+  );
+  if (ownUsage != null) return ownUsage;
+  if (tagOptsOutOfVariantInherit(source, binding.elementStart, binding.openingTagEnd)) {
+    return null;
+  }
+  for (const start of nameTagStarts) {
+    if (start === binding.elementStart) continue;
+    const end = tryJsxElementEnd(source, start);
+    if (binding.elementStart > start && binding.elementStart < end) {
+      return binding.elementStart;
+    }
+  }
+  return null;
+}
+
 /**
  * Every initial state a motion element can resolve during SSR: an inline
  * `initial={{ ... }}` object, a same-file `initial={ident}` object, and
  * named variant objects from a `variants=` binding referenced by
- * `initial="name"`, `initial={"name"}`, `initial={ident}`, or a string
- * literal in that expression. Exemption is keyed at the `initial=` usage
- * when that tag names the variant; otherwise at the `variants=` element
- * (stagger children have no `initial=` of their own).
+ * `initial="name"` on this element or an ancestor (stagger children).
+ * Exemption is keyed at the `initial=` usage when that tag names the
+ * variant; otherwise at the `variants=` element.
  */
 function collectInitialStates(source: string, ctx?: ScanContext): InitialState[] {
   const states: InitialState[] = [];
@@ -589,16 +646,12 @@ function collectInitialStates(source: string, ctx?: ScanContext): InitialState[]
   const names = collectInitialVariantNames(source);
   const { bindings } = collectVariantsBindings(source, ctx);
   for (const name of names) {
+    const nameTagStarts = collectInitialNameTagStarts(source, name);
     for (const binding of bindings) {
       const objects = collectNamedVariantObjects(binding.objectText, name);
       if (objects.length === 0) continue;
-      const usageIndex = findInitialUsageIndexInTag(
-        source,
-        binding.elementStart,
-        binding.openingTagEnd,
-        name
-      );
-      const index = usageIndex ?? binding.elementStart;
+      const index = namedVariantUsageIndex(source, binding, name, nameTagStarts);
+      if (index == null) continue;
       for (const obj of objects) {
         states.push({ text: obj.text, index });
       }
@@ -1202,6 +1255,69 @@ test("always-rendered stagger children with hiding named variants stay offenders
     isExemptHidingInitial(source, hiding[0].index),
     false,
     "Hero/ClientLogos-style children have no initial=; collection keys off the child tag, which is always rendered"
+  );
+});
+
+test("unrelated sibling variants= leftover is not collected from a file-global name", () => {
+  const source = `
+    const leftover = { hidden: { opacity: 0 } };
+    const containerVariants = { hidden: {} };
+    <motion.div variants={containerVariants} initial="hidden" />
+    <motion.div variants={leftover} />
+  `;
+  assert.equal(
+    hidingOpacityStates(source).length,
+    0,
+    "leftover is not a stagger child of the initial=\"hidden\" node"
+  );
+});
+
+test("leftover sibling after a stagger parent with self-closing same-name child is not collected", () => {
+  const source = `
+    const leftover = { hidden: { opacity: 0 } };
+    const containerVariants = { hidden: {} };
+    const childVariants = { hidden: { opacity: 0 } };
+    <motion.div variants={containerVariants} initial="hidden">
+      <motion.div variants={childVariants} />
+    </motion.div>
+    <motion.div variants={leftover} />
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(hiding.length, 1, "stagger child remains an offender; leftover sibling is not");
+  assert.equal(
+    isExemptHidingInitial(source, hiding[0].index),
+    false,
+    "Hero/ClientLogos-style children have no initial=; collection keys off the child tag"
+  );
+});
+
+test("nested child with initial={false} does not inherit a parent hiding name", () => {
+  const source = `
+    const containerVariants = { hidden: {} };
+    const childVariants = { hidden: { opacity: 0 } };
+    <motion.div variants={containerVariants} initial="hidden">
+      <motion.div variants={childVariants} initial={false} />
+    </motion.div>
+  `;
+  assert.equal(
+    hidingOpacityStates(source).length,
+    0,
+    "initial={false} opts the child out of inherited hidden"
+  );
+});
+
+test("nested child with inherit={false} does not inherit a parent hiding name", () => {
+  const source = `
+    const containerVariants = { hidden: {} };
+    const childVariants = { hidden: { opacity: 0 } };
+    <motion.div variants={containerVariants} initial="hidden">
+      <motion.div variants={childVariants} inherit={false} />
+    </motion.div>
+  `;
+  assert.equal(
+    hidingOpacityStates(source).length,
+    0,
+    "inherit={false} opts the child out of inherited hidden"
   );
 });
 
