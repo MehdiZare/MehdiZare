@@ -206,6 +206,8 @@ export function resolveCanonicalUrl(pathname: string, canonicalUrl?: string): st
   return forceCanonicalHost(pathname, siteUrl);
 }
 
+const TITLE_SEPARATORS = [" | ", " — ", " – ", " - "] as const;
+
 /**
  * Document / Open Graph / Twitter title. Nested routes otherwise pick up the
  * layout `title.template` for `<title>` only, leaving og:title as the short
@@ -217,19 +219,15 @@ export function composeDocumentTitle(title: string, siteName = SITE_NAME): strin
     return siteName;
   }
 
-  if (
-    trimmed.endsWith(` | ${siteName}`) ||
-    trimmed.endsWith(` — ${siteName}`) ||
-    trimmed.endsWith(` - ${siteName}`)
-  ) {
+  if (TITLE_SEPARATORS.some((separator) => trimmed.endsWith(`${separator}${siteName}`))) {
     return trimmed;
   }
 
   if (
     trimmed.startsWith(`${siteName} `) ||
     trimmed.startsWith(`${siteName}—`) ||
-    trimmed.startsWith(`${siteName} –`) ||
-    trimmed.startsWith(`${siteName} -`)
+    trimmed.startsWith(`${siteName}–`) ||
+    trimmed.startsWith(`${siteName}-`)
   ) {
     return trimmed;
   }
@@ -329,7 +327,7 @@ export function buildPageMetadata({
   modifiedTime,
   keywords,
 }: BuildPageMetadataOptions): Metadata {
-  const resolvedTitle = seo?.metaTitle ?? title;
+  const resolvedTitle = seo?.metaTitle?.trim() || title;
   const documentTitle = composeDocumentTitle(resolvedTitle);
   const resolvedDescription = seo?.metaDescription ?? description;
   const canonical = resolveCanonicalUrl(pathname, seo?.canonicalURL);

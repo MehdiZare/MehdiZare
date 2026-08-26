@@ -58,11 +58,30 @@ test("composeDocumentTitle keeps homepage titles that already lead with the site
     composeDocumentTitle("Mehdi Zare — Principal AI Engineer · CFA Charterholder"),
     "Mehdi Zare — Principal AI Engineer · CFA Charterholder",
   );
+  assert.equal(
+    composeDocumentTitle("Mehdi Zare—Principal AI Engineer"),
+    "Mehdi Zare—Principal AI Engineer",
+  );
 });
 
 test("composeDocumentTitle appends the site name to short inner-page titles", () => {
   assert.equal(composeDocumentTitle("About"), "About | Mehdi Zare");
   assert.equal(composeDocumentTitle("Get in Touch"), "Get in Touch | Mehdi Zare");
+});
+
+test("composeDocumentTitle does not double-append when the site name is already a suffix", () => {
+  assert.equal(composeDocumentTitle("About | Mehdi Zare"), "About | Mehdi Zare");
+  assert.equal(
+    composeDocumentTitle("AI Engineering — Mehdi Zare"),
+    "AI Engineering — Mehdi Zare",
+  );
+  assert.equal(composeDocumentTitle("About – Mehdi Zare"), "About – Mehdi Zare");
+  assert.equal(composeDocumentTitle("About - Mehdi Zare"), "About - Mehdi Zare");
+});
+
+test("composeDocumentTitle treats blank or exact site-name titles as the site name", () => {
+  assert.equal(composeDocumentTitle("   "), "Mehdi Zare");
+  assert.equal(composeDocumentTitle("Mehdi Zare"), "Mehdi Zare");
 });
 
 test("buildPageMetadata uses the composed title for document, Open Graph, and Twitter", () => {
@@ -74,6 +93,20 @@ test("buildPageMetadata uses the composed title for document, Open Graph, and Tw
   assert.deepEqual(metadata.title, { absolute: "About | Mehdi Zare" });
   assert.equal(metadata.openGraph?.title, "About | Mehdi Zare");
   assert.equal(metadata.twitter?.title, "About | Mehdi Zare");
+});
+
+test("buildPageMetadata ignores blank CMS metaTitle and composes the page title", () => {
+  const metadata = buildPageMetadata({
+    pathname: "/about",
+    title: "About",
+    description: "About page",
+    seo: {
+      id: 1,
+      metaTitle: "   ",
+    },
+  });
+  assert.deepEqual(metadata.title, { absolute: "About | Mehdi Zare" });
+  assert.equal(metadata.openGraph?.title, "About | Mehdi Zare");
 });
 
 // ── Person JSON-LD ─────────────────────────────────────────────────────
