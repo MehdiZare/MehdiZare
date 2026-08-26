@@ -303,6 +303,12 @@ function isExistingFile(path: string): boolean {
   }
 }
 
+function isInsideDir(filePath: string, root: string): boolean {
+  const resolved = resolve(filePath);
+  const resolvedRoot = resolve(root);
+  return resolved === resolvedRoot || resolved.startsWith(`${resolvedRoot}/`);
+}
+
 function resolveImportedModule(fromFile: string, spec: string): string | null {
   if (!(spec.startsWith(".") || spec.startsWith("@/"))) return null;
   const base = spec.startsWith("@/")
@@ -315,6 +321,7 @@ function resolveImportedModule(fromFile: string, spec: string): string | null {
     join(base, "index.ts"),
     join(base, "index.tsx"),
   ]) {
+    if (!isInsideDir(candidate, process.cwd())) continue;
     if (isExistingFile(candidate)) return candidate;
   }
   return null;
@@ -491,6 +498,11 @@ function collectVariantsBindings(
   const unresolved: string[] = [];
 
   for (const match of source.matchAll(/variants\s*=\s*\{/g)) {
+    const elementStart = findJsxTagStart(source, match.index);
+    if (elementStart < 0) continue;
+    const openingTagEnd = findOpeningTagEnd(source, elementStart);
+    if (match.index >= openingTagEnd) continue;
+
     const exprBrace = match.index + match[0].lastIndexOf("{");
     const inner = skipWs(source, exprBrace + 1);
     const objectTexts: string[] = [];
@@ -505,10 +517,6 @@ function collectVariantsBindings(
         else unresolved.push(ident);
       }
     }
-
-    const elementStart = findJsxTagStart(source, match.index);
-    if (elementStart < 0) continue;
-    const openingTagEnd = findOpeningTagEnd(source, elementStart);
 
     for (const objectText of objectTexts) {
       bindings.push({ objectText, elementStart, openingTagEnd });
@@ -1096,6 +1104,7 @@ test("imported named variants objects are collected", () => {
   const hiding = hidingOpacityStates(source, ctx);
   assert.equal(hiding.length, 1, "import { cardVariants } from ./motion must resolve the object");
   assert.equal(isExemptHidingInitial(source, hiding[0].index), false);
+  assert.equal(hidingHits(hiding[0].text).includes("scale"), false);
   assert.deepEqual(collectVariantsBindings(source, ctx).unresolved, []);
 });
 
@@ -1104,8 +1113,28 @@ test("imported default variants objects are collected", () => {
   const source = readFileSync(file, "utf8");
   const ctx = { filePath: file };
   const hiding = hidingOpacityStates(source, ctx);
-  assert.equal(hiding.length, 1, "import cardVariants from ./motion must resolve export default");
+  assert.equal(hiding.length, 1, "import fadeVariants from ./motion must resolve export default");
   assert.equal(isExemptHidingInitial(source, hiding[0].index), false);
+  assert.ok(
+    hidingHits(hiding[0].text).includes("scale"),
+    "default export payload must not collide with the named cardVariants export"
+  );
+  assert.deepEqual(collectVariantsBindings(source, ctx).unresolved, []);
+});
+
+test("const variants = { property keys are not unresolved JSX bindings", () => {
+  const before = `
+    const variants = { hidden: { opacity: 0 } };
+    <motion.div initial="hidden" variants={variants} />
+  `;
+  assert.deepEqual(collectVariantsBindings(before).unresolved, []);
+  assert.equal(hidingOpacityStates(before).length, 1);
+
+  const after = `
+    <motion.div initial="hidden" variants={cardVariants} />
+    const variants = { leftover: { opacity: 0 } };
+  `;
+  assert.deepEqual(collectVariantsBindings(after).unresolved, ["cardVariants"]);
 });
 
 test("factory variants={ident} fail closed when the object is not a literal", () => {
