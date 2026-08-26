@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import type { Article, Author } from "@/types/strapi";
+import type { Article, Author, Category, Tag } from "@/types/strapi";
 import {
   getAboutPage,
   getArticles,
