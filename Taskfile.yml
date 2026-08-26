@@ -40,8 +40,8 @@ tasks:
     cmd: pnpm turbo lint
 
   typecheck:
-    desc: Run TypeScript type checking on web app
-    cmd: pnpm --filter=web exec tsc --noEmit
+    desc: Run TypeScript type checking across the workspace
+    cmd: pnpm typecheck
 
   test:
     desc: Run web and repo script tests
@@ -55,7 +55,7 @@ tasks:
     desc: Run required checks before pushing changes
     cmds:
       - pnpm --filter=web lint
-      - pnpm --filter=web exec tsc --noEmit
+      - pnpm typecheck
       - pnpm test
       - pnpm --filter=web build
 

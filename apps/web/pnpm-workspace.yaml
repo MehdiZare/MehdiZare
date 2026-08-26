@@ -3,6 +3,7 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
 minimumReleaseAgeExclude:
-  - '@posthog/core@1.48.8'
-  - '@posthog/types@1.405.1'
-  - posthog-js@1.418.11
+  - '@posthog/core@1.48.11'
+  - '@posthog/types@1.406.2'
+  - posthog-js@1.420.0
+  - '@posthog/browser-common@0.6.0'

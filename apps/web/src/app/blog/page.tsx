@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 import { BlogListPageContent } from "@/components/blog/BlogListPageContent";
-import { getBlogListingData } from "@/lib/blog-listing";
+import { BLOG_PAGE_DESCRIPTION, getBlogListingData } from "@/lib/blog-listing";
 import { getSiteProfile } from "@/lib/site-profile";
 import { buildPageMetadata, toPersonId } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const siteProfile = await getSiteProfile();
-
   return buildPageMetadata({
     pathname: "/blog",
     title: "Blog",
-    description: siteProfile.siteDescription,
+    description: BLOG_PAGE_DESCRIPTION,
     type: "website",
     keywords: [
       "production AI engineering",
@@ -34,7 +32,7 @@ export default async function BlogPage() {
       categories={categories}
       pagination={pagination}
       pageTitle="Blog"
-      pageDescription={siteProfile.siteDescription}
+      pageDescription={BLOG_PAGE_DESCRIPTION}
       canonicalPath="/blog"
       canonicalAuthorId={toPersonId(siteProfile.author.profilePath)}
     />

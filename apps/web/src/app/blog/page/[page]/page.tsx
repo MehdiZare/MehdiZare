@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { BlogListPageContent } from "@/components/blog/BlogListPageContent";
 import {
+  BLOG_PAGE_DESCRIPTION,
   BLOG_PAGE_SIZE,
   getBlogListingData,
   parsePositivePageNumber,
@@ -37,13 +38,12 @@ export async function generateStaticParams(): Promise<Array<{ page: string }>> {
 export async function generateMetadata({ params }: BlogArchivePageProps): Promise<Metadata> {
   const { page: rawPage } = await params;
   const currentPage = parsePositivePageNumber(rawPage);
-  const siteProfile = await getSiteProfile();
 
   const pageNumberLabel = currentPage && currentPage > 1 ? ` - Page ${currentPage}` : "";
   const metadata = buildPageMetadata({
     pathname: "/blog",
     title: `Blog${pageNumberLabel}`,
-    description: siteProfile.siteDescription,
+    description: BLOG_PAGE_DESCRIPTION,
     type: "website",
     keywords: [
       "production AI engineering",
@@ -88,7 +88,7 @@ export default async function BlogArchivePage({ params }: BlogArchivePageProps) 
       categories={categories}
       pagination={pagination}
       pageTitle="Blog"
-      pageDescription={siteProfile.siteDescription}
+      pageDescription={BLOG_PAGE_DESCRIPTION}
       canonicalPath="/blog"
       canonicalAuthorId={toPersonId(siteProfile.author.profilePath)}
     />

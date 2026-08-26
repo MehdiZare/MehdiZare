@@ -40,7 +40,7 @@ Scope: `apps/web` implementation quality, accessibility, and SEO consistency.
 ## Validation Executed
 
 - `pnpm --filter=web lint` ✅
-- `pnpm --filter=web exec tsc --noEmit` ✅
+- `pnpm --filter=web typecheck` ✅
 - `pnpm --filter=web test` ✅
 - `pnpm --filter=web build` ✅
 - `task pre-push` ✅

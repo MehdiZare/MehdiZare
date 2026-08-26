@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return buildPageMetadata({
     pathname: "/contact",
-    title: "Contact",
+    title: "Get in Touch",
     description: siteProfile.contactPrompt,
     type: "website",
     keywords: [

@@ -10,6 +10,8 @@ const {
   buildBlogPostingJsonLd,
   buildBlogJsonLd,
   buildFAQJsonLd,
+  buildPageMetadata,
+  composeDocumentTitle,
   resolveCanonicalUrl,
 } = await import("../src/lib/seo.ts");
 
@@ -49,6 +51,29 @@ test("resolveCanonicalUrl forces configured canonical host for absolute override
     "https://mehdi-zare.com/blog/category/ai-engineering"
   );
   assert.equal(result, "https://www.mehdi-zare.com/blog/category/ai-engineering");
+});
+
+test("composeDocumentTitle keeps homepage titles that already lead with the site name", () => {
+  assert.equal(
+    composeDocumentTitle("Mehdi Zare — Principal AI Engineer · CFA Charterholder"),
+    "Mehdi Zare — Principal AI Engineer · CFA Charterholder",
+  );
+});
+
+test("composeDocumentTitle appends the site name to short inner-page titles", () => {
+  assert.equal(composeDocumentTitle("About"), "About | Mehdi Zare");
+  assert.equal(composeDocumentTitle("Get in Touch"), "Get in Touch | Mehdi Zare");
+});
+
+test("buildPageMetadata uses the composed title for document, Open Graph, and Twitter", () => {
+  const metadata = buildPageMetadata({
+    pathname: "/about",
+    title: "About",
+    description: "About page",
+  });
+  assert.deepEqual(metadata.title, { absolute: "About | Mehdi Zare" });
+  assert.equal(metadata.openGraph?.title, "About | Mehdi Zare");
+  assert.equal(metadata.twitter?.title, "About | Mehdi Zare");
 });
 
 // ── Person JSON-LD ─────────────────────────────────────────────────────

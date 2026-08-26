@@ -64,15 +64,55 @@ allowBuilds:
   unrs-resolver: true
 
 minimumReleaseAgeExclude:
-  - '@posthog/core@1.48.8'
-  - '@posthog/types@1.405.1'
-  - posthog-js@1.418.11
+  - '@posthog/core@1.48.8 || 1.48.11'
+  - '@posthog/types@1.405.1 || 1.406.2'
+  - posthog-js@1.420.0
   - tar@7.5.22
-  - '@posthog/browser-common@0.5.0'
-  - '@strapi/plugin-cloud@5.52.1'
-  - '@strapi/plugin-users-permissions@5.52.1'
-  - '@strapi/strapi@5.52.1'
+  - '@posthog/browser-common@0.5.0 || 0.6.0'
+  - '@strapi/plugin-cloud@5.52.2'
+  - '@strapi/plugin-users-permissions@5.52.2'
+  - '@strapi/strapi@5.52.2'
   - hono@4.13.4
   - '@hono/node-server@1.19.17'
   - yaml@1.10.3
   - '@types/react-dom@19.2.5'
+  - '@next/env@16.3.3'
+  - '@next/eslint-plugin-next@16.3.3'
+  - '@next/swc-darwin-arm64@16.3.3'
+  - '@next/swc-darwin-x64@16.3.3'
+  - '@next/swc-linux-arm64-gnu@16.3.3'
+  - '@next/swc-linux-arm64-musl@16.3.3'
+  - '@next/swc-linux-x64-gnu@16.3.3'
+  - '@next/swc-linux-x64-musl@16.3.3'
+  - '@next/swc-win32-arm64-msvc@16.3.3'
+  - '@next/swc-win32-x64-msvc@16.3.3'
+  - '@strapi/admin@5.52.2'
+  - '@strapi/cloud-cli@5.52.2'
+  - '@strapi/content-manager@5.52.2'
+  - '@strapi/content-releases@5.52.2'
+  - '@strapi/content-type-builder@5.52.2'
+  - '@strapi/core@5.52.2'
+  - '@strapi/data-transfer@5.52.2'
+  - '@strapi/database@5.52.2'
+  - '@strapi/email@5.52.2'
+  - '@strapi/generators@5.52.2'
+  - '@strapi/i18n@5.52.2'
+  - '@strapi/logger@5.52.2'
+  - '@strapi/openapi@5.52.2'
+  - '@strapi/permissions@5.52.2'
+  - '@strapi/provider-email-sendmail@5.52.2'
+  - '@strapi/provider-upload-local@5.52.2'
+  - '@strapi/review-workflows@5.52.2'
+  - '@strapi/types@5.52.2'
+  - '@strapi/typescript-utils@5.52.2'
+  - '@strapi/upload@5.52.2'
+  - '@strapi/utils@5.52.2'
+  - '@turbo/darwin-64@2.10.12'
+  - '@turbo/darwin-arm64@2.10.12'
+  - '@turbo/linux-64@2.10.12'
+  - '@turbo/linux-arm64@2.10.12'
+  - '@turbo/windows-64@2.10.12'
+  - '@turbo/windows-arm64@2.10.12'
+  - eslint-config-next@16.3.3
+  - next@16.3.3
+  - turbo@2.10.12
