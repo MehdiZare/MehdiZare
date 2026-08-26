@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 
 // Framer Motion inlines the resolved `initial` state as a `style` attribute
 // during SSR. Any initial state that zeroes out opacity, size, or scale is
@@ -10,6 +10,11 @@ import { join, relative, resolve } from "node:path";
 // out of the pages #28 did not cover.
 
 const COMPONENTS_DIR = resolve(process.cwd(), "src/components");
+const SRC_ROOT = resolve(process.cwd(), "src");
+
+interface ScanContext {
+  filePath?: string;
+}
 
 const ZERO_LITERAL = String.raw`(?:0(?:\.0+)?(?![.\d])|["'\`]0(?:px|%|rem|em)?["'\`])`;
 
@@ -223,16 +228,16 @@ function readJsxElement(source: string, ltIndex: number): string {
     }
     if (isFragment) {
       if (source.startsWith("<>", i)) {
-        depth += 1;
-        i += 2;
+        const nested = readJsxElement(source, i);
+        i += nested.length;
         continue;
       }
     } else if (
       source.startsWith(nestedOpen, i) &&
       /[\s>/]/.test(source[i + nestedOpen.length] ?? "")
     ) {
-      depth += 1;
-      i += nestedOpen.length;
+      const nested = readJsxElement(source, i);
+      i += nested.length;
       continue;
     }
     i += 1;
@@ -288,6 +293,100 @@ function findSameFileObjectLiteral(source: string, ident: string): string | null
   if (!match) return null;
   const braceIndex = source.indexOf("{", match.index + match[0].length - 1);
   return readBalanced(source, braceIndex, "{", "}");
+}
+
+function isExistingFile(path: string): boolean {
+  try {
+    return existsSync(path) && statSync(path).isFile();
+  } catch {
+    return false;
+  }
+}
+
+function isInsideDir(filePath: string, root: string): boolean {
+  const resolved = resolve(filePath);
+  const resolvedRoot = resolve(root);
+  return resolved === resolvedRoot || resolved.startsWith(`${resolvedRoot}/`);
+}
+
+function resolveImportedModule(fromFile: string, spec: string): string | null {
+  if (!(spec.startsWith(".") || spec.startsWith("@/"))) return null;
+  const base = spec.startsWith("@/")
+    ? join(SRC_ROOT, spec.slice(2))
+    : resolve(dirname(fromFile), spec);
+  for (const candidate of [
+    base,
+    `${base}.ts`,
+    `${base}.tsx`,
+    join(base, "index.ts"),
+    join(base, "index.tsx"),
+  ]) {
+    if (!isInsideDir(candidate, process.cwd())) continue;
+    if (isExistingFile(candidate)) return candidate;
+  }
+  return null;
+}
+
+function findImportBinding(
+  source: string,
+  ident: string
+): { spec: string; exportedName: string } | null {
+  for (const match of source.matchAll(
+    /(?:^|\n)\s*import\s+(type\s+)?(?:[A-Za-z_$][\w$]*\s*,\s*)?\{([^}]*)\}\s+from\s+(['"])([^'"]+)\3/g
+  )) {
+    if (match[1]) continue;
+    const spec = match[4];
+    for (const raw of match[2].split(",")) {
+      const part = raw.trim();
+      if (!part || part.startsWith("type ")) continue;
+      const aliased = /^([A-Za-z_$][\w$]*)\s+as\s+([A-Za-z_$][\w$]*)$/.exec(part);
+      if (aliased && aliased[2] === ident) return { spec, exportedName: aliased[1] };
+      if (part === ident) return { spec, exportedName: ident };
+    }
+  }
+
+  const defaultImport = new RegExp(
+    String.raw`(?:^|\n)\s*import\s+(?!type\s)${escapeRegExp(ident)}\s+from\s+(['"])([^'"]+)\1`
+  ).exec(source);
+  if (defaultImport) return { spec: defaultImport[2], exportedName: "default" };
+
+  return null;
+}
+
+function findDefaultExportObjectLiteral(source: string): string | null {
+  const literal = /export\s+default\s+\{/.exec(source);
+  if (literal) {
+    const braceIndex = source.indexOf("{", literal.index);
+    return readBalanced(source, braceIndex, "{", "}");
+  }
+  const ident = /export\s+default\s+([A-Za-z_$][\w$]*)/.exec(source);
+  if (!ident) return null;
+  return findSameFileObjectLiteral(source, ident[1]);
+}
+
+function findImportedObjectLiteral(
+  source: string,
+  ident: string,
+  fromFile: string
+): string | null {
+  const binding = findImportBinding(source, ident);
+  if (!binding) return null;
+  const modulePath = resolveImportedModule(fromFile, binding.spec);
+  if (!modulePath) return null;
+  const imported = readFileSync(modulePath, "utf8");
+  if (binding.exportedName === "default") return findDefaultExportObjectLiteral(imported);
+  return findSameFileObjectLiteral(imported, binding.exportedName);
+}
+
+function resolveVariantsObject(
+  source: string,
+  ident: string,
+  ctx?: ScanContext
+): string | null {
+  const local = findSameFileObjectLiteral(source, ident);
+  if (local) return local;
+  if (!ctx?.filePath) return null;
+  return findImportedObjectLiteral(source, ident, ctx.filePath);
 }
 
 function collectNamedVariantObjects(source: string, name: string): InitialState[] {
@@ -370,9 +469,13 @@ const VARIANT_EXPR_KEYWORDS = new Set([
 
 function collectIdentNamesFromExpr(expr: string): string[] {
   const names: string[] = [];
-  for (const match of expr.matchAll(/[A-Za-z_$][\w$]*/g)) {
-    if (NON_VARIANT_INITIAL.has(match[0]) || VARIANT_EXPR_KEYWORDS.has(match[0])) continue;
-    names.push(match[0]);
+  const tokens = [...expr.matchAll(/[A-Za-z_$][\w$]*/g)];
+  for (let i = 0; i < tokens.length; i += 1) {
+    const name = tokens[i][0];
+    if (NON_VARIANT_INITIAL.has(name) || VARIANT_EXPR_KEYWORDS.has(name)) continue;
+    const prev = i > 0 ? tokens[i - 1][0] : "";
+    if (prev === "as" || prev === "satisfies") continue;
+    names.push(name);
   }
   return names;
 }
@@ -387,10 +490,19 @@ interface VariantsBinding {
  * Every `variants={ident}` / `variants={{ ... }}` object in the file, tied to
  * the JSX element that carries the attribute.
  */
-function collectVariantsBindings(source: string): VariantsBinding[] {
+function collectVariantsBindings(
+  source: string,
+  ctx?: ScanContext
+): { bindings: VariantsBinding[]; unresolved: string[] } {
   const bindings: VariantsBinding[] = [];
+  const unresolved: string[] = [];
 
   for (const match of source.matchAll(/variants\s*=\s*\{/g)) {
+    const elementStart = findJsxTagStart(source, match.index);
+    if (elementStart < 0) continue;
+    const openingTagEnd = findOpeningTagEnd(source, elementStart);
+    if (match.index >= openingTagEnd) continue;
+
     const exprBrace = match.index + match[0].lastIndexOf("{");
     const inner = skipWs(source, exprBrace + 1);
     const objectTexts: string[] = [];
@@ -400,23 +512,18 @@ function collectVariantsBindings(source: string): VariantsBinding[] {
     } else {
       const expr = readBalanced(source, exprBrace, "{", "}");
       for (const ident of collectIdentNamesFromExpr(expr)) {
-        const obj = findSameFileObjectLiteral(source, ident);
+        const obj = resolveVariantsObject(source, ident, ctx);
         if (obj) objectTexts.push(obj);
+        else unresolved.push(ident);
       }
     }
-
-    if (objectTexts.length === 0) continue;
-
-    const elementStart = findJsxTagStart(source, match.index);
-    if (elementStart < 0) continue;
-    const openingTagEnd = findOpeningTagEnd(source, elementStart);
 
     for (const objectText of objectTexts) {
       bindings.push({ objectText, elementStart, openingTagEnd });
     }
   }
 
-  return bindings;
+  return { bindings, unresolved };
 }
 
 /** File index of `initial=` on this opening tag that names `name`, if any. */
@@ -449,16 +556,73 @@ function findInitialUsageIndexInTag(
   return null;
 }
 
+function tryJsxElementEnd(source: string, ltIndex: number): number {
+  try {
+    return ltIndex + readJsxElement(source, ltIndex).length;
+  } catch {
+    return findOpeningTagEnd(source, ltIndex);
+  }
+}
+
+function collectInitialNameTagStarts(source: string, name: string): number[] {
+  const starts: number[] = [];
+  for (const match of source.matchAll(/initial\s*=/g)) {
+    const tagStart = findJsxTagStart(source, match.index);
+    if (tagStart < 0) continue;
+    const openingTagEnd = findOpeningTagEnd(source, tagStart);
+    if (findInitialUsageIndexInTag(source, tagStart, openingTagEnd, name) != null) {
+      starts.push(tagStart);
+    }
+  }
+  return [...new Set(starts)];
+}
+
+function tagOptsOutOfVariantInherit(
+  source: string,
+  ltIndex: number,
+  openingTagEnd: number
+): boolean {
+  const tag = source.slice(ltIndex, openingTagEnd);
+  return (
+    /\binherit\s*=\s*\{\s*false\s*\}/.test(tag) || /\binitial\s*=\s*\{\s*false\s*\}/.test(tag)
+  );
+}
+
+function namedVariantUsageIndex(
+  source: string,
+  binding: VariantsBinding,
+  name: string,
+  nameTagStarts: number[]
+): number | null {
+  const ownUsage = findInitialUsageIndexInTag(
+    source,
+    binding.elementStart,
+    binding.openingTagEnd,
+    name
+  );
+  if (ownUsage != null) return ownUsage;
+  if (tagOptsOutOfVariantInherit(source, binding.elementStart, binding.openingTagEnd)) {
+    return null;
+  }
+  for (const start of nameTagStarts) {
+    if (start === binding.elementStart) continue;
+    const end = tryJsxElementEnd(source, start);
+    if (binding.elementStart > start && binding.elementStart < end) {
+      return binding.elementStart;
+    }
+  }
+  return null;
+}
+
 /**
  * Every initial state a motion element can resolve during SSR: an inline
  * `initial={{ ... }}` object, a same-file `initial={ident}` object, and
  * named variant objects from a `variants=` binding referenced by
- * `initial="name"`, `initial={"name"}`, `initial={ident}`, or a string
- * literal in that expression. Exemption is keyed at the `initial=` usage
- * when that tag names the variant; otherwise at the `variants=` element
- * (stagger children have no `initial=` of their own).
+ * `initial="name"` on this element or an ancestor (stagger children).
+ * Exemption is keyed at the `initial=` usage when that tag names the
+ * variant; otherwise at the `variants=` element.
  */
-function collectInitialStates(source: string): InitialState[] {
+function collectInitialStates(source: string, ctx?: ScanContext): InitialState[] {
   const states: InitialState[] = [];
 
   for (const match of source.matchAll(/initial\s*=\s*\{/g)) {
@@ -480,18 +644,14 @@ function collectInitialStates(source: string): InitialState[] {
   }
 
   const names = collectInitialVariantNames(source);
-  const bindings = collectVariantsBindings(source);
+  const { bindings } = collectVariantsBindings(source, ctx);
   for (const name of names) {
+    const nameTagStarts = collectInitialNameTagStarts(source, name);
     for (const binding of bindings) {
       const objects = collectNamedVariantObjects(binding.objectText, name);
       if (objects.length === 0) continue;
-      const usageIndex = findInitialUsageIndexInTag(
-        source,
-        binding.elementStart,
-        binding.openingTagEnd,
-        name
-      );
-      const index = usageIndex ?? binding.elementStart;
+      const index = namedVariantUsageIndex(source, binding, name, nameTagStarts);
+      if (index == null) continue;
       for (const obj of objects) {
         states.push({ text: obj.text, index });
       }
@@ -680,8 +840,10 @@ function hidingHits(state: string): string[] {
   return HIDING_PROPS.filter((prop) => prop.pattern.test(state)).map((prop) => prop.name);
 }
 
-function hidingOpacityStates(source: string): InitialState[] {
-  return collectInitialStates(source).filter((state) => hidingHits(state.text).includes("opacity"));
+function hidingOpacityStates(source: string, ctx?: ScanContext): InitialState[] {
+  return collectInitialStates(source, ctx).filter((state) =>
+    hidingHits(state.text).includes("opacity")
+  );
 }
 
 function readSource(relativePath: string): string {
@@ -978,6 +1140,78 @@ test("typed const variants objects are still collected", () => {
   assert.equal(isExemptHidingInitial(source, hiding[0].index), false);
 });
 
+test("spread hidden keys on const ident = { are collected", () => {
+  const source = `
+    const cardVariants = { ...base, hidden: { opacity: 0 } };
+    <motion.div initial="hidden" variants={cardVariants} />
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(hiding.length, 1, "hidden: { opacity: 0 } inside a spread object must be collected");
+  assert.equal(isExemptHidingInitial(source, hiding[0].index), false);
+});
+
+test("imported named variants objects are collected", () => {
+  const file = resolve(process.cwd(), "tests/fixtures/motion-scanner/uses-import.tsx");
+  const source = readFileSync(file, "utf8");
+  const ctx = { filePath: file };
+  const hiding = hidingOpacityStates(source, ctx);
+  assert.equal(hiding.length, 1, "import { cardVariants } from ./motion must resolve the object");
+  assert.equal(isExemptHidingInitial(source, hiding[0].index), false);
+  assert.equal(hidingHits(hiding[0].text).includes("scale"), false);
+  assert.deepEqual(collectVariantsBindings(source, ctx).unresolved, []);
+});
+
+test("imported default variants objects are collected", () => {
+  const file = resolve(process.cwd(), "tests/fixtures/motion-scanner/uses-default-import.tsx");
+  const source = readFileSync(file, "utf8");
+  const ctx = { filePath: file };
+  const hiding = hidingOpacityStates(source, ctx);
+  assert.equal(hiding.length, 1, "import fadeVariants from ./motion must resolve export default");
+  assert.equal(isExemptHidingInitial(source, hiding[0].index), false);
+  assert.ok(
+    hidingHits(hiding[0].text).includes("scale"),
+    "default export payload must not collide with the named cardVariants export"
+  );
+  assert.deepEqual(collectVariantsBindings(source, ctx).unresolved, []);
+});
+
+test("const variants = { property keys are not unresolved JSX bindings", () => {
+  const before = `
+    const variants = { hidden: { opacity: 0 } };
+    <motion.div initial="hidden" variants={variants} />
+  `;
+  assert.deepEqual(collectVariantsBindings(before).unresolved, []);
+  assert.equal(hidingOpacityStates(before).length, 1);
+
+  const after = `
+    <motion.div initial="hidden" variants={cardVariants} />
+    const variants = { leftover: { opacity: 0 } };
+  `;
+  assert.deepEqual(collectVariantsBindings(after).unresolved, ["cardVariants"]);
+});
+
+test("factory variants={ident} fail closed when the object is not a literal", () => {
+  const source = `
+    const cardVariants = createVariants({ hidden: { opacity: 0 } });
+    <motion.div initial="hidden" variants={cardVariants} />
+  `;
+  assert.deepEqual(collectVariantsBindings(source).unresolved, ["cardVariants"]);
+  assert.equal(
+    hidingOpacityStates(source).length,
+    0,
+    "createVariants({ hidden }) is not inlined; fail closed instead of collecting"
+  );
+});
+
+test("variants={ident as Type} still resolves ident and skips the type name", () => {
+  const source = `
+    const cardVariants = { hidden: { opacity: 0 } };
+    <motion.div initial="hidden" variants={cardVariants as Variants} />
+  `;
+  assert.deepEqual(collectVariantsBindings(source).unresolved, []);
+  assert.equal(hidingOpacityStates(source).length, 1);
+});
+
 test("always-rendered named hiding variants stay offenders", () => {
   const source = `
     const cardVariants = { hidden: { opacity: 0 } };
@@ -1021,6 +1255,69 @@ test("always-rendered stagger children with hiding named variants stay offenders
     isExemptHidingInitial(source, hiding[0].index),
     false,
     "Hero/ClientLogos-style children have no initial=; collection keys off the child tag, which is always rendered"
+  );
+});
+
+test("unrelated sibling variants= leftover is not collected from a file-global name", () => {
+  const source = `
+    const leftover = { hidden: { opacity: 0 } };
+    const containerVariants = { hidden: {} };
+    <motion.div variants={containerVariants} initial="hidden" />
+    <motion.div variants={leftover} />
+  `;
+  assert.equal(
+    hidingOpacityStates(source).length,
+    0,
+    "leftover is not a stagger child of the initial=\"hidden\" node"
+  );
+});
+
+test("leftover sibling after a stagger parent with self-closing same-name child is not collected", () => {
+  const source = `
+    const leftover = { hidden: { opacity: 0 } };
+    const containerVariants = { hidden: {} };
+    const childVariants = { hidden: { opacity: 0 } };
+    <motion.div variants={containerVariants} initial="hidden">
+      <motion.div variants={childVariants} />
+    </motion.div>
+    <motion.div variants={leftover} />
+  `;
+  const hiding = hidingOpacityStates(source);
+  assert.equal(hiding.length, 1, "stagger child remains an offender; leftover sibling is not");
+  assert.equal(
+    isExemptHidingInitial(source, hiding[0].index),
+    false,
+    "Hero/ClientLogos-style children have no initial=; collection keys off the child tag"
+  );
+});
+
+test("nested child with initial={false} does not inherit a parent hiding name", () => {
+  const source = `
+    const containerVariants = { hidden: {} };
+    const childVariants = { hidden: { opacity: 0 } };
+    <motion.div variants={containerVariants} initial="hidden">
+      <motion.div variants={childVariants} initial={false} />
+    </motion.div>
+  `;
+  assert.equal(
+    hidingOpacityStates(source).length,
+    0,
+    "initial={false} opts the child out of inherited hidden"
+  );
+});
+
+test("nested child with inherit={false} does not inherit a parent hiding name", () => {
+  const source = `
+    const containerVariants = { hidden: {} };
+    const childVariants = { hidden: { opacity: 0 } };
+    <motion.div variants={containerVariants} initial="hidden">
+      <motion.div variants={childVariants} inherit={false} />
+    </motion.div>
+  `;
+  assert.equal(
+    hidingOpacityStates(source).length,
+    0,
+    "inherit={false} opts the child out of inherited hidden"
   );
 });
 
@@ -1096,8 +1393,13 @@ test("no component ships an SSR initial state that hides its content", () => {
   for (const file of listTsxFiles(COMPONENTS_DIR)) {
     const key = relative(COMPONENTS_DIR, file);
     const source = readFileSync(file, "utf8");
+    const ctx = { filePath: file };
+    const { unresolved } = collectVariantsBindings(source, ctx);
+    for (const ident of unresolved) {
+      offenders.push(`${key}: unresolved variants={${ident}}`);
+    }
 
-    for (const state of collectInitialStates(source)) {
+    for (const state of collectInitialStates(source, ctx)) {
       if (isExemptHidingInitial(source, state.index)) continue;
 
       for (const prop of hidingHits(state.text)) {
