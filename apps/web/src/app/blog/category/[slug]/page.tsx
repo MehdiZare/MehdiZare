@@ -6,9 +6,10 @@ import { PostCard } from "@/components/blog/PostCard";
 import { getCategorySeedBySlug } from "@/lib/taxonomy-seed";
 import { getCategories, getCategoryBySlug, getArticles } from "@/lib/strapi";
 import {
+  buildBreadcrumbJsonLd,
+  buildNoIndexMetadata,
   buildPageMetadata,
   buildWebPageJsonLd,
-  buildBreadcrumbJsonLd,
 } from "@/lib/seo";
 
 type ArticleList = Awaited<ReturnType<typeof getArticles>>["data"];
@@ -86,13 +87,7 @@ export async function generateMetadata({
     const category = res.data[0];
 
     if (!category && !seed) {
-      return {
-        title: "Category Not Found",
-        robots: {
-          index: false,
-          follow: false,
-        },
-      };
+      return buildNoIndexMetadata("Category Not Found");
     }
 
     const fallbackName = seed?.headline ?? seed?.name ?? formatCategoryName(slug);
@@ -116,13 +111,7 @@ export async function generateMetadata({
     });
   } catch {
     if (!seed) {
-      return {
-        title: "Category Not Found",
-        robots: {
-          index: false,
-          follow: false,
-        },
-      };
+      return buildNoIndexMetadata("Category Not Found");
     }
 
     const fallbackName = seed.headline ?? seed.name ?? formatCategoryName(slug);

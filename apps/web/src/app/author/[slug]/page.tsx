@@ -9,6 +9,7 @@ import { getSiteProfile } from "@/lib/site-profile";
 import { fetchAllPages, getArticles, getAuthorBySlug, getAuthors } from "@/lib/strapi";
 import {
   buildBreadcrumbJsonLd,
+  buildNoIndexMetadata,
   buildPageMetadata,
   buildPersonJsonLd,
   buildProfilePageJsonLd,
@@ -49,18 +50,12 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
     const author = response.data[0];
 
     if (!author) {
-      return {
-        title: "Author Not Found",
-        robots: {
-          index: false,
-          follow: false,
-        },
-      };
+      return buildNoIndexMetadata("Author Not Found");
     }
 
     const role = author.jobTitle ?? author.headline ?? siteProfile.authorRole;
     const title = `${author.name} | ${role}`;
-    const description = author.bioShort ?? siteProfile.siteDescription;
+    const description = author.bioShort ?? `Articles by ${author.name}.`;
 
     return buildPageMetadata({
       pathname: `/author/${author.slug}`,
@@ -77,13 +72,7 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
       ],
     });
   } catch {
-    return {
-      title: "Author Not Found",
-      robots: {
-        index: false,
-        follow: false,
-      },
-    };
+    return buildNoIndexMetadata("Author Not Found");
   }
 }
 
@@ -155,7 +144,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
   const authorPath = `/author/${author.slug}`;
   const personId = toPersonId(authorPath);
   const role = author.jobTitle ?? author.headline ?? siteProfile.authorRole;
-  const description = author.bioShort ?? siteProfile.siteDescription;
+  const description = author.bioShort ?? `Articles by ${author.name}.`;
   const websiteUrl =
     normalizeIdentityUrl(author.websiteUrl, CANONICAL_IDENTITY_ORIGIN) ??
     siteProfile.author.websiteUrl;

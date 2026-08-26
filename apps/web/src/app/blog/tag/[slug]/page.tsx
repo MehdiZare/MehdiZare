@@ -2,21 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { PostCard } from "@/components/blog/PostCard";
+import { formatTagName, resolveTagListingCopy } from "@/lib/blog-listing";
 import { getTagSeedBySlug } from "@/lib/taxonomy-seed";
 import { getTags, getTagBySlug, getArticles } from "@/lib/strapi";
-import { getSiteProfile } from "@/lib/site-profile";
-import { buildPageMetadata, buildWebPageJsonLd, buildBreadcrumbJsonLd } from "@/lib/seo";
+import { buildBreadcrumbJsonLd, buildNoIndexMetadata, buildPageMetadata, buildWebPageJsonLd } from "@/lib/seo";
 
 interface TagPageProps {
   params: Promise<{ slug: string }>;
-}
-
-function formatTagName(slug: string): string {
-  return slug
-    .split("-")
-    .filter(Boolean)
-    .map((part) => part[0].toUpperCase() + part.slice(1))
-    .join(" ");
 }
 
 function buildTagHighlights(tagTitle: string): string[] {
@@ -45,39 +37,42 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
     const tag = tagRes.data[0];
 
     if (!tag && !seed) {
-      return {
-        title: "Tag Not Found",
-        robots: { index: false, follow: false },
-      };
+      return buildNoIndexMetadata("Tag Not Found");
     }
 
-    const siteProfile = await getSiteProfile();
+    const { pageDescription } = resolveTagListingCopy({
+      slug,
+      name: tag?.name,
+      seedName: seed?.name,
+      intro: tag?.intro,
+      seedIntro: seed?.intro,
+      tagDescription: tag?.description,
+      seedDescription: seed?.description,
+    });
     const fallbackTitle = seed?.headline ?? seed?.name ?? formatTagName(slug);
-    const fallbackDescription =
-      seed?.intro ?? seed?.description ?? siteProfile.siteDescription;
 
     return buildPageMetadata({
       pathname: `/blog/tag/${slug}`,
       title: tag?.seo?.metaTitle ?? tag?.headline ?? tag?.name ?? fallbackTitle,
-      description:
-        tag?.seo?.metaDescription ??
-        tag?.intro ??
-        tag?.description ??
-        fallbackDescription,
+      description: tag?.seo?.metaDescription ?? pageDescription,
       seo: tag?.seo,
     });
   } catch {
     if (!seed) {
-      return {
-        title: "Tag Not Found",
-        robots: { index: false, follow: false },
-      };
+      return buildNoIndexMetadata("Tag Not Found");
     }
+
+    const { pageDescription } = resolveTagListingCopy({
+      slug,
+      seedName: seed.name,
+      seedIntro: seed.intro,
+      seedDescription: seed.description,
+    });
 
     return buildPageMetadata({
       pathname: `/blog/tag/${slug}`,
       title: seed.headline ?? seed.name ?? formatTagName(slug),
-      description: seed.intro ?? seed.description ?? `Articles tagged ${formatTagName(slug)}.`,
+      description: pageDescription,
     });
   }
 }
@@ -119,14 +114,16 @@ export default async function TagPage({ params }: TagPageProps) {
   }
 
   const canonicalPath = `/blog/tag/${slug}`;
-  const tagName = tag?.name ?? seed?.name ?? formatTagName(slug);
+  const { tagName, pageDescription } = resolveTagListingCopy({
+    slug,
+    name: tag?.name,
+    seedName: seed?.name,
+    intro: tag?.intro,
+    seedIntro: seed?.intro,
+    tagDescription: tag?.description,
+    seedDescription: seed?.description,
+  });
   const pageTitle = tag?.headline ?? seed?.headline ?? tagName;
-  const pageDescription =
-    tag?.intro ??
-    seed?.intro ??
-    tag?.description ??
-    seed?.description ??
-    `Articles tagged ${tagName}.`;
   const highlights = buildTagHighlights(pageTitle);
 
   return (

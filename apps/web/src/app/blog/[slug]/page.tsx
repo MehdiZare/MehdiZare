@@ -14,6 +14,7 @@ import { getSiteProfile } from "@/lib/site-profile";
 import {
   buildBlogPostingJsonLd,
   buildBreadcrumbJsonLd,
+  buildNoIndexMetadata,
   buildPageMetadata,
   buildWebPageJsonLd,
   splitKeywords,
@@ -53,28 +54,19 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: BlogPostPageProps): Promise<Metadata> {
-  const siteProfile = await getSiteProfile();
-
   try {
     const { slug } = await params;
     const res = await getArticleBySlug(slug);
     const article = res.data[0];
 
     if (!article) {
-      return {
-        title: "Post Not Found",
-        robots: {
-          index: false,
-          follow: false,
-        },
-      };
+      return buildNoIndexMetadata("Post Not Found");
     }
 
     const metadata = buildPageMetadata({
       pathname: `/blog/${slug}`,
       title: article.title,
-      description:
-        article.excerpt || siteProfile.siteDescription,
+      description: article.excerpt || article.title,
       seo: article.seo,
       image: article.featuredImage,
       type: "article",
@@ -92,13 +84,7 @@ export async function generateMetadata({
 
     return metadata;
   } catch {
-    return {
-      title: "Post Not Found",
-      robots: {
-        index: false,
-        follow: false,
-      },
-    };
+    return buildNoIndexMetadata("Post Not Found");
   }
 }
 
@@ -179,7 +165,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const authorLinkedIn = articleAuthor?.linkedinUrl ?? siteProfile.author.linkedinUrl;
   const authorInitials = buildInitials(authorName);
   const articleDescription =
-    article.excerpt || siteProfile.siteDescription;
+    article.excerpt || article.title;
   const primaryImage =
     toAbsoluteMediaUrl(article.seo?.metaImage?.url) ??
     toAbsoluteMediaUrl(article.featuredImage?.url);

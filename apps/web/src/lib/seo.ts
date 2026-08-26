@@ -376,6 +376,33 @@ export function buildPageMetadata({
   return metadata;
 }
 
+/**
+ * Titles + robots for not-found metadata. Absolute composed titles keep
+ * document / Open Graph / Twitter in sync. A short page-specific description
+ * (the route title) prevents the root layout homepage blurb from inheriting
+ * onto 404s.
+ */
+export function buildNoIndexMetadata(title: string): Metadata {
+  const documentTitle = composeDocumentTitle(title);
+
+  return {
+    title: { absolute: documentTitle },
+    description: title,
+    robots: {
+      index: false,
+      follow: false,
+    },
+    openGraph: {
+      title: documentTitle,
+      description: title,
+    },
+    twitter: {
+      title: documentTitle,
+      description: title,
+    },
+  };
+}
+
 export function buildWebsiteJsonLd(options: WebsiteJsonLdOptions = {}): Record<string, unknown> {
   const siteUrl = getSiteUrl();
   const name = options.name ?? SITE_NAME;

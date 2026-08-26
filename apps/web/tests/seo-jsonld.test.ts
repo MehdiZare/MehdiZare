@@ -10,10 +10,12 @@ const {
   buildBlogPostingJsonLd,
   buildBlogJsonLd,
   buildFAQJsonLd,
+  buildNoIndexMetadata,
   buildPageMetadata,
   composeDocumentTitle,
   resolveCanonicalUrl,
 } = await import("../src/lib/seo.ts");
+import { DEFAULT_SITE_PROFILE } from "../src/lib/site-profile-defaults.ts";
 
 // ── WebSite JSON-LD ────────────────────────────────────────────────────
 
@@ -107,6 +109,18 @@ test("buildPageMetadata ignores blank CMS metaTitle and composes the page title"
   });
   assert.deepEqual(metadata.title, { absolute: "About | Mehdi Zare" });
   assert.equal(metadata.openGraph?.title, "About | Mehdi Zare");
+});
+
+test("buildNoIndexMetadata sets noindex and composed titles on document, Open Graph, and Twitter", () => {
+  const metadata = buildNoIndexMetadata("Post Not Found");
+  assert.deepEqual(metadata.title, { absolute: "Post Not Found | Mehdi Zare" });
+  assert.equal(metadata.openGraph?.title, "Post Not Found | Mehdi Zare");
+  assert.equal(metadata.twitter?.title, "Post Not Found | Mehdi Zare");
+  assert.deepEqual(metadata.robots, { index: false, follow: false });
+  assert.equal(metadata.description, "Post Not Found");
+  assert.equal(metadata.openGraph?.description, "Post Not Found");
+  assert.equal(metadata.twitter?.description, "Post Not Found");
+  assert.notEqual(metadata.description, DEFAULT_SITE_PROFILE.siteDescription);
 });
 
 // ── Person JSON-LD ─────────────────────────────────────────────────────

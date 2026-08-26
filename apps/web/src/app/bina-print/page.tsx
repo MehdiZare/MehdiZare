@@ -8,6 +8,7 @@ import { fallbackBinaPrintData } from "@/content/fallbacks";
 import { isBinaPrintEnabled } from "@/lib/feature-flags";
 import {
   buildBreadcrumbJsonLd,
+  buildNoIndexMetadata,
   buildPageMetadata,
   buildWebPageJsonLd,
 } from "@/lib/seo";
@@ -17,7 +18,9 @@ import { getBinaPrintPage } from "@/lib/strapi";
 const binaPrintMetadataTitle = "Bina Print";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const siteProfile = await getSiteProfile();
+  if (!isBinaPrintEnabled()) {
+    return buildNoIndexMetadata("Bina Print Not Found");
+  }
 
   try {
     const response = await getBinaPrintPage();
@@ -26,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildPageMetadata({
       pathname: "/bina-print",
       title: binaPrintMetadataTitle,
-      description: cmsData?.heroSubheadline || siteProfile.siteDescription,
+      description: cmsData?.heroSubheadline || fallbackBinaPrintData.heroSubheadline,
       seo: cmsData?.seo,
       type: "website",
       keywords: [
@@ -40,7 +43,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildPageMetadata({
       pathname: "/bina-print",
       title: binaPrintMetadataTitle,
-      description: siteProfile.siteDescription,
+      description: fallbackBinaPrintData.heroSubheadline,
       type: "website",
       keywords: [
         "AI scoring system",
