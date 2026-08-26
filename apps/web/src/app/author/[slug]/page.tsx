@@ -6,7 +6,7 @@ import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { StrapiImage } from "@/components/shared/StrapiImage";
 import { getSiteProfile } from "@/lib/site-profile";
-import { getArticles, getAuthorBySlug, getAuthors } from "@/lib/strapi";
+import { fetchAllPages, getArticles, getAuthorBySlug, getAuthors } from "@/lib/strapi";
 import {
   buildBreadcrumbJsonLd,
   buildPageMetadata,
@@ -24,28 +24,10 @@ interface AuthorPageProps {
 
 type AuthorList = Awaited<ReturnType<typeof getAuthors>>["data"];
 
-async function getAllAuthors(): Promise<AuthorList> {
-  const pageSize = 100;
-  let page = 1;
-  const allAuthors: AuthorList = [];
-
-  while (true) {
-    const response = await getAuthors({
-      sort: "updatedAt:desc",
-      pagination: { page, pageSize, withCount: true },
-    });
-
-    allAuthors.push(...response.data);
-
-    const pageCount = response.meta.pagination?.pageCount ?? 1;
-    if (page >= pageCount) {
-      break;
-    }
-
-    page += 1;
-  }
-
-  return allAuthors;
+function getAllAuthors(): Promise<AuthorList> {
+  // Shared STRAPI_MAX_PAGES cap. Extra slugs still render on demand
+  // (dynamicParams defaults to true).
+  return fetchAllPages(getAuthors, "authors", { sort: "updatedAt:desc" });
 }
 
 export async function generateStaticParams() {
