@@ -3,6 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { PostCard } from "@/components/blog/PostCard";
+import {
+  resolveCategoryListingCopy,
+  resolveTaxonomyDisplayName,
+} from "@/lib/blog-listing";
 import { getCategorySeedBySlug } from "@/lib/taxonomy-seed";
 import { getCategories, getCategoryBySlug, getArticles } from "@/lib/strapi";
 import {
@@ -23,14 +27,6 @@ interface SubcategoryCard {
   name: string;
   slug: string;
   description?: string;
-}
-
-function formatCategoryName(slug: string): string {
-  return slug
-    .split("-")
-    .filter(Boolean)
-    .map((part) => part[0].toUpperCase() + part.slice(1))
-    .join(" ");
 }
 
 function buildWhatYouWillFindPoints(
@@ -90,22 +86,23 @@ export async function generateMetadata({
       return buildNoIndexMetadata("Category Not Found");
     }
 
-    const fallbackName = seed?.headline ?? seed?.name ?? formatCategoryName(slug);
-    const fallbackDescription =
-      seed?.intro ?? seed?.description ?? `Articles in ${fallbackName}`;
+    const { categoryTitle, pageDescription } = resolveCategoryListingCopy({
+      slug,
+      name: category?.name,
+      seedName: seed?.name,
+      headline: category?.headline,
+      seedHeadline: seed?.headline,
+      intro: category?.intro,
+      seedIntro: seed?.intro,
+      categoryDescription: category?.description,
+      seedDescription: seed?.description,
+    });
 
+    // buildPageMetadata already prefers a filled seo.metaTitle over this title.
     return buildPageMetadata({
       pathname: `/blog/category/${slug}`,
-      title:
-        category?.seo?.metaTitle ??
-        category?.headline ??
-        category?.name ??
-        fallbackName,
-      description:
-        category?.seo?.metaDescription ??
-        category?.intro ??
-        category?.description ??
-        fallbackDescription,
+      title: categoryTitle,
+      description: pageDescription,
       seo: category?.seo,
       type: "website",
     });
@@ -114,12 +111,18 @@ export async function generateMetadata({
       return buildNoIndexMetadata("Category Not Found");
     }
 
-    const fallbackName = seed.headline ?? seed.name ?? formatCategoryName(slug);
+    const { categoryTitle, pageDescription } = resolveCategoryListingCopy({
+      slug,
+      seedName: seed.name,
+      seedHeadline: seed.headline,
+      seedIntro: seed.intro,
+      seedDescription: seed.description,
+    });
 
     return buildPageMetadata({
       pathname: `/blog/category/${slug}`,
-      title: fallbackName,
-      description: seed.intro ?? seed.description ?? `Articles in ${fallbackName}`,
+      title: categoryTitle,
+      description: pageDescription,
       type: "website",
     });
   }
@@ -141,27 +144,38 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     notFound();
   }
 
-  const categoryName = category?.name ?? seed?.name ?? formatCategoryName(slug);
-  const categoryTitle = category?.headline ?? seed?.headline ?? categoryName;
-  const categoryDescription =
-    category?.intro ??
-    seed?.intro ??
-    category?.description ??
-    seed?.description ??
-    `Articles in ${categoryName}`;
+  const {
+    categoryName,
+    categoryTitle,
+    pageDescription: categoryDescription,
+  } = resolveCategoryListingCopy({
+    slug,
+    name: category?.name,
+    seedName: seed?.name,
+    headline: category?.headline,
+    seedHeadline: seed?.headline,
+    intro: category?.intro,
+    seedIntro: seed?.intro,
+    categoryDescription: category?.description,
+    seedDescription: seed?.description,
+  });
 
   const parentSeed = seed?.parentSlug ? getCategorySeedBySlug(seed.parentSlug) : undefined;
   const parentInfo = category?.parent
     ? {
-        name: category.parent.name,
+        name: resolveTaxonomyDisplayName(
+          category.parent.slug,
+          category.parent.name
+        ),
         slug: category.parent.slug,
       }
     : parentSeed
       ? {
-          name:
-            parentSeed.name ??
-            parentSeed.headline ??
-            formatCategoryName(parentSeed.slug),
+          name: resolveTaxonomyDisplayName(
+            parentSeed.slug,
+            parentSeed.name,
+            parentSeed.headline
+          ),
           slug: parentSeed.slug,
         }
       : null;
@@ -170,13 +184,17 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     category?.children && category.children.length > 0
       ? category.children.map((child) => ({
           id: child.id,
-          name: child.name,
+          name: resolveTaxonomyDisplayName(child.slug, child.name),
           slug: child.slug,
           description: child.description,
         }))
       : (seed?.children ?? []).map((child) => ({
           id: child.slug,
-          name: child.name ?? child.headline ?? formatCategoryName(child.slug),
+          name: resolveTaxonomyDisplayName(
+            child.slug,
+            child.name,
+            child.headline
+          ),
           slug: child.slug,
           description: child.description,
         }));

@@ -20,7 +20,8 @@ function firstFilled(
   return undefined;
 }
 
-export function formatTagName(slug: string): string {
+/** Title-cases a taxonomy slug for use as a last-resort display label. */
+export function formatSlugName(slug: string): string {
   return slug
     .split("-")
     .filter(Boolean)
@@ -28,11 +29,15 @@ export function formatTagName(slug: string): string {
     .join(" ");
 }
 
-export function resolveTagName(
+/**
+ * Picks the first non-blank candidate, treating CMS empty strings and
+ * whitespace as absent, and falls back to the slug-derived label.
+ */
+export function resolveTaxonomyDisplayName(
   slug: string,
   ...candidates: Array<string | null | undefined>
 ): string {
-  return firstFilled(...candidates) ?? formatTagName(slug);
+  return firstFilled(...candidates) ?? formatSlugName(slug);
 }
 
 export function buildTagListingDescription(tagName: string): string {
@@ -48,7 +53,7 @@ export function resolveTagListingCopy(input: {
   tagDescription?: string | null;
   seedDescription?: string | null;
 }): { tagName: string; pageDescription: string } {
-  const tagName = resolveTagName(input.slug, input.name, input.seedName);
+  const tagName = resolveTaxonomyDisplayName(input.slug, input.name, input.seedName);
   const pageDescription =
     firstFilled(
       input.intro,
@@ -58,6 +63,45 @@ export function resolveTagListingCopy(input: {
     ) ?? buildTagListingDescription(tagName);
 
   return { tagName, pageDescription };
+}
+
+export function buildCategoryListingDescription(categoryName: string): string {
+  return `Articles in ${categoryName}.`;
+}
+
+/**
+ * Resolves the three strings a category listing renders -- breadcrumb name,
+ * display title, and description -- from CMS values with seed fallbacks.
+ * Headline wins over name across both sources so the metadata title, the h1,
+ * and the JSON-LD name always agree.
+ */
+export function resolveCategoryListingCopy(input: {
+  slug: string;
+  name?: string | null;
+  seedName?: string | null;
+  headline?: string | null;
+  seedHeadline?: string | null;
+  intro?: string | null;
+  seedIntro?: string | null;
+  categoryDescription?: string | null;
+  seedDescription?: string | null;
+}): { categoryName: string; categoryTitle: string; pageDescription: string } {
+  const categoryName = resolveTaxonomyDisplayName(
+    input.slug,
+    input.name,
+    input.seedName
+  );
+  const categoryTitle =
+    firstFilled(input.headline, input.seedHeadline) ?? categoryName;
+  const pageDescription =
+    firstFilled(
+      input.intro,
+      input.seedIntro,
+      input.categoryDescription,
+      input.seedDescription
+    ) ?? buildCategoryListingDescription(categoryName);
+
+  return { categoryName, categoryTitle, pageDescription };
 }
 
 export function buildBlogPageUrl(page: number): string {

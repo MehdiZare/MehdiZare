@@ -80,6 +80,33 @@ test("tag listing metadata shares the listing copy helper and never uses the sit
   assert.doesNotMatch(pageSource, /getSiteProfile/);
 });
 
+test("category listing metadata shares the listing copy helper for intro and description", () => {
+  const pageSource = readSource("src/app/blog/category/[slug]/page.tsx");
+  assert.match(pageSource, /resolveCategoryListingCopy/);
+  assert.match(pageSource, /description:\s*pageDescription/);
+  assert.doesNotMatch(
+    pageSource,
+    /category\?\.intro\s*\?\?\s*category\?\.description/
+  );
+});
+
+test("category listing title comes from the shared copy helper, not a raw headline chain", () => {
+  const pageSource = readSource("src/app/blog/category/[slug]/page.tsx");
+  assert.match(pageSource, /title:\s*categoryTitle/);
+  assert.doesNotMatch(pageSource, /category\?\.headline\s*\?\?/);
+  assert.doesNotMatch(pageSource, /seed\??\.headline\s*\?\?/);
+  assert.doesNotMatch(pageSource, /category\?\.seo\?\.metaTitle\s*\?\?/);
+});
+
+test("category listing parent and subcategory names route through the display-name helper", () => {
+  const pageSource = readSource("src/app/blog/category/[slug]/page.tsx");
+  assert.match(pageSource, /resolveTaxonomyDisplayName/);
+  assert.doesNotMatch(pageSource, /name:\s*category\.parent\.name,/);
+  assert.doesNotMatch(pageSource, /name:\s*child\.name,/);
+  assert.doesNotMatch(pageSource, /child\.name\s*\?\?\s*child\.headline/);
+  assert.doesNotMatch(pageSource, /formatCategoryName/);
+});
+
 test("paginated blog 404s use the noindex helper for invalid and out-of-range pages", () => {
   const pageSource = readSource("src/app/blog/page/[page]/page.tsx");
   assert.match(pageSource, /buildNoIndexMetadata\("Blog Page Not Found"\)/);
