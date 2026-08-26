@@ -11,14 +11,15 @@
     "develop": "strapi develop",
     "start": "strapi start",
     "strapi": "strapi",
+    "typecheck": "tsc --noEmit",
     "seed": "npx tsx scripts/seed.ts",
     "upgrade": "npx @strapi/upgrade latest",
     "upgrade:dry": "npx @strapi/upgrade latest --dry"
   },
   "dependencies": {
-    "@strapi/plugin-cloud": "5.52.1",
-    "@strapi/plugin-users-permissions": "5.52.1",
-    "@strapi/strapi": "5.52.1",
+    "@strapi/plugin-cloud": "5.52.2",
+    "@strapi/plugin-users-permissions": "5.52.2",
+    "@strapi/strapi": "5.52.2",
     "better-sqlite3": "13.0.3",
     "pg": "^8.23.0",
     "react": "^18.3.1",

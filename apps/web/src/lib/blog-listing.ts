@@ -2,6 +2,9 @@ import { getArticles, getCategories } from "@/lib/strapi";
 
 export const BLOG_PAGE_SIZE = 9;
 
+export const BLOG_PAGE_DESCRIPTION =
+  "Writing on production AI systems, LLM architecture, and shipping AI in finance, defense, healthcare, and enterprise.";
+
 export function buildBlogPageUrl(page: number): string {
   return page > 1 ? `/blog/page/${page}` : "/blog";
 }

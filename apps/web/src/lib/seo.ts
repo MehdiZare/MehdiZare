@@ -206,6 +206,35 @@ export function resolveCanonicalUrl(pathname: string, canonicalUrl?: string): st
   return forceCanonicalHost(pathname, siteUrl);
 }
 
+const TITLE_SEPARATORS = [" | ", " — ", " – ", " - "] as const;
+
+/**
+ * Document / Open Graph / Twitter title. Nested routes otherwise pick up the
+ * layout `title.template` for `<title>` only, leaving og:title as the short
+ * page name. Absolute titles keep those three in sync.
+ */
+export function composeDocumentTitle(title: string, siteName = SITE_NAME): string {
+  const trimmed = title.trim();
+  if (!trimmed || trimmed === siteName) {
+    return siteName;
+  }
+
+  if (TITLE_SEPARATORS.some((separator) => trimmed.endsWith(`${separator}${siteName}`))) {
+    return trimmed;
+  }
+
+  if (
+    trimmed.startsWith(`${siteName} `) ||
+    trimmed.startsWith(`${siteName}—`) ||
+    trimmed.startsWith(`${siteName}–`) ||
+    trimmed.startsWith(`${siteName}-`)
+  ) {
+    return trimmed;
+  }
+
+  return `${trimmed} | ${siteName}`;
+}
+
 export function normalizeRobotsValue(value?: string): string | undefined {
   if (!value?.trim()) {
     return undefined;
@@ -298,24 +327,25 @@ export function buildPageMetadata({
   modifiedTime,
   keywords,
 }: BuildPageMetadataOptions): Metadata {
-  const resolvedTitle = seo?.metaTitle ?? title;
+  const resolvedTitle = seo?.metaTitle?.trim() || title;
+  const documentTitle = composeDocumentTitle(resolvedTitle);
   const resolvedDescription = seo?.metaDescription ?? description;
   const canonical = resolveCanonicalUrl(pathname, seo?.canonicalURL);
   const robots = normalizeRobotsValue(seo?.metaRobots);
   const resolvedImage = seo?.metaImage ?? image;
   const images =
-    toMetadataImages(resolvedImage, resolvedTitle) ??
+    toMetadataImages(resolvedImage, documentTitle) ??
     [
       {
         url: toAbsoluteUrl("/opengraph-image", getSiteUrl()),
         width: 1200,
         height: 630,
-        alt: resolvedTitle,
+        alt: documentTitle,
       },
     ];
 
   const metadata: Metadata = {
-    title: resolvedTitle,
+    title: { absolute: documentTitle },
     description: resolvedDescription,
     keywords: seo?.keywords ?? keywords,
     alternates: {
@@ -324,7 +354,7 @@ export function buildPageMetadata({
     openGraph: {
       type,
       url: canonical,
-      title: resolvedTitle,
+      title: documentTitle,
       description: resolvedDescription,
       siteName: SITE_NAME,
       images,
@@ -333,7 +363,7 @@ export function buildPageMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: resolvedTitle,
+      title: documentTitle,
       description: resolvedDescription,
       images,
     },

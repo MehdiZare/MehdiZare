@@ -6,7 +6,7 @@ Next.js App Router frontend for the public portfolio.
 
 - `pnpm --filter=web dev`
 - `pnpm --filter=web lint`
-- `pnpm --filter=web exec tsc --noEmit`
+- `pnpm --filter=web typecheck` (or `pnpm typecheck` from the repo root; do not invoke `tsc` via `pnpm exec`)
 - `pnpm --filter=web test`
 - `pnpm --filter=web build`
 - `pnpm --filter=web posthog:push-dashboard`

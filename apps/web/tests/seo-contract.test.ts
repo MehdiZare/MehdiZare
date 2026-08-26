@@ -9,6 +9,8 @@ test("metadata builder keeps canonical URL + social metadata defaults", () => {
   assert.match(source, /resolveCanonicalUrl/);
   assert.match(source, /card: "summary_large_image"/);
   assert.match(source, /alternates:\s*{\s*canonical/);
+  assert.match(source, /composeDocumentTitle/);
+  assert.match(source, /title:\s*\{\s*absolute:\s*documentTitle/);
 });
 
 test("website JSON-LD supports canonical overrides", () => {
