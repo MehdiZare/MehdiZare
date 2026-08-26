@@ -564,19 +564,6 @@ function tryJsxElementEnd(source: string, ltIndex: number): number {
   }
 }
 
-function collectInitialNameTagStarts(source: string, name: string): number[] {
-  const starts: number[] = [];
-  for (const match of source.matchAll(/initial\s*=/g)) {
-    const tagStart = findJsxTagStart(source, match.index);
-    if (tagStart < 0) continue;
-    const openingTagEnd = findOpeningTagEnd(source, tagStart);
-    if (findInitialUsageIndexInTag(source, tagStart, openingTagEnd, name) != null) {
-      starts.push(tagStart);
-    }
-  }
-  return [...new Set(starts)];
-}
-
 function tagOptsOutOfVariantInherit(
   source: string,
   ltIndex: number,
@@ -588,11 +575,25 @@ function tagOptsOutOfVariantInherit(
   );
 }
 
+function enclosingAncestorStarts(source: string, childStart: number): number[] {
+  const ancestors: number[] = [];
+  let probe = childStart;
+  while (probe > 0) {
+    const parentStart = findJsxTagStart(source, probe - 1);
+    if (parentStart < 0) break;
+    const parentEnd = tryJsxElementEnd(source, parentStart);
+    if (childStart > parentStart && childStart < parentEnd) {
+      ancestors.push(parentStart);
+    }
+    probe = parentStart;
+  }
+  return ancestors;
+}
+
 function namedVariantUsageIndex(
   source: string,
   binding: VariantsBinding,
-  name: string,
-  nameTagStarts: number[]
+  name: string
 ): number | null {
   const ownUsage = findInitialUsageIndexInTag(
     source,
@@ -604,10 +605,12 @@ function namedVariantUsageIndex(
   if (tagOptsOutOfVariantInherit(source, binding.elementStart, binding.openingTagEnd)) {
     return null;
   }
-  for (const start of nameTagStarts) {
-    if (start === binding.elementStart) continue;
-    const end = tryJsxElementEnd(source, start);
-    if (binding.elementStart > start && binding.elementStart < end) {
+  for (const ancestorStart of enclosingAncestorStarts(source, binding.elementStart)) {
+    const openingTagEnd = findOpeningTagEnd(source, ancestorStart);
+    if (tagOptsOutOfVariantInherit(source, ancestorStart, openingTagEnd)) {
+      return null;
+    }
+    if (findInitialUsageIndexInTag(source, ancestorStart, openingTagEnd, name) != null) {
       return binding.elementStart;
     }
   }
@@ -646,11 +649,10 @@ function collectInitialStates(source: string, ctx?: ScanContext): InitialState[]
   const names = collectInitialVariantNames(source);
   const { bindings } = collectVariantsBindings(source, ctx);
   for (const name of names) {
-    const nameTagStarts = collectInitialNameTagStarts(source, name);
     for (const binding of bindings) {
       const objects = collectNamedVariantObjects(binding.objectText, name);
       if (objects.length === 0) continue;
-      const index = namedVariantUsageIndex(source, binding, name, nameTagStarts);
+      const index = namedVariantUsageIndex(source, binding, name);
       if (index == null) continue;
       for (const obj of objects) {
         states.push({ text: obj.text, index });
@@ -1161,6 +1163,18 @@ test("imported named variants objects are collected", () => {
   assert.deepEqual(collectVariantsBindings(source, ctx).unresolved, []);
 });
 
+test("imported @/ variants objects are collected", () => {
+  const source = `
+    import { cardVariants } from "@/lib/__fixtures__/motion-alias-variants";
+    <motion.div initial="hidden" variants={cardVariants} />
+  `;
+  const ctx = { filePath: resolve(process.cwd(), "src/components/layout/Navbar.tsx") };
+  const hiding = hidingOpacityStates(source, ctx);
+  assert.equal(hiding.length, 1, "import { cardVariants } from \"@/…\" must resolve via SRC_ROOT");
+  assert.equal(isExemptHidingInitial(source, hiding[0].index), false);
+  assert.deepEqual(collectVariantsBindings(source, ctx).unresolved, []);
+});
+
 test("imported default variants objects are collected", () => {
   const file = resolve(process.cwd(), "tests/fixtures/motion-scanner/uses-default-import.tsx");
   const source = readFileSync(file, "utf8");
@@ -1207,6 +1221,15 @@ test("variants={ident as Type} still resolves ident and skips the type name", ()
   const source = `
     const cardVariants = { hidden: { opacity: 0 } };
     <motion.div initial="hidden" variants={cardVariants as Variants} />
+  `;
+  assert.deepEqual(collectVariantsBindings(source).unresolved, []);
+  assert.equal(hidingOpacityStates(source).length, 1);
+});
+
+test("variants={ident satisfies Type} still resolves ident and skips the type name", () => {
+  const source = `
+    const cardVariants = { hidden: { opacity: 0 } };
+    <motion.div initial="hidden" variants={cardVariants satisfies Variants} />
   `;
   assert.deepEqual(collectVariantsBindings(source).unresolved, []);
   assert.equal(hidingOpacityStates(source).length, 1);
@@ -1321,6 +1344,40 @@ test("nested child with inherit={false} does not inherit a parent hiding name", 
   );
 });
 
+test("an intermediate inherit={false} wrapper stops stagger inherit for grandchildren", () => {
+  const source = `
+    const containerVariants = { hidden: {} };
+    const childVariants = { hidden: { opacity: 0 } };
+    <motion.div variants={containerVariants} initial="hidden">
+      <motion.div inherit={false}>
+        <motion.div variants={childVariants} />
+      </motion.div>
+    </motion.div>
+  `;
+  assert.equal(
+    hidingOpacityStates(source).length,
+    0,
+    "Framer's inherit chain stops at the intermediate inherit={false}"
+  );
+});
+
+test("an intermediate initial={false} wrapper stops stagger inherit for grandchildren", () => {
+  const source = `
+    const containerVariants = { hidden: {} };
+    const childVariants = { hidden: { opacity: 0 } };
+    <motion.div variants={containerVariants} initial="hidden">
+      <motion.div initial={false}>
+        <motion.div variants={childVariants} />
+      </motion.div>
+    </motion.div>
+  `;
+  assert.equal(
+    hidingOpacityStates(source).length,
+    0,
+    "Framer's inherit chain stops at the intermediate initial={false}"
+  );
+});
+
 test("inline variants={{}} hiding objects follow the element's initial= usage", () => {
   const source = `
     <AnimatePresence>
@@ -1387,26 +1444,36 @@ test("collection .length under AnimatePresence is not exempt", () => {
   }
 });
 
-test("no component ships an SSR initial state that hides its content", () => {
+function collectHidingOffenders(files: Array<{ path: string; label: string }>): string[] {
   const offenders: string[] = [];
 
-  for (const file of listTsxFiles(COMPONENTS_DIR)) {
-    const key = relative(COMPONENTS_DIR, file);
-    const source = readFileSync(file, "utf8");
-    const ctx = { filePath: file };
+  for (const { path, label } of files) {
+    const source = readFileSync(path, "utf8");
+    const ctx = { filePath: path };
     const { unresolved } = collectVariantsBindings(source, ctx);
     for (const ident of unresolved) {
-      offenders.push(`${key}: unresolved variants={${ident}}`);
+      offenders.push(`${label}: unresolved variants={${ident}}`);
     }
 
     for (const state of collectInitialStates(source, ctx)) {
       if (isExemptHidingInitial(source, state.index)) continue;
 
       for (const prop of hidingHits(state.text)) {
-        offenders.push(`${key}: ${prop} in ${state.text.replace(/\s+/g, " ")}`);
+        offenders.push(`${label}: ${prop} in ${state.text.replace(/\s+/g, " ")}`);
       }
     }
   }
+
+  return offenders;
+}
+
+test("no component ships an SSR initial state that hides its content", () => {
+  const offenders = collectHidingOffenders(
+    listTsxFiles(COMPONENTS_DIR).map((file) => ({
+      path: file,
+      label: relative(COMPONENTS_DIR, file),
+    }))
+  );
 
   assert.deepEqual(
     offenders,
@@ -1414,6 +1481,17 @@ test("no component ships an SSR initial state that hides its content", () => {
     "Motion initial states must not hide content during SSR. Animate a " +
       "transform instead, or render the final value and enhance after mount:\n  " +
       offenders.join("\n  ")
+  );
+});
+
+test("the production scan loop flags unresolved variants={ident}", () => {
+  const fixture = resolve(process.cwd(), "tests/fixtures/motion-scanner/unresolved-binding.tsx");
+  const offenders = collectHidingOffenders([
+    { path: fixture, label: "fixture/unresolved-binding.tsx" },
+  ]);
+  assert.ok(
+    offenders.some((row) => row.includes("unresolved variants={orphanVariants}")),
+    `production scan wiring must surface unresolved bindings; got:\n  ${offenders.join("\n  ")}`
   );
 });
 
