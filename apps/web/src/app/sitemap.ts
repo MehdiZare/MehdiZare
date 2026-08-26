@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import type { Article, Author, Category, Tag } from "@/types/strapi";
 import {
+  fetchAllPages,
   getAboutPage,
   getArticles,
   getAuthors,
@@ -21,7 +22,8 @@ export const revalidate = 3600;
 /** One parallel CMS round uses the 15s Strapi timeout; finish before the isolate is killed. */
 export const maxDuration = 20;
 
-const SITEMAP_MAX_PAGES = 20;
+/** Hand back the fallback while the isolate is still alive to serve it. */
+export const SITEMAP_DEADLINE_MS = 16_000;
 
 function safeDate(input: string | undefined, fallback: Date): Date {
   if (!input) {
@@ -44,100 +46,32 @@ export function maxValidDate(values: Array<string | undefined>, fallback: Date):
   return latest ?? fallback;
 }
 
-async function getAllArticlesForSitemap(): Promise<Article[]> {
-  const pageSize = 100;
-  let page = 1;
-  const articles: Article[] = [];
+/**
+ * The sitemap only reads slug, updatedAt and the cover image, so skip the full
+ * article populate (category, tags, author credentials, seo.metaImage).
+ */
+const SITEMAP_ARTICLE_FIELDS = {
+  fields: ["slug", "updatedAt"],
+  populate: { featuredImage: { fields: ["url"] } },
+} as const;
 
-  while (true) {
-    const response = await getArticles({
-      pagination: { page, pageSize, withCount: true },
-      sort: "publishedAt:desc",
-    });
-
-    articles.push(...response.data);
-
-    const pageCount = response.meta.pagination?.pageCount ?? 1;
-    if (page >= pageCount || page >= SITEMAP_MAX_PAGES) {
-      break;
-    }
-
-    page += 1;
-  }
-
-  return articles;
+function getAllArticlesForSitemap(): Promise<Article[]> {
+  return fetchAllPages(getArticles, "articles", {
+    ...SITEMAP_ARTICLE_FIELDS,
+    sort: "publishedAt:desc",
+  });
 }
 
-async function getAllAuthorsForSitemap(): Promise<Author[]> {
-  const pageSize = 100;
-  let page = 1;
-  const authors: Author[] = [];
-
-  while (true) {
-    const response = await getAuthors({
-      pagination: { page, pageSize, withCount: true },
-      sort: "updatedAt:desc",
-    });
-
-    authors.push(...response.data);
-
-    const pageCount = response.meta.pagination?.pageCount ?? 1;
-    if (page >= pageCount || page >= SITEMAP_MAX_PAGES) {
-      break;
-    }
-
-    page += 1;
-  }
-
-  return authors;
+function getAllAuthorsForSitemap(): Promise<Author[]> {
+  return fetchAllPages(getAuthors, "authors", { sort: "updatedAt:desc" });
 }
 
-async function getAllCategoriesForSitemap(): Promise<Category[]> {
-  const pageSize = 100;
-  let page = 1;
-  const categories: Category[] = [];
-
-  while (true) {
-    const response = await getCategories({
-      pagination: { page, pageSize, withCount: true },
-      sort: "order:asc",
-    });
-
-    categories.push(...response.data);
-
-    const pageCount = response.meta.pagination?.pageCount ?? 1;
-    if (page >= pageCount || page >= SITEMAP_MAX_PAGES) {
-      break;
-    }
-
-    page += 1;
-  }
-
-  return categories;
+function getAllCategoriesForSitemap(): Promise<Category[]> {
+  return fetchAllPages(getCategories, "categories", { sort: "order:asc" });
 }
 
-async function getAllTagsForSitemap(): Promise<Tag[]> {
-  const pageSize = 100;
-  let page = 1;
-  const tags: Tag[] = [];
-
-  while (true) {
-    const response = await getTags({
-      pagination: { page, pageSize, withCount: true },
-      sort: "name:asc",
-    });
-
-    tags.push(...response.data);
-
-    const pageCount = response.meta.pagination?.pageCount ?? 1;
-    if (page >= pageCount || page >= SITEMAP_MAX_PAGES) {
-      break;
-    }
-
-    page += 1;
-  }
-
-  return tags;
+function getAllTagsForSitemap(): Promise<Tag[]> {
+  return fetchAllPages(getTags, "tags", { sort: "name:asc" });
 }
 
 interface TaxonomyCategoryNode {
@@ -362,16 +296,18 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
   };
 
   const timestampWork = (async () => {
-    const [homeRes, aboutRes, consultingRes] = await Promise.all([
+    // bina-print joins the same round; awaiting it afterwards made a second
+    // sequential 15s hop, which is the one path that could outlive maxDuration.
+    const [homeRes, aboutRes, consultingRes, binaPrintRes] = await Promise.all([
       getHomePage(),
       getAboutPage(),
       getConsultingPage(),
+      showBinaPrint ? getBinaPrintPage() : Promise.resolve(null),
     ]);
     pageTimestamps.home = safeDate(homeRes.data?.updatedAt, now);
     pageTimestamps.about = safeDate(aboutRes.data?.updatedAt, now);
     pageTimestamps.consulting = safeDate(consultingRes.data?.updatedAt, now);
-    if (showBinaPrint) {
-      const binaPrintRes = await getBinaPrintPage();
+    if (binaPrintRes) {
       pageTimestamps.binaPrint = safeDate(binaPrintRes.data?.updatedAt, now);
     }
   })();
@@ -397,6 +333,14 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
       pageTimestamps.blog
     );
     articlePages = mapArticlePages(articles, now);
+    if (articles.length > 0 && articlePages.length === 0) {
+      // Rows came back but none produced a URL -- a narrowed `fields` query or a
+      // renamed slug field would look exactly like this, and silently drop every
+      // post from the sitemap.
+      console.warn(
+        `[sitemap] ${articles.length} article(s) returned but none had a usable slug.`
+      );
+    }
   } else {
     degradedSources.push("articles");
   }
@@ -471,11 +415,27 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const showBinaPrint = isBinaPrintEnabled();
+  let deadline: ReturnType<typeof setTimeout> | undefined;
 
   try {
-    return await buildCmsSitemap(now, showBinaPrint);
+    // buildCmsSitemap settles every branch itself, so the catch below only fires
+    // on a programming error. A slow CMS would instead run out the isolate and
+    // return nothing at all -- this deadline is what keeps the fallback usable.
+    return await Promise.race([
+      buildCmsSitemap(now, showBinaPrint),
+      new Promise<MetadataRoute.Sitemap>((resolve) => {
+        deadline = setTimeout(() => {
+          console.warn(
+            `[sitemap] CMS did not finish within ${SITEMAP_DEADLINE_MS}ms; serving static + taxonomy fallback`
+          );
+          resolve(buildDegradedSitemap(now, showBinaPrint));
+        }, SITEMAP_DEADLINE_MS);
+      }),
+    ]);
   } catch (error) {
     console.warn("[sitemap] CMS enrichment failed; serving static + taxonomy fallback", error);
     return buildDegradedSitemap(now, showBinaPrint);
+  } finally {
+    clearTimeout(deadline);
   }
 }

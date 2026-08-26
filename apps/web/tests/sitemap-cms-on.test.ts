@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 // The CMS-off contract lives in sitemap-route.test.ts. This file covers the
 // opposite branch: a reachable Strapi, so mapArticlePages / mapAuthorPages, the
-// empty-slug skips, and the SITEMAP_MAX_PAGES cap actually execute.
+// empty-slug skips, and the STRAPI_MAX_PAGES cap actually execute.
 //
 // `serverEnv` freezes DISABLE_STRAPI_CMS at module scope, so this has to be its
 // own file — node:test already runs each test file in its own process, which is
@@ -32,6 +32,7 @@ function emptyScenario(): Scenario {
 
 let scenario: Scenario = emptyScenario();
 let requestedPaths: string[] = [];
+let requestedUrls: URL[] = [];
 
 function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -46,6 +47,7 @@ function jsonResponse(body: unknown): Response {
 globalThis.fetch = (async (input: RequestInfo | URL) => {
   const url = new URL(String(input));
   requestedPaths.push(url.pathname);
+  requestedUrls.push(url);
 
   const page = Number(url.searchParams.get("pagination[page]") ?? "1");
   const collection = (rows: Row[], pageCount: number) =>
@@ -69,11 +71,14 @@ globalThis.fetch = (async (input: RequestInfo | URL) => {
   }
 }) as typeof fetch;
 
-const { default: sitemap } = await import("../src/app/sitemap.ts");
+const { default: sitemap, maxDuration, SITEMAP_DEADLINE_MS } = await import(
+  "../src/app/sitemap.ts"
+);
 
 async function runSitemap(next: Partial<Scenario> = {}) {
   scenario = { ...emptyScenario(), ...next };
   requestedPaths = [];
+  requestedUrls = [];
   const entries = await sitemap();
   return { entries, urls: entries.map((entry) => entry.url) };
 }
@@ -131,7 +136,7 @@ test("only well-formed author slugs reach the sitemap, and the fallback covers n
   );
 });
 
-test("article pagination stops at SITEMAP_MAX_PAGES", async () => {
+test("article pagination stops at STRAPI_MAX_PAGES", async () => {
   await runSitemap({ articlePageCount: 99 });
 
   const articleRequests = requestedPaths.filter((path) => path === "/api/articles").length;
@@ -143,7 +148,7 @@ test("article pagination stops at SITEMAP_MAX_PAGES", async () => {
   assert.equal(
     articleRequests,
     20,
-    "pins SITEMAP_MAX_PAGES — update deliberately if the cap moves"
+    "pins STRAPI_MAX_PAGES — update deliberately if the cap moves"
   );
 });
 
@@ -177,4 +182,32 @@ test("an empty CMS still falls back to taxonomy categories and tags", async () =
   assert.ok(urls.includes(`${SITE_URL}/blog/tag/llms`));
   assert.ok(urls.includes(`${SITE_URL}/author/mehdi-zare`));
   assert.deepEqual(articleUrls(urls), [], "no articles means no article entries");
+});
+
+test("the article query asks only for what the sitemap renders", async () => {
+  await runSitemap({ articles: [{ slug: "valid-post", updatedAt: "2026-02-02T00:00:00.000Z" }] });
+
+  const articleRequest = requestedUrls.find((url) => url.pathname === "/api/articles");
+  assert.ok(articleRequest, "the sitemap must read /api/articles");
+
+  const params = articleRequest.searchParams;
+  assert.deepEqual(
+    [params.get("fields[0]"), params.get("fields[1]")],
+    ["slug", "updatedAt"],
+    "narrowing the query is what keeps the full article populate out of the sitemap read"
+  );
+  assert.equal(params.get("populate[featuredImage][fields][0]"), "url");
+  assert.equal(
+    params.get("populate[author][populate][credentials][populate]"),
+    null,
+    "the sitemap must not pull author credentials or seo.metaImage"
+  );
+});
+
+test("the CMS deadline leaves room to serve the fallback", () => {
+  assert.ok(
+    SITEMAP_DEADLINE_MS < maxDuration * 1000,
+    `the deadline (${SITEMAP_DEADLINE_MS}ms) must fire while the isolate is still ` +
+      `alive to serve buildDegradedSitemap (maxDuration ${maxDuration}s)`
+  );
 });

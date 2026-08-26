@@ -170,6 +170,56 @@ export async function fetchAPI<T>(path: string, params?: FetchAPIParams): Promis
   return (await response.json()) as T;
 }
 
+const PAGE_SIZE = 100;
+
+/**
+ * Upper bound on sequential page reads for one collection. Each page costs up
+ * to STRAPI_TIMEOUT_MS, so an uncapped walk can outlive the caller's budget --
+ * or loop forever if Strapi reports a pageCount it never reaches.
+ */
+export const STRAPI_MAX_PAGES = 20;
+
+/**
+ * Read every page of a collection, newest-first, stopping at STRAPI_MAX_PAGES.
+ * Truncation is logged rather than silent so a catalog that outgrows the cap
+ * shows up in the deploy logs instead of quietly shrinking the sitemap.
+ */
+export async function fetchAllPages<T>(
+  fetchPage: (params: FetchAPIParams) => Promise<StrapiCollectionResponse<T>>,
+  label: string,
+  params: FetchAPIParams
+): Promise<T[]> {
+  const items: T[] = [];
+  let page = 1;
+
+  while (true) {
+    const response = await fetchPage({
+      ...params,
+      pagination: { page, pageSize: PAGE_SIZE, withCount: true },
+    });
+
+    items.push(...response.data);
+
+    const pageCount = response.meta.pagination?.pageCount ?? 1;
+    if (page >= pageCount) {
+      break;
+    }
+
+    if (page >= STRAPI_MAX_PAGES) {
+      console.warn(
+        `[strapi] ${label}: stopped after ${STRAPI_MAX_PAGES} pages of ${PAGE_SIZE} ` +
+          `but Strapi reports ${pageCount}; entries beyond ` +
+          `${STRAPI_MAX_PAGES * PAGE_SIZE} are omitted.`
+      );
+      break;
+    }
+
+    page += 1;
+  }
+
+  return items;
+}
+
 function flattenParams(
   prefix: string,
   obj: Record<string, unknown>,

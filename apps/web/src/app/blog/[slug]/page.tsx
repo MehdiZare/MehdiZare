@@ -5,7 +5,7 @@ import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { AiEngineerProfileLink } from "@/components/seo/AiEngineerProfileLink";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { getArticles, getArticleBySlug } from "@/lib/strapi";
+import { fetchAllPages, getArticles, getArticleBySlug } from "@/lib/strapi";
 import { StrapiImage } from "@/components/shared/StrapiImage";
 import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
 import { TableOfContents } from "@/components/blog/TableOfContents";
@@ -32,28 +32,8 @@ const AI_ENGINEER_IN_CONTENT_BLOG_SLUGS = new Set([
   "why-most-ai-projects-die-before-production-and-it-s-not-a-tech-problem",
 ]);
 
-async function getAllArticles(): Promise<ArticleList> {
-  const pageSize = 100;
-  let page = 1;
-  const allArticles: ArticleList = [];
-
-  while (true) {
-    const res = await getArticles({
-      sort: "publishedAt:desc",
-      pagination: { page, pageSize, withCount: true },
-    });
-
-    allArticles.push(...res.data);
-
-    const pageCount = res.meta.pagination?.pageCount ?? 1;
-    if (page >= pageCount) {
-      break;
-    }
-
-    page += 1;
-  }
-
-  return allArticles;
+function getAllArticles(): Promise<ArticleList> {
+  return fetchAllPages(getArticles, "articles", { sort: "publishedAt:desc" });
 }
 
 export async function generateStaticParams() {
