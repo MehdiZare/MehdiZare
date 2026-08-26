@@ -44,7 +44,8 @@ export async function generateStaticParams() {
     return articles.map((article) => ({
       slug: article.slug,
     }));
-  } catch {
+  } catch (error) {
+    console.warn("[blog] generateStaticParams: CMS listing failed; skipping static paths", error);
     return [];
   }
 }

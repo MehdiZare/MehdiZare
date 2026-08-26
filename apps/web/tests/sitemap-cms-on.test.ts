@@ -152,6 +152,22 @@ test("only well-formed article slugs reach the sitemap", async () => {
   );
 });
 
+test("a malformed featuredImage still emits the article loc", async () => {
+  const { entries, urls } = await runSitemap({
+    articles: [
+      {
+        slug: "valid-post",
+        updatedAt: "2026-02-02T00:00:00.000Z",
+        featuredImage: { url: 123 },
+      },
+    ],
+  });
+
+  assert.deepEqual(articleUrls(urls), [`${SITE_URL}/blog/valid-post`]);
+  const post = entries.find((entry) => entry.url === `${SITE_URL}/blog/valid-post`);
+  assert.equal(post?.images, undefined);
+});
+
 test("only well-formed author slugs reach the sitemap, and the fallback covers none", async () => {
   const { urls } = await runSitemap({
     authors: [{ slug: "" }, { slug: "  " }, { slug: 42 }],

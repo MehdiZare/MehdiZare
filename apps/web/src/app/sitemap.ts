@@ -253,18 +253,19 @@ function mapArticlePages(articles: Article[], now: Date): MetadataRoute.Sitemap 
   for (const article of articles) {
     const slug = normalizeSlug(article.slug);
     if (!slug) continue;
+    let imageUrl: string | undefined;
     try {
-      const imageUrl = toAbsoluteMediaUrl(article.featuredImage?.url);
-      pages.push({
-        url: `${SITE_URL}/blog/${slug}`,
-        lastModified: safeDate(article.updatedAt, now),
-        changeFrequency: "weekly",
-        priority: 0.7,
-        images: imageUrl ? [imageUrl] : undefined,
-      });
-    } catch {
-      // Skip a malformed row; do not fail the whole sitemap.
+      imageUrl = toAbsoluteMediaUrl(article.featuredImage?.url);
+    } catch (error) {
+      console.warn(`[sitemap] skipping featuredImage for /blog/${slug}`, error);
     }
+    pages.push({
+      url: `${SITE_URL}/blog/${slug}`,
+      lastModified: safeDate(article.updatedAt, now),
+      changeFrequency: "weekly",
+      priority: 0.7,
+      images: imageUrl ? [imageUrl] : undefined,
+    });
   }
   return pages;
 }
@@ -274,18 +275,19 @@ function mapAuthorPages(authors: Author[], now: Date): MetadataRoute.Sitemap {
   for (const author of authors) {
     const slug = normalizeSlug(author.slug);
     if (!slug) continue;
+    let imageUrl: string | undefined;
     try {
-      const imageUrl = toAbsoluteMediaUrl(author.profileImage?.url);
-      pages.push({
-        url: `${SITE_URL}/author/${slug}`,
-        lastModified: safeDate(author.updatedAt, now),
-        changeFrequency: "monthly",
-        priority: 0.6,
-        images: imageUrl ? [imageUrl] : undefined,
-      });
-    } catch {
-      // Skip a malformed row; do not fail the whole sitemap.
+      imageUrl = toAbsoluteMediaUrl(author.profileImage?.url);
+    } catch (error) {
+      console.warn(`[sitemap] skipping profileImage for /author/${slug}`, error);
     }
+    pages.push({
+      url: `${SITE_URL}/author/${slug}`,
+      lastModified: safeDate(author.updatedAt, now),
+      changeFrequency: "monthly",
+      priority: 0.6,
+      images: imageUrl ? [imageUrl] : undefined,
+    });
   }
   return pages;
 }

@@ -34,7 +34,8 @@ export async function generateStaticParams() {
   try {
     const authors = await getAllAuthors();
     return authors.map((author) => ({ slug: author.slug }));
-  } catch {
+  } catch (error) {
+    console.warn("[author] generateStaticParams: CMS listing failed; skipping static paths", error);
     return [];
   }
 }
