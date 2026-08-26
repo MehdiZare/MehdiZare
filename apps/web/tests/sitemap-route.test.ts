@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 process.env.DISABLE_STRAPI_CMS = "true";
+delete process.env.ENABLE_BINA_PRINT;
+delete process.env.NEXT_PUBLIC_ENABLE_BINA_PRINT;
 
 const { default: sitemap, maxDuration } = await import("../src/app/sitemap.ts");
 

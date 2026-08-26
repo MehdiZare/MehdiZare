@@ -380,8 +380,11 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
   let articlePages: MetadataRoute.Sitemap = [];
   if (articlesResult.status === "fulfilled") {
     const articles = articlesResult.value;
-    if (articles.length > 0) {
-      pageTimestamps.blog = safeDate(articles[0]?.updatedAt, pageTimestamps.blog);
+    for (const article of articles) {
+      const updated = safeDate(article.updatedAt, pageTimestamps.blog);
+      if (updated > pageTimestamps.blog) {
+        pageTimestamps.blog = updated;
+      }
     }
     articlePages = mapArticlePages(articles, now);
   } else {
