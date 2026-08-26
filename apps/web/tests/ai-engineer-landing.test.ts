@@ -29,6 +29,24 @@ test("AI engineer landing is a dedicated non-blog route titled to the query", ()
   assert.doesNotMatch(page, /\/blog\//);
   assert.match(readSource("src/components/layout/Footer.tsx"), /href: "\/ai-engineer"/);
   assert.match(readSource("src/components/home/ServicesGrid.tsx"), /href: "\/ai-engineer"/);
+  assert.match(readSource("src/app/about/page.tsx"), /AiEngineerProfileLink/);
+  assert.match(
+    readSource("src/app/blog/[slug]/page.tsx"),
+    /how-ai-works-from-data-to-decisions/
+  );
+  assert.match(
+    readSource("src/app/blog/[slug]/page.tsx"),
+    /why-most-ai-projects-die-before-production-and-it-s-not-a-tech-problem/
+  );
+  assert.match(readSource("src/app/blog/[slug]/page.tsx"), /AiEngineerProfileLink/);
+  assert.match(
+    readSource("src/components/seo/AiEngineerProfileLink.tsx"),
+    /href="\/ai-engineer"/
+  );
+  assert.doesNotMatch(
+    readSource("src/app/consulting/page.tsx"),
+    /AiEngineerProfileLink/
+  );
 });
 
 test("AI engineer landing copy stays AI/finance and omits government/CISA", () => {
