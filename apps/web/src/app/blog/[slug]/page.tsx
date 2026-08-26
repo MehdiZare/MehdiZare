@@ -33,6 +33,8 @@ const AI_ENGINEER_IN_CONTENT_BLOG_SLUGS = new Set([
 ]);
 
 function getAllArticles(): Promise<ArticleList> {
+  // Shared STRAPI_MAX_PAGES cap. Extra slugs still render on demand
+  // (dynamicParams defaults to true).
   return fetchAllPages(getArticles, "articles", { sort: "publishedAt:desc" });
 }
 

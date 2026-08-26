@@ -32,10 +32,11 @@ export const STRAPI_FETCH_REVALIDATE_SECONDS = parseRevalidateSeconds(
   process.env.STRAPI_FETCH_REVALIDATE_SECONDS
 );
 
-interface FetchAPIParams {
+export interface FetchAPIParams {
   populate?: string | string[] | Record<string, unknown>;
   filters?: Record<string, unknown>;
   sort?: string | string[];
+  fields?: readonly string[];
   pagination?: {
     page?: number;
     pageSize?: number;
@@ -173,21 +174,25 @@ export async function fetchAPI<T>(path: string, params?: FetchAPIParams): Promis
 const PAGE_SIZE = 100;
 
 /**
- * Upper bound on sequential page reads for one collection. Each page costs up
- * to STRAPI_TIMEOUT_MS, so an uncapped walk can outlive the caller's budget --
- * or loop forever if Strapi reports a pageCount it never reaches.
+ * Upper bound on sequential page reads for one collection. Without a cap, an
+ * inflated or never-decreasing Strapi pageCount walks until the platform kills
+ * the process. This is not a time budget: each page can still cost up to
+ * STRAPI_TIMEOUT_MS, so callers with a short isolate must impose their own
+ * deadline.
  */
 export const STRAPI_MAX_PAGES = 20;
 
 /**
- * Read every page of a collection, newest-first, stopping at STRAPI_MAX_PAGES.
- * Truncation is logged rather than silent so a catalog that outgrows the cap
- * shows up in the deploy logs instead of quietly shrinking the sitemap.
+ * Walk a collection page by page (caller supplies `sort`), stopping at
+ * STRAPI_MAX_PAGES. Truncation is logged rather than silent so a catalog that
+ * outgrows the cap shows up in logs instead of quietly dropping sitemap URLs
+ * or generateStaticParams entries. Caller pagination is ignored; the helper
+ * always requests PAGE_SIZE with withCount.
  */
 export async function fetchAllPages<T>(
   fetchPage: (params: FetchAPIParams) => Promise<StrapiCollectionResponse<T>>,
   label: string,
-  params: FetchAPIParams
+  params: Omit<FetchAPIParams, "pagination"> = {}
 ): Promise<T[]> {
   const items: T[] = [];
   let page = 1;
@@ -198,9 +203,16 @@ export async function fetchAllPages<T>(
       pagination: { page, pageSize: PAGE_SIZE, withCount: true },
     });
 
+    if (!Array.isArray(response.data)) {
+      throw new StrapiRequestError(
+        `[strapi] ${label}: expected collection data to be an array`,
+        { path: `/${label}` }
+      );
+    }
+
     items.push(...response.data);
 
-    const pageCount = response.meta.pagination?.pageCount ?? 1;
+    const pageCount = response.meta?.pagination?.pageCount ?? 1;
     if (page >= pageCount) {
       break;
     }

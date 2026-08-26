@@ -2,8 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 // The CMS-off contract lives in sitemap-route.test.ts. This file covers the
-// opposite branch: a reachable Strapi, so mapArticlePages / mapAuthorPages, the
-// empty-slug skips, and the STRAPI_MAX_PAGES cap actually execute.
+// opposite branch: a reachable Strapi, so mapArticlePages / mapAuthorPages,
+// empty-slug skips, STRAPI_MAX_PAGES, the narrowed article query, and
+// SITEMAP_DEADLINE_MS < maxDuration actually execute.
 //
 // `serverEnv` freezes DISABLE_STRAPI_CMS at module scope, so this has to be its
 // own file — node:test already runs each test file in its own process, which is
@@ -33,6 +34,15 @@ function emptyScenario(): Scenario {
 let scenario: Scenario = emptyScenario();
 let requestedPaths: string[] = [];
 let requestedUrls: URL[] = [];
+let stallCms = false;
+const stalledRejects: Array<(reason?: unknown) => void> = [];
+let holdSingleTypes: Promise<void> | null = null;
+const SINGLE_TYPE_PATHS = new Set([
+  "/api/home-page",
+  "/api/about-page",
+  "/api/consulting-page",
+  "/api/bina-print-page",
+]);
 
 function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -45,6 +55,12 @@ function jsonResponse(body: unknown): Response {
 // (fetchAPI -> fetchStrapi -> fetch). This covers URL building and pagination
 // param serialization too, which mocking `@/lib/strapi` would skip.
 globalThis.fetch = (async (input: RequestInfo | URL) => {
+  if (stallCms) {
+    return new Promise<Response>((_resolve, reject) => {
+      stalledRejects.push(reject);
+    });
+  }
+
   const url = new URL(String(input));
   requestedPaths.push(url.pathname);
   requestedUrls.push(url);
@@ -66,7 +82,10 @@ globalThis.fetch = (async (input: RequestInfo | URL) => {
     case "/api/tags":
       return collection(scenario.tags, 1);
     default:
-      // Single types (home/about/consulting) only contribute a lastModified.
+      // Single types (home/about/consulting/bina-print) only contribute a lastModified.
+      if (holdSingleTypes && SINGLE_TYPE_PATHS.has(url.pathname)) {
+        await holdSingleTypes;
+      }
       return jsonResponse({ data: { updatedAt: "2026-01-01T00:00:00.000Z" } });
   }
 }) as typeof fetch;
@@ -121,7 +140,11 @@ test("only well-formed article slugs reach the sitemap", async () => {
     "2026-02-02T00:00:00.000Z",
     "article lastModified comes from its own updatedAt"
   );
-  assert.ok(post.images?.length, "a featuredImage must be carried through as an absolute URL");
+  assert.deepEqual(
+    post.images,
+    [`${SITE_URL}/cms-uploads/cover.png`],
+    "a featuredImage must be carried through as an absolute proxied URL"
+  );
 });
 
 test("only well-formed author slugs reach the sitemap, and the fallback covers none", async () => {
@@ -136,19 +159,36 @@ test("only well-formed author slugs reach the sitemap, and the fallback covers n
   );
 });
 
+test("a well-formed CMS author replaces the fallback author page", async () => {
+  const { urls } = await runSitemap({
+    authors: [
+      { slug: "" },
+      { slug: "jane-doe", updatedAt: "2026-02-01T00:00:00.000Z" },
+    ],
+  });
+
+  assert.deepEqual(
+    urls.filter((url) => url.startsWith(`${SITE_URL}/author/`)),
+    [`${SITE_URL}/author/jane-doe`],
+    "mapAuthorPages must emit the CMS author instead of the taxonomy fallback"
+  );
+});
+
 test("article pagination stops at STRAPI_MAX_PAGES", async () => {
   await runSitemap({ articlePageCount: 99 });
 
-  const articleRequests = requestedPaths.filter((path) => path === "/api/articles").length;
+  const articlePages = requestedUrls
+    .filter((url) => url.pathname === "/api/articles")
+    .map((url) => url.searchParams.get("pagination[page]"));
 
   assert.ok(
-    articleRequests < 99,
-    `pagination must not follow pageCount to the end; made ${articleRequests} requests`
+    articlePages.length < 99,
+    `pagination must not follow pageCount to the end; made ${articlePages.length} requests`
   );
-  assert.equal(
-    articleRequests,
-    20,
-    "pins STRAPI_MAX_PAGES — update deliberately if the cap moves"
+  assert.deepEqual(
+    articlePages,
+    Array.from({ length: 20 }, (_, index) => String(index + 1)),
+    "pins STRAPI_MAX_PAGES and pagination[page] serialization — update deliberately if the cap moves"
   );
 });
 
@@ -172,6 +212,11 @@ test("CMS categories and tags replace the taxonomy fallback", async () => {
     urls.filter((url) => url.startsWith(`${SITE_URL}/blog/category/`)),
     [`${SITE_URL}/blog/category/cms-cat`],
     "blank CMS category slugs are skipped rather than emitted as /blog/category/"
+  );
+  assert.deepEqual(
+    urls.filter((url) => url.startsWith(`${SITE_URL}/blog/tag/`)),
+    [`${SITE_URL}/blog/tag/cms-tag`],
+    "blank CMS tag slugs are skipped rather than emitted as /blog/tag/null"
   );
 });
 
@@ -204,10 +249,95 @@ test("the article query asks only for what the sitemap renders", async () => {
   );
 });
 
+test("bina-print is fetched in the same round as the other single types", async (t) => {
+  process.env.ENABLE_BINA_PRINT = "true";
+  t.after(() => {
+    delete process.env.ENABLE_BINA_PRINT;
+    holdSingleTypes = null;
+  });
+
+  let releaseSingleTypes: (() => void) | undefined;
+  holdSingleTypes = new Promise<void>((resolve) => {
+    releaseSingleTypes = resolve;
+  });
+
+  requestedPaths = [];
+  const pending = sitemap();
+
+  const started = Date.now();
+  while (![...SINGLE_TYPE_PATHS].every((path) => requestedPaths.includes(path))) {
+    if (Date.now() - started > 1000) {
+      assert.fail(
+        `bina-print must be requested before other single types resolve; saw ${requestedPaths.join(", ")}`
+      );
+    }
+    await Promise.resolve();
+  }
+
+  releaseSingleTypes?.();
+  const entries = await pending;
+  const urls = entries.map((entry) => entry.url);
+  assert.ok(urls.includes(`${SITE_URL}/bina-print`));
+});
+
 test("the CMS deadline leaves room to serve the fallback", () => {
   assert.ok(
     SITEMAP_DEADLINE_MS < maxDuration * 1000,
     `the deadline (${SITEMAP_DEADLINE_MS}ms) must fire while the isolate is still ` +
       `alive to serve buildDegradedSitemap (maxDuration ${maxDuration}s)`
+  );
+});
+
+test("a stalled CMS still serves the taxonomy fallback before maxDuration", async (t) => {
+  stallCms = true;
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  t.after(() => {
+    stallCms = false;
+    for (const reject of stalledRejects.splice(0)) {
+      reject(new Error("stalled CMS test cleanup"));
+    }
+  });
+
+  const pending = sitemap();
+  t.mock.timers.tick(SITEMAP_DEADLINE_MS);
+  const entries = await pending;
+  const urls = entries.map((entry) => entry.url);
+
+  assert.ok(urls.includes(`${SITE_URL}/blog/category/ai-engineering`));
+  assert.ok(urls.includes(`${SITE_URL}/blog/tag/llms`));
+  assert.ok(urls.includes(`${SITE_URL}/author/mehdi-zare`));
+  assert.deepEqual(articleUrls(urls), [], "deadline fallback must not emit CMS article URLs");
+});
+
+test("in-flight CMS fetches can fail after the deadline without becoming unhandledRejections", async (t) => {
+  stallCms = true;
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+
+  const unhandled: unknown[] = [];
+  const onUnhandled = (reason: unknown) => {
+    unhandled.push(reason);
+  };
+  process.on("unhandledRejection", onUnhandled);
+  t.after(() => {
+    process.off("unhandledRejection", onUnhandled);
+    stallCms = false;
+    stalledRejects.length = 0;
+  });
+
+  const pending = sitemap();
+  t.mock.timers.tick(SITEMAP_DEADLINE_MS);
+  const entries = await pending;
+  assert.ok(entries.length > 0, "fallback must already have been served");
+
+  for (const reject of stalledRejects.splice(0)) {
+    reject(new Error("late CMS failure"));
+  }
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.deepEqual(
+    unhandled,
+    [],
+    "in-flight CMS work that fails after fallback is served must not surface as unhandledRejection"
   );
 });

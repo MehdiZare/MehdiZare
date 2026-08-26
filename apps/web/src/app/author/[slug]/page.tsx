@@ -25,6 +25,8 @@ interface AuthorPageProps {
 type AuthorList = Awaited<ReturnType<typeof getAuthors>>["data"];
 
 function getAllAuthors(): Promise<AuthorList> {
+  // Shared STRAPI_MAX_PAGES cap. Extra slugs still render on demand
+  // (dynamicParams defaults to true).
   return fetchAllPages(getAuthors, "authors", { sort: "updatedAt:desc" });
 }
 

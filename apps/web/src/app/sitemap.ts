@@ -19,10 +19,10 @@ import taxonomy from "../../../../data/taxonomy.json";
 const SITE_URL = getSiteUrl();
 
 export const revalidate = 3600;
-/** One parallel CMS round uses the 15s Strapi timeout; finish before the isolate is killed. */
+/** Isolate budget: must exceed SITEMAP_DEADLINE_MS so a slow CMS walk can still return the fallback. */
 export const maxDuration = 20;
 
-/** Hand back the fallback while the isolate is still alive to serve it. */
+/** Must stay below maxDuration * 1000 so buildDegradedSitemap can return before the isolate is killed. Does not abort in-flight CMS fetches. */
 export const SITEMAP_DEADLINE_MS = 16_000;
 
 function safeDate(input: string | undefined, fallback: Date): Date {
@@ -47,8 +47,9 @@ export function maxValidDate(values: Array<string | undefined>, fallback: Date):
 }
 
 /**
- * The sitemap only reads slug, updatedAt and the cover image, so skip the full
- * article populate (category, tags, author credentials, seo.metaImage).
+ * Sitemap rows only need slug, updatedAt, and featuredImage.url.
+ * Passing this populate overrides getArticles' default articlePopulate
+ * (category, tags, author credentials, seo.metaImage).
  */
 const SITEMAP_ARTICLE_FIELDS = {
   fields: ["slug", "updatedAt"],
@@ -296,8 +297,8 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
   };
 
   const timestampWork = (async () => {
-    // bina-print joins the same round; awaiting it afterwards made a second
-    // sequential 15s hop, which is the one path that could outlive maxDuration.
+    // Share this Promise.all so bina-print cannot add a serial STRAPI_TIMEOUT_MS
+    // hop after home/about/consulting.
     const [homeRes, aboutRes, consultingRes, binaPrintRes] = await Promise.all([
       getHomePage(),
       getAboutPage(),
@@ -334,11 +335,11 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     );
     articlePages = mapArticlePages(articles, now);
     if (articles.length > 0 && articlePages.length === 0) {
-      // Rows came back but none produced a URL -- a narrowed `fields` query or a
-      // renamed slug field would look exactly like this, and silently drop every
-      // post from the sitemap.
+      // Rows came back but mapArticlePages emitted nothing — a fields/populate
+      // mismatch (missing slug) looks exactly like this and would otherwise
+      // ship a sitemap with zero article URLs.
       console.warn(
-        `[sitemap] ${articles.length} article(s) returned but none had a usable slug.`
+        `[sitemap] ${articles.length} article(s) returned but none produced a URL.`
       );
     }
   } else {
@@ -416,13 +417,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const showBinaPrint = isBinaPrintEnabled();
   let deadline: ReturnType<typeof setTimeout> | undefined;
+  let settled = false;
+
+  // Keep a handle so a late CMS rejection after the deadline wins cannot
+  // surface as an unhandledRejection. Failures before the race settles still
+  // go through the catch below.
+  const cmsWork = buildCmsSitemap(now, showBinaPrint);
+  void cmsWork.catch((error) => {
+    if (settled) {
+      console.warn("[sitemap] CMS enrichment failed after a result was already returned", error);
+    }
+  });
 
   try {
-    // buildCmsSitemap settles every branch itself, so the catch below only fires
-    // on a programming error. A slow CMS would instead run out the isolate and
-    // return nothing at all -- this deadline is what keeps the fallback usable.
-    return await Promise.race([
-      buildCmsSitemap(now, showBinaPrint),
+    // Promise.allSettled inside buildCmsSitemap absorbs CMS failures, so this
+    // catch is only for unexpected throws (and a throw from the fallback
+    // builder). The race is what returns a sitemap when the CMS is merely slow,
+    // instead of waiting until maxDuration kills the isolate.
+    const result = await Promise.race([
+      cmsWork,
       new Promise<MetadataRoute.Sitemap>((resolve) => {
         deadline = setTimeout(() => {
           console.warn(
@@ -432,7 +445,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }, SITEMAP_DEADLINE_MS);
       }),
     ]);
+    settled = true;
+    return result;
   } catch (error) {
+    settled = true;
     console.warn("[sitemap] CMS enrichment failed; serving static + taxonomy fallback", error);
     return buildDegradedSitemap(now, showBinaPrint);
   } finally {
