@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CareerTimeline } from "@/components/about/CareerTimeline";
 import { CredentialBadges } from "@/components/about/CredentialBadges";
 import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
+import { AiEngineerProfileLink } from "@/components/seo/AiEngineerProfileLink";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
@@ -128,6 +129,7 @@ export default async function AboutPage() {
             <p className="mt-5 max-w-3xl text-xl leading-relaxed text-mid-gray">
               {data.positioningStatement}
             </p>
+            <AiEngineerProfileLink section="about_hero" className="mt-4" />
           </AnimatedSection>
         </div>
       </section>

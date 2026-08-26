@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TrackedLink } from "@/components/analytics/TrackedLink";
+import { AiEngineerProfileLink } from "@/components/seo/AiEngineerProfileLink";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getArticles, getArticleBySlug } from "@/lib/strapi";
@@ -25,6 +26,11 @@ interface BlogPostPageProps {
 }
 
 type ArticleList = Awaited<ReturnType<typeof getArticles>>["data"];
+
+const AI_ENGINEER_IN_CONTENT_BLOG_SLUGS = new Set([
+  "how-ai-works-from-data-to-decisions",
+  "why-most-ai-projects-die-before-production-and-it-s-not-a-tech-problem",
+]);
 
 async function getAllArticles(): Promise<ArticleList> {
   const pageSize = 100;
@@ -286,6 +292,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <div className="mt-10">
                 <BlocksRenderer content={article.content} />
               </div>
+              {AI_ENGINEER_IN_CONTENT_BLOG_SLUGS.has(article.slug) ? (
+                <AiEngineerProfileLink section="blog_body" className="mt-10" />
+              ) : null}
 
               {/* Tags */}
               {article.tags && article.tags.length > 0 && (
