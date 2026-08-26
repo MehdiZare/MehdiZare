@@ -16,7 +16,7 @@ import { serverEnv } from "@/lib/server-env";
 
 const STRAPI_URL = serverEnv.strapiUrl;
 const STRAPI_API_TOKEN = serverEnv.strapiApiToken;
-const STRAPI_TIMEOUT_MS = 15_000;
+export const STRAPI_TIMEOUT_MS = 15_000;
 const STRAPI_DISABLED = serverEnv.strapiDisabled;
 const DEFAULT_REVALIDATE_SECONDS = 600;
 
@@ -182,26 +182,59 @@ const PAGE_SIZE = 100;
  */
 export const STRAPI_MAX_PAGES = 20;
 
+export interface FetchAllPagesOptions {
+  /** Unix ms. Do not start another page that cannot finish before this instant. */
+  deadlineMs?: number;
+}
+
 /**
  * Walk a collection page by page (caller supplies `sort`), stopping at
  * STRAPI_MAX_PAGES. Truncation is logged rather than silent so a catalog that
  * outgrows the cap shows up in logs instead of quietly dropping sitemap URLs
  * or generateStaticParams entries. Caller pagination is ignored; the helper
  * always requests PAGE_SIZE with withCount.
+ *
+ * A later-page failure returns rows already collected instead of dropping them.
+ * `deadlineMs` skips a further page when remaining time cannot cover
+ * STRAPI_TIMEOUT_MS.
  */
 export async function fetchAllPages<T>(
   fetchPage: (params: FetchAPIParams) => Promise<StrapiCollectionResponse<T>>,
   label: string,
-  params: Omit<FetchAPIParams, "pagination"> = {}
+  params: Omit<FetchAPIParams, "pagination"> = {},
+  options: FetchAllPagesOptions = {}
 ): Promise<T[]> {
   const items: T[] = [];
   let page = 1;
 
   while (true) {
-    const response = await fetchPage({
-      ...params,
-      pagination: { page, pageSize: PAGE_SIZE, withCount: true },
-    });
+    if (
+      page > 1 &&
+      options.deadlineMs != null &&
+      Date.now() + STRAPI_TIMEOUT_MS >= options.deadlineMs
+    ) {
+      console.warn(
+        `[strapi] ${label}: stopping pagination to honor caller deadline; returning ${items.length} row(s)`
+      );
+      break;
+    }
+
+    let response: StrapiCollectionResponse<T>;
+    try {
+      response = await fetchPage({
+        ...params,
+        pagination: { page, pageSize: PAGE_SIZE, withCount: true },
+      });
+    } catch (error) {
+      if (items.length > 0) {
+        console.warn(
+          `[strapi] ${label}: page ${page} failed after ${items.length} row(s); returning partial results`,
+          error
+        );
+        return items;
+      }
+      throw error;
+    }
 
     if (!Array.isArray(response.data)) {
       throw new StrapiRequestError(

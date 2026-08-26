@@ -25,6 +25,8 @@ interface Scenario {
   tags: Row[];
   /** What Strapi claims the article catalog spans, to drive the pagination loop. */
   articlePageCount: number;
+  /** Article pagination[page] that should fail (504), to pin partial results. */
+  failArticlePage?: number;
 }
 
 function emptyScenario(): Scenario {
@@ -74,6 +76,9 @@ globalThis.fetch = (async (input: RequestInfo | URL) => {
 
   switch (url.pathname) {
     case "/api/articles":
+      if (scenario.failArticlePage != null && page === scenario.failArticlePage) {
+        return new Response("gateway timeout", { status: 504, statusText: "Gateway Timeout" });
+      }
       return collection(scenario.articles, scenario.articlePageCount);
     case "/api/authors":
       return collection(scenario.authors, 1);
@@ -189,6 +194,20 @@ test("article pagination stops at STRAPI_MAX_PAGES", async () => {
     articlePages,
     Array.from({ length: 20 }, (_, index) => String(index + 1)),
     "pins STRAPI_MAX_PAGES and pagination[page] serialization — update deliberately if the cap moves"
+  );
+});
+
+test("a later article page failure keeps page-1 URLs instead of dropping the catalog", async () => {
+  const { urls } = await runSitemap({
+    articles: [{ slug: "page-one", updatedAt: "2026-02-02T00:00:00.000Z" }],
+    articlePageCount: 3,
+    failArticlePage: 2,
+  });
+
+  assert.deepEqual(
+    articleUrls(urls),
+    [`${SITE_URL}/blog/page-one`],
+    "page 1 must survive a timeout on page 2 rather than serving a zero-article fallback"
   );
 });
 
