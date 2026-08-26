@@ -1,0 +1,7 @@
+// Deliberately unparseable — the closing brace of the component is missing.
+// Stored as .txt so `tsc --noEmit` does not try to compile it. The scanner
+// reads it by path, so the extension does not change how it is parsed.
+import { motion } from "framer-motion";
+
+export function BrokenButHiding() {
+  return <motion.div initial={{ opacity: 0 }} />;
