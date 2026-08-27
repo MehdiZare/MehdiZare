@@ -8,6 +8,7 @@ import type {
 } from "@/types/strapi";
 import type { SiteProfile } from "@/lib/site-profile";
 import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
+import { getSiteUrl } from "@/lib/seo";
 
 function buildCanonicalAboutStory(): string[] {
   return [
@@ -130,6 +131,38 @@ export interface AboutFallbackData {
   socialLinks: SocialLink[];
 }
 
+/** Hostname without a leading `www.`, or `undefined` when `url` is not absolute. */
+function comparableHost(url: string): string | undefined {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Drops the site's own URL from the About page's "Portfolio & External
+ * Profiles" grid. The section lists profiles held *elsewhere*, so a card
+ * linking back to this site -- with `target="_blank"`, from the page you are
+ * already on -- does not belong in it.
+ *
+ * `DEFAULT_SOCIAL_LINKS` keeps the Website entry because the footer wants a
+ * canonical self-link. The two consumers genuinely differ, and this is the one
+ * that needs the narrower list.
+ *
+ * Without this the move to repo-owned copy (#100) would have changed what the
+ * page renders: the `about-page` CMS row held four links, the repo default
+ * holds five, and the CMS list was what production shipped. A link that cannot
+ * be parsed is kept rather than dropped -- filtering is not this function's job.
+ */
+function externalProfilesOnly(links: SocialLink[]): SocialLink[] {
+  const siteHost = comparableHost(getSiteUrl());
+  if (!siteHost) {
+    return links;
+  }
+  return links.filter((link) => comparableHost(link.url) !== siteHost);
+}
+
 export function buildAboutFallback(siteProfile: SiteProfile): AboutFallbackData {
   return {
     title: `About ${siteProfile.siteName}`,
@@ -140,6 +173,6 @@ export function buildAboutFallback(siteProfile: SiteProfile): AboutFallbackData 
     credentials: fallbackCredentials,
     experiences: fallbackExperiences,
     education: fallbackEducation,
-    socialLinks: siteProfile.socialLinks,
+    socialLinks: externalProfilesOnly(siteProfile.socialLinks),
   };
 }

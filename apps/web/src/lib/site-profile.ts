@@ -6,7 +6,6 @@ import {
 } from "./site-profile-defaults";
 import { identityUrlKey, normalizeIdentityUrl } from "./url-normalization";
 import { isBinaPrintEnabled } from "./feature-flags";
-import { serverEnv } from "./server-env";
 import { blankToUndefined } from "./strings";
 import {
   resolveAuthorAddress,
@@ -456,18 +455,6 @@ function collectMissingRequiredFields(
   return missing;
 }
 
-function resolveStrictMode(explicit?: boolean): boolean {
-  if (typeof explicit === "boolean") {
-    return explicit;
-  }
-
-  if (serverEnv.strapiDisabled) {
-    return false;
-  }
-
-  return process.env.SITE_PROFILE_STRICT === "true";
-}
-
 /**
  * Merges CMS site settings over the repo defaults.
  *
@@ -531,9 +518,14 @@ export function normalizeSiteProfile(
   settings: SiteSettings | null | undefined,
   options: SiteProfileOptions = {}
 ): SiteProfile {
-  const strict = resolveStrictMode(options.strict);
-
-  if (strict) {
+  // Strict validation is opt-in per call, never ambient. It used to also turn
+  // on from `SITE_PROFILE_STRICT=true`, which existed to fail a build whose
+  // `site-setting` row was missing required fields. #100 took that row out of
+  // the read path, so production now passes `settings` as `undefined` -- and
+  // an ambient switch would have found every required field "missing" and
+  // thrown on every request. The check still means something for a caller that
+  // hands over settings to validate; it just cannot be turned on from outside.
+  if (options.strict === true) {
     const missingFields = collectMissingRequiredFields(settings, options.author);
     if (missingFields.length > 0) {
       throw new SiteProfileValidationError(
