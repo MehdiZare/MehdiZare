@@ -52,3 +52,21 @@ test("site profile provides stable geo fallback fields for author", () => {
   assert.equal(profile.author.addressRegion, "FL");
   assert.equal(profile.author.addressCountry, "US");
 });
+
+// The defaults above are only reached when the CMS author carries no address.
+// A seeded author does carry one, so the CMS value is what actually renders --
+// pin that precedence, or a defaults-only edit looks like it changed the site
+// when it did not.
+test("site profile prefers a CMS author address over the geo fallback", () => {
+  const profile = normalizeSiteProfile(undefined, {
+    author: {
+      ...canonicalAuthor,
+      addressLocality: "Austin",
+      addressRegion: "TX",
+      addressCountry: "US",
+    },
+  });
+
+  assert.equal(profile.author.addressLocality, "Austin");
+  assert.equal(profile.author.addressRegion, "TX");
+});
