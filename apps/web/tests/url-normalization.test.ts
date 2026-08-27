@@ -62,6 +62,21 @@ test("normalizeIdentityUrl strips a trailing slash from a path", () => {
   );
 });
 
+test("normalizeIdentityUrl strips embedded credentials", () => {
+  // `https://www.mehdi-zare.com@evil.example.com/` parses with hostname
+  // evil.example.com and the apex as *userinfo*, so the serialized href reads
+  // as one host and navigates to another. Nothing here should ever carry
+  // credentials anyway -- a password in a CMS field would be published.
+  assert.equal(
+    normalizeIdentityUrl("https://user:pass@example.com/a", ORIGIN),
+    "https://example.com/a"
+  );
+  assert.equal(
+    normalizeIdentityUrl("https://www.mehdi-zare.com@evil.example.com/", ORIGIN),
+    "https://evil.example.com"
+  );
+});
+
 test("identityUrlKey returns an empty key for a rejected URL", () => {
   // dedupeUrls and dedupeSocialLinks skip empty keys, so a rejected scheme
   // must not produce a key that could occupy a slot.
@@ -69,11 +84,21 @@ test("identityUrlKey returns an empty key for a rejected URL", () => {
   assert.equal(identityUrlKey("   ", ORIGIN), "");
 });
 
-test("identityUrlKey matches http and https forms of the same address", () => {
+test("identityUrlKey treats http and https forms as distinct addresses", () => {
+  // Protocol is part of the key, so dedupeUrls / dedupeSocialLinks keep both
+  // forms. This pins that as deliberate rather than accidental.
+  assert.notEqual(
+    identityUrlKey("https://example.com/a", ORIGIN),
+    identityUrlKey("http://example.com/a", ORIGIN)
+  );
+});
+
+test("identityUrlKey ignores embedded credentials when deduping", () => {
+  // The key is built from protocol + host + path, so a credentialed copy of a
+  // URL keys the same as the clean one -- it must not be able to take the
+  // dedupe slot and evict the canonical form.
   assert.equal(
-    identityUrlKey("https://example.com/a", ORIGIN) ===
-      identityUrlKey("http://example.com/a", ORIGIN),
-    false,
-    "protocol is part of the key today -- this pins the current behavior so a change is deliberate"
+    identityUrlKey("https://user:pass@example.com/a", ORIGIN),
+    identityUrlKey("https://example.com/a", ORIGIN)
   );
 });

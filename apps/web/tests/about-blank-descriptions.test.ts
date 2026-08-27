@@ -1,10 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 
 import { CareerTimeline } from "../src/components/about/CareerTimeline.tsx";
 import { EducationList } from "../src/components/about/EducationList.tsx";
+import { assertRendersComponent } from "./contract-assertions.ts";
 import type { Education, Experience } from "../src/types/strapi.ts";
 
 // #89. `{value && <p>…</p>}` suppresses `""` but not `"   "` — a whitespace-only
@@ -138,4 +141,52 @@ test("education list treats a whitespace-only field as absent", () => {
   );
 
   assert.doesNotMatch(html, /MBA,/);
+});
+
+// `degree` and `institution` are `required` in the Strapi component, but
+// Strapi's `required` rejects `""` and accepts `"   "` — the same reachability
+// argument #89 makes for `description`. Both were rendered raw until now.
+
+test("education list treats a whitespace-only institution as absent", () => {
+  const html = renderToStaticMarkup(
+    createElement(EducationList, {
+      education: [baseEducation({ institution: "   " })],
+    })
+  );
+
+  assert.deepEqual(emptyParagraphs(html), []);
+});
+
+test("education list omits the leading separator for a whitespace-only degree", () => {
+  const html = renderToStaticMarkup(
+    createElement(EducationList, {
+      education: [baseEducation({ degree: "   ", field: "Finance" })],
+    })
+  );
+
+  assert.match(html, /Finance/);
+  assert.doesNotMatch(html, /, Finance/);
+});
+
+test("education list renders no heading when degree and field are both blank", () => {
+  const html = renderToStaticMarkup(
+    createElement(EducationList, {
+      education: [baseEducation({ degree: "  ", field: "" })],
+    })
+  );
+
+  assert.doesNotMatch(html, /<h3[^>]*>\s*<\/h3>/);
+});
+
+// Everything above renders the components in isolation. That only protects
+// /about while /about still routes through them -- re-inlining either block
+// would regress the page with every assertion above still green.
+test("the about page renders the extracted components instead of re-inlining them", () => {
+  const source = readFileSync(
+    resolve(process.cwd(), "src/app/about/page.tsx"),
+    "utf8"
+  );
+
+  assertRendersComponent(source, "CareerTimeline", "#89", "about page");
+  assertRendersComponent(source, "EducationList", "#89", "about page");
 });

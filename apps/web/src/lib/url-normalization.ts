@@ -49,6 +49,14 @@ export function normalizeIdentityUrl(
     return null;
   }
 
+  // `identityUrlKey` builds its key from protocol + host + path only, so
+  // userinfo that survives here keys identically to the clean URL while
+  // serializing differently: the credentialed copy takes the dedupe slot and
+  // evicts the canonical one. Credentials are also never valid in a `Person`
+  // `url` / `sameAs`, and an embedded password would be published verbatim.
+  parsed.username = "";
+  parsed.password = "";
+
   const canonicalApex = stripWww(canonical.hostname).toLowerCase();
   const parsedApex = stripWww(parsed.hostname).toLowerCase();
 

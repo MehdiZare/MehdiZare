@@ -172,35 +172,26 @@ export function resolveAuthorPageIdentity(
 /**
  * Identity for the byline and `Person` JSON-LD on `/blog/[slug]`.
  *
- * Here the Site Profile owner *is* the right fallback: an article with no
- * author relation is the site owner's, which is what the route already assumed
- * before this change.
+ * The Site Profile owner is the right fallback for an article with *no* author
+ * relation -- that is the site owner's article, which is what the route already
+ * assumed before this change. It is the wrong fallback for an article that
+ * *has* a relation whose name is blank: the route still derives `authorPath`
+ * from the relation's own slug, so borrowing the owner's name puts one person's
+ * name above a profile link to another, and points `BlogPosting.author.@id` at
+ * a `Person` node the visible byline contradicts.
+ *
+ * So a present relation is resolved by exactly the rule `/author/[slug]` uses.
+ * Delegating rather than repeating it is the point: this module exists because
+ * the two routes drifted while each spelled the same rule for itself.
  */
 export function resolveArticleAuthorIdentity(
   source: AuthorIdentitySource | null | undefined,
   fallbacks: AuthorIdentityFallbacks,
   canonicalOrigin: string
 ): AuthorIdentity {
-  const name = firstFilled(source?.name, fallbacks.authorName) ?? "";
-  const role = resolveRole(source, fallbacks);
-  const bioShort =
-    firstFilled(source?.bioShort, fallbacks.authorBioShort) ?? "";
-
-  return {
-    name,
-    role,
-    bioShort,
-    websiteUrl: resolveIdentityUrl(
-      source?.websiteUrl,
-      fallbacks.websiteUrl,
-      canonicalOrigin
-    ),
-    linkedinUrl: resolveIdentityUrl(
-      source?.linkedinUrl,
-      fallbacks.linkedinUrl,
-      canonicalOrigin
-    ),
-    title: composeAuthorTitle(name, role),
-    description: buildAuthorListingDescription(name, source?.bioShort),
-  };
+  return resolveAuthorPageIdentity(
+    source ?? { name: fallbacks.authorName },
+    fallbacks,
+    canonicalOrigin
+  );
 }

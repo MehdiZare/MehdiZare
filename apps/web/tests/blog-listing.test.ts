@@ -3,10 +3,12 @@ import assert from "node:assert/strict";
 import { DEFAULT_SITE_PROFILE } from "../src/lib/site-profile-defaults.ts";
 
 const { buildPageMetadata } = await import("../src/lib/seo.ts");
+// `formatSlugName` comes from the leaf module, not through blog-listing:
+// blog-listing reaches `server-only`, and there is one import path for it now.
+const { formatSlugName } = await import("../src/lib/strings.ts");
 const {
   buildTagListingDescription,
   buildCategoryListingDescription,
-  formatSlugName,
   resolveTaxonomyDisplayName,
   resolveTagListingCopy,
   resolveCategoryListingCopy,

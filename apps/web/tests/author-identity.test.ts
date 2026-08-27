@@ -123,14 +123,25 @@ test("author page identity falls back to the slug label rather than another auth
 });
 
 test("author page identity never emits a dangling title separator", () => {
-  const identity = resolveAuthorPageIdentity(
-    { slug: "jane-doe", name: "", jobTitle: "", headline: "" },
-    FALLBACKS,
+  // The slug and the authorRole fallback both have to be blank for a half to
+  // actually come out empty -- with either one filled, the separator can never
+  // dangle and this test cannot fail.
+  const bothBlank = resolveAuthorPageIdentity(
+    { slug: "", name: "", jobTitle: "", headline: "" },
+    { ...FALLBACKS, authorRole: "" },
     ORIGIN
   );
 
-  assert.doesNotMatch(identity.title, /\|\s*$/);
-  assert.doesNotMatch(identity.title, /^\s*\|/);
+  assert.equal(bothBlank.title, "");
+
+  const roleBlank = resolveAuthorPageIdentity(
+    { slug: "jane-doe", name: "Jane Doe", jobTitle: "", headline: "" },
+    { ...FALLBACKS, authorRole: "  " },
+    ORIGIN
+  );
+
+  assert.equal(roleBlank.title, "Jane Doe");
+  assert.doesNotMatch(roleBlank.title, /\|/);
 });
 
 test("author page identity normalizes identity URLs and rejects blank ones", () => {
@@ -201,9 +212,44 @@ test("article author identity treats blank CMS values as absent, not as present"
     ORIGIN
   );
 
-  assert.equal(identity.name, FALLBACKS.authorName);
+  // The name falls back to the slug label, not to the site owner: the route
+  // still links the byline to /author/jane-doe, so borrowing `authorName` here
+  // would name one person above a profile link to another.
+  assert.equal(identity.name, "Jane Doe");
   assert.equal(identity.role, FALLBACKS.authorRole);
   assert.equal(identity.bioShort, FALLBACKS.authorBioShort);
+});
+
+test("article author identity never borrows the site owner's name for a linked author", () => {
+  // #83's cross-route rule, from the article side. `/blog/[slug]` derives
+  // authorPath and BlogPosting.author.@id from the *relation's* slug, so a
+  // byline naming the owner over a link to /author/jane-doe attributes Jane's
+  // article to the owner in the structured data.
+  const article = resolveArticleAuthorIdentity(
+    { slug: "jane-doe", name: "   " },
+    FALLBACKS,
+    ORIGIN
+  );
+  const page = resolveAuthorPageIdentity(
+    { slug: "jane-doe", name: "   " },
+    FALLBACKS,
+    ORIGIN
+  );
+
+  assert.notEqual(article.name, FALLBACKS.authorName);
+  assert.equal(
+    article.name,
+    page.name,
+    "the two routes render the same Person, so they must resolve the same name"
+  );
+});
+
+test("article author identity still falls back to the site owner with no relation at all", () => {
+  // The other half of the rule: an article with no author relation *is* the
+  // owner's, and authorPath falls back to the owner's profile path with it.
+  const identity = resolveArticleAuthorIdentity(null, FALLBACKS, ORIGIN);
+
+  assert.equal(identity.name, FALLBACKS.authorName);
 });
 
 test("article author identity never lets a blank URL reach Person url or sameAs", () => {

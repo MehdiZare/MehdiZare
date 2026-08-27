@@ -1,8 +1,10 @@
 import { getArticles, getCategories } from "@/lib/strapi";
 import { firstFilled, formatSlugName } from "@/lib/strings";
 
-// Re-exported: this module is where taxonomy callers already look for it.
-export { formatSlugName };
+// Deliberately not re-exported. This module imports `@/lib/strapi`, which
+// reaches `server-only`, so a client component that reached `formatSlugName`
+// through here would fail the build for a pure string function. Escaping that
+// chain is why the helper moved to `@/lib/strings` -- import it from there.
 
 export const BLOG_PAGE_SIZE = 9;
 
