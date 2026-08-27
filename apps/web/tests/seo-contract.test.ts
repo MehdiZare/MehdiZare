@@ -120,9 +120,11 @@ test("category subcategory cards route names and descriptions through the shared
 
   // The child mapping moved out of the page into resolveSubcategoryCards, so
   // the name-resolution contract is asserted where the mapping now lives.
-  assert.match(pageSource, /resolveSubcategoryCards/);
-  assert.doesNotMatch(pageSource, /name:\s*child\.name,/);
-  assert.doesNotMatch(pageSource, /description:\s*child\.description,/);
+  assert.match(pageSource, /resolveSubcategoryCards\(/);
+  assert.doesNotMatch(pageSource, /name:\s*child\.name/);
+  assert.doesNotMatch(pageSource, /child\.name\s*\?\?\s*child\.headline/);
+  assert.doesNotMatch(pageSource, /description:\s*child\.description/);
+  assert.doesNotMatch(pageSource, /id:\s*child\.id/);
   assert.match(listingSource, /child\.name,\s*child\.headline/);
   assert.match(listingSource, /description:\s*firstFilled\(child\.description\)/);
   assert.doesNotMatch(listingSource, /child\.name\s*\?\?\s*child\.headline/);

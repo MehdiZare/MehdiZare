@@ -52,8 +52,10 @@ export interface SubcategoryCard {
  * Maps CMS or seed child categories onto subcategory cards, resolving the
  * label through the shared display-name rule and treating a blank CMS
  * description as absent so a whitespace-only value cannot render an empty
- * paragraph under the card title. CMS children carry a numeric `id`; seed
- * children have none and are keyed by slug.
+ * paragraph under the card title. A kept description is returned trimmed.
+ * CMS children carry a numeric `id`; seed children have none and are keyed
+ * by slug — the fallback is nullish-coalescing, so a CMS `id` of `0` keeps
+ * its own key.
  */
 export function resolveSubcategoryCards(
   children: Array<{
