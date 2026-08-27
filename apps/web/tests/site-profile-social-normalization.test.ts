@@ -48,7 +48,7 @@ test("site profile provides stable geo fallback fields for author", () => {
     author: canonicalAuthor,
   });
 
-  assert.equal(profile.author.addressLocality, "Arlington");
-  assert.equal(profile.author.addressRegion, "VA");
+  assert.equal(profile.author.addressLocality, "Miami");
+  assert.equal(profile.author.addressRegion, "FL");
   assert.equal(profile.author.addressCountry, "US");
 });
