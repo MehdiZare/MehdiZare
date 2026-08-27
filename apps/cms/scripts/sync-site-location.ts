@@ -174,6 +174,56 @@ function report(
 }
 
 /**
+ * Refuses to write unless the record found by slug is the one apps/web renders.
+ *
+ * This script resolves a slug from `data/taxonomy.json`; the site does not.
+ * `getPrimaryAuthor` (apps/web/src/lib/strapi.ts) filters `isPrimary=true`,
+ * sorts `updatedAt:desc` and takes the first -- and `isPrimary` is a plain
+ * boolean with no uniqueness constraint, so a *second* flagged record touched
+ * more recently wins. Checking the flag alone is not enough: the script would
+ * update the slug-matched record, print a success line, and leave production
+ * rendering the other one. Mirror the runtime query and compare document ids.
+ */
+async function assertIsTheAuthorTheSiteRenders(
+  author: StrapiEntity,
+  slug: string
+): Promise<void> {
+  if (author.isPrimary !== true) {
+    console.error(
+      `\nStrapi: author "${slug}" is not flagged isPrimary, so apps/web will not read it. Fix the isPrimary flags in Strapi before syncing.`
+    );
+    process.exit(1);
+  }
+
+  const response = await strapiFetch<{ data: StrapiEntity[] }>(
+    "authors",
+    {},
+    {
+      "filters[isPrimary][$eq]": "true",
+      sort: "updatedAt:desc",
+      "pagination[pageSize]": "5",
+    }
+  );
+
+  const primaries = response.data ?? [];
+  const rendered = primaries[0];
+
+  if (!rendered) {
+    console.error(
+      `\nStrapi: no author is flagged isPrimary, so apps/web falls back to the most recently updated author. Flag "${slug}" before syncing.`
+    );
+    process.exit(1);
+  }
+
+  if (rendered.documentId !== author.documentId) {
+    console.error(
+      `\nStrapi: apps/web renders author "${rendered.slug}" (${rendered.documentId}), not "${slug}" (${author.documentId}). ${primaries.length} author(s) are flagged isPrimary and the most recently updated one wins. Fix the flags before syncing.`
+    );
+    process.exit(1);
+  }
+}
+
+/**
  * Refuses the author write when publishing it would take unrelated draft edits
  * live with it.
  *
@@ -287,16 +337,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // This script selects by slug; apps/web selects by the flag
-  // (`getPrimaryAuthor` filters `isPrimary=true`, newest first). Writing a
-  // record the runtime does not read would report success while production
-  // kept rendering the stale address, so require the two to agree.
-  if (author.isPrimary !== true) {
-    console.error(
-      `Strapi: author "${primaryAuthor.slug}" is not flagged isPrimary, so apps/web will not read it. Fix the isPrimary flags in Strapi before syncing.`
-    );
-    process.exit(1);
-  }
+  await assertIsTheAuthorTheSiteRenders(author, primaryAuthor.slug);
 
   const authorChanges = diffFields(author, desiredAuthor);
   report(`author ${primaryAuthor.slug} (${author.documentId})`, author, desiredAuthor, authorChanges);
