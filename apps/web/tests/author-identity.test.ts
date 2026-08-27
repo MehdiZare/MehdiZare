@@ -402,7 +402,13 @@ test("author address keeps a guest author's own address untouched", () => {
 
 test("author address prefers the author's own values over the fallback", () => {
   const address = resolveAuthorAddress(
-    { slug: "mehdi-zare", isPrimary: true, addressLocality: "Austin", addressRegion: "TX" },
+    {
+      slug: "mehdi-zare",
+      isPrimary: true,
+      addressLocality: "Austin",
+      addressRegion: "TX",
+      addressCountry: "US",
+    },
     SITE_OWNER
   );
 
@@ -437,16 +443,15 @@ test("author address trims the values it returns", () => {
   assert.equal(address.addressLocality, "Berlin");
 });
 
-test("author address falls back field by field for the site owner (see #102)", () => {
-  // Pins today's behavior rather than endorsing it. The three components are
-  // resolved independently, so a site-owner record that fills some of them
-  // inherits the rest -- "Berlin, FL" is reachable from a half-finished edit in
-  // the Strapi admin.
+test("a partial site-owner address is emitted as-is, never merged with the fallback (#102)", () => {
+  // The regression this replaces: the three components used to resolve
+  // independently, so an owner record filling some of them inherited the rest
+  // and published "Berlin, FL, DE" -- a person in a state they do not live in.
+  // Google reads PostalAddress as one unit, and since every property on it is
+  // optional free text, no validator flags that. It was wrong silently.
   //
-  // Deliberately NOT changed here: `buildAuthorProfile` in site-profile.ts
-  // merges the same way for the other three Person surfaces, so fixing only
-  // this one would make /author/[slug] a fourth variant and re-open the very
-  // drift #92 closed. #102 tracks fixing both together.
+  // The shape below is the realistic trigger, not a contrived one: relocating
+  // abroad and clearing addressRegion because there is no state to name.
   const address = resolveAuthorAddress(
     {
       slug: "mehdi-zare",
@@ -458,7 +463,42 @@ test("author address falls back field by field for the site owner (see #102)", (
     SITE_OWNER
   );
 
-  assert.equal(address.addressLocality, "Berlin");
-  assert.equal(address.addressRegion, SITE_OWNER.addressRegion);
-  assert.equal(address.addressCountry, "DE");
+  assert.deepEqual(address, {
+    addressLocality: "Berlin",
+    addressRegion: undefined,
+    addressCountry: "DE",
+  });
+  assert.notEqual(
+    address.addressRegion,
+    SITE_OWNER.addressRegion,
+    "the owner's region must not leak into an address the CMS record already speaks for"
+  );
+});
+
+test("the site owner inherits the full fallback only with no address at all (#102)", () => {
+  // The other half of all-or-nothing: inheriting is still right when the record
+  // says nothing, which is what keeps /author/[slug] consistent with the Person
+  // the root layout emits (#92).
+  const blank = resolveAuthorAddress(
+    { slug: "mehdi-zare", isPrimary: true },
+    SITE_OWNER
+  );
+
+  assert.deepEqual(blank, {
+    addressLocality: SITE_OWNER.addressLocality,
+    addressRegion: SITE_OWNER.addressRegion,
+    addressCountry: SITE_OWNER.addressCountry,
+  });
+
+  // A single filled field is enough to make the record speak for itself.
+  const countryOnly = resolveAuthorAddress(
+    { slug: "mehdi-zare", isPrimary: true, addressCountry: "DE" },
+    SITE_OWNER
+  );
+
+  assert.deepEqual(countryOnly, {
+    addressLocality: undefined,
+    addressRegion: undefined,
+    addressCountry: "DE",
+  });
 });

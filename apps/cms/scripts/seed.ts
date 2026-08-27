@@ -469,14 +469,23 @@ if (!primaryAuthor) {
 // Content: HomePage (draftAndPublish: true)
 // ---------------------------------------------------------------------------
 
+// Derived from `siteSettings`, not restated (#101).
+//
+// The home page prefers this seeded `home-page` record over the Site Profile
+// fallback, and `buildHomeFallback` in apps/web/src/content/fallbacks/home.ts
+// already maps every one of these fields back to the same positioning copy --
+// so the two can never legitimately differ. Written out as literals they were
+// a fourth hand-maintained copy that nothing compared: rewording the
+// positioning copy in siteSettings and DEFAULT_SITE_PROFILE left this block
+// stale, and the next seed shipped a hero contradicting the site's own
+// structured data. Referencing the source makes that drift unrepresentable.
 const homePage = {
-  heroHeadline: "I take AI from prototype to production.",
-  heroSubheadline:
-    "Most AI projects stall between demo and deployment. I'm the engineer who gets them across that gap — because I learn your domain before I write a line of code.",
-  heroPrimaryCtaLabel: "Let's Talk",
-  heroPrimaryCtaHref: "/consulting#book",
-  heroSecondaryCtaLabel: "How I work",
-  heroSecondaryCtaHref: "/about",
+  heroHeadline: siteSettings.positioningHeadline,
+  heroSubheadline: siteSettings.positioningSubheadline,
+  heroPrimaryCtaLabel: siteSettings.primaryCtaLabel,
+  heroPrimaryCtaHref: siteSettings.primaryCtaHref,
+  heroSecondaryCtaLabel: siteSettings.secondaryCtaLabel,
+  heroSecondaryCtaHref: siteSettings.secondaryCtaHref,
 };
 
 // ---------------------------------------------------------------------------
@@ -485,8 +494,9 @@ const homePage = {
 
 const aboutPage = {
   title: "About Mehdi Zare",
-  positioningStatement:
-    "Most AI projects stall between demo and deployment. I'm the engineer who gets them across that gap — because I learn your domain before I write a line of code.",
+  // Same derivation as homePage above (#101): buildAboutFallback maps
+  // positioningStatement <- siteProfile.positioningSubheadline.
+  positioningStatement: siteSettings.positioningSubheadline,
   stats: [
     { value: "12+", label: "Years building software and AI systems" },
     { value: "10+", label: "AI systems shipped to production" },
@@ -507,11 +517,11 @@ const aboutPage = {
   experiences: [
     {
       title: "Principal AI Engineer / Cloud Architect",
-      company: "Sev1Tech",
+      company: "Entarian",
       startDate: "2025",
       current: true,
       description:
-        "Built GenAI systems for CISA cybersecurity operations, focused on production observability and threat-informed monitoring in federal environments where reliability is non-negotiable.",
+        "Built GenAI systems for federal cybersecurity operations, focused on production observability and threat-informed monitoring in federal environments where reliability is non-negotiable.",
     },
     {
       title: "Senior AI/ML Engineer",
@@ -587,8 +597,12 @@ const aboutPage = {
 
 const consultingPage = {
   title: "AI Consulting for High-Stakes Teams",
-  subtitle:
-    "Most AI projects stall between demo and deployment. I'm the engineer who gets them across that gap — because I learn your domain before I write a line of code.",
+  // Same derivation as homePage above (#101). This one is live-exposed:
+  // apps/web/src/app/consulting/page.tsx prefers `cmsData.subtitle` over the
+  // fallback, and it reaches both the visible lede and the page's JSON-LD
+  // description, so a stale literal here shipped wrong copy and wrong
+  // structured data together.
+  subtitle: siteSettings.positioningSubheadline,
   audiences: [
     {
       title: "Financial Services Teams",

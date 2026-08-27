@@ -1,4 +1,5 @@
 import {
+  CANONICAL_IDENTITY_ORIGIN,
   DEFAULT_SITE_PROFILE,
   DEFAULT_NAV_ITEMS,
   DEFAULT_SOCIAL_LINKS,
@@ -7,6 +8,7 @@ import { identityUrlKey, normalizeIdentityUrl } from "./url-normalization";
 import { isBinaPrintEnabled } from "./feature-flags";
 import { serverEnv } from "./server-env";
 import { blankToUndefined } from "./strings";
+import { resolveAuthorAddress } from "./author-identity";
 import type {
   Author,
   Credential,
@@ -16,8 +18,6 @@ import type {
   SocialLink,
   StrapiImage,
 } from "../types/strapi";
-
-const CANONICAL_IDENTITY_ORIGIN = DEFAULT_SITE_PROFILE.authorWebsiteUrl;
 
 const REQUIRED_SITE_PROFILE_FIELDS = [
   "siteName",
@@ -325,12 +325,21 @@ function buildAuthorProfile(
     alumniOf: alumniOf.length > 0 ? alumniOf : [...DEFAULT_SITE_PROFILE.authorAlumniOf],
     knowsAbout: knowsAbout.length > 0 ? knowsAbout : [...DEFAULT_SITE_PROFILE.knowsAbout],
     credentials: normalizeCredentials(author?.credentials),
-    addressLocality:
-      blankToUndefined(author?.addressLocality) ?? DEFAULT_SITE_PROFILE.authorAddressLocality,
-    addressRegion:
-      blankToUndefined(author?.addressRegion) ?? DEFAULT_SITE_PROFILE.authorAddressRegion,
-    addressCountry:
-      blankToUndefined(author?.addressCountry) ?? DEFAULT_SITE_PROFILE.authorAddressCountry,
+    // Delegated rather than repeated (#102). This resolved the three fields
+    // independently, each with its own `?? DEFAULT_SITE_PROFILE` fallback, so a
+    // record filling only some of them inherited the rest and published a
+    // mixed address -- `Berlin, FL, DE` from a single cleared field. Sharing
+    // the resolver with `/author/[slug]` is also what stops the two from
+    // drifting apart again, which is the whole point of #92 and #98.
+    ...resolveAuthorAddress(
+      { ...author, slug },
+      {
+        slug,
+        addressLocality: DEFAULT_SITE_PROFILE.authorAddressLocality,
+        addressRegion: DEFAULT_SITE_PROFILE.authorAddressRegion,
+        addressCountry: DEFAULT_SITE_PROFILE.authorAddressCountry,
+      }
+    ),
   };
 }
 

@@ -22,7 +22,7 @@ function baseExperience(overrides: Partial<Experience> = {}): Experience {
   return {
     id: 1,
     title: "Principal AI Engineer",
-    company: "Sev1Tech",
+    company: "Entarian",
     startDate: "2023-01-01",
     current: true,
     ...overrides,
