@@ -4,7 +4,8 @@
   "info": {
     "singularName": "about-page",
     "pluralName": "about-pages",
-    "displayName": "About Page"
+    "displayName": "About Page",
+    "description": "Not read by the website. Page copy and site identity live in the repo (apps/web/src/content/fallbacks/ and src/lib/site-profile-defaults.ts). Editing this has no effect on the live site. Articles, categories, tags and the Author record ARE read from here."
   },
   "options": {
     "draftAndPublish": true
