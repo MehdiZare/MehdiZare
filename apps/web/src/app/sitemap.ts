@@ -354,11 +354,10 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     blog: now,
   };
 
-  // The static pages' copy lives in the repo, so their lastmod is the build,
-  // not a CMS row (#100). Reading it from Strapi reported 2026-02-25 for pages
-  // that had in fact changed that morning: the records were seeded once and
-  // never touched again, so their updatedAt tracked the seed rather than the
-  // deploy that changed what the page says.
+  // The static pages' copy lives in the repo, so their lastmod is not a CMS
+  // row (#100). Reading it from Strapi reported 2026-02-25 for pages that had
+  // in fact changed that morning. With force-dynamic this falls through to
+  // request-time `now` — tracked as #113 (deploy-stable lastmod).
   const [articlesResult, authorsResult, categoriesResult, tagsResult] =
     await Promise.allSettled([
       getAllArticlesForSitemap(deadlineMs),

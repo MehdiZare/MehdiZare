@@ -30,7 +30,7 @@ test("sitemap includes fallback category/tag entries when CMS is disabled", asyn
   assert.equal(revalidate, 0);
 });
 
-test("blog lastModified uses the newest valid article updatedAt, not wall-clock now", () => {
+test("blog lastModified uses the newest valid article timestamp, not wall-clock now", () => {
   const olderPublished = "2024-01-01T00:00:00.000Z";
   const newerEdit = "2025-06-15T12:00:00.000Z";
   const now = new Date("2026-08-26T00:00:00.000Z");
