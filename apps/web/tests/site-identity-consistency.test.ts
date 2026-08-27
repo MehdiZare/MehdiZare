@@ -29,6 +29,15 @@ import {
 // a field added to two sources is covered the day it is added. A key that
 // genuinely lives in only one source has to be named in an exemption list
 // below, with a reason -- that is the only way to opt out.
+//
+// Three is the whole list because the seed's other page literals no longer
+// restate this copy (#101): `homePage`, `aboutPage.positioningStatement` and
+// `consultingPage.subtitle` now read from `siteSettings` instead of repeating
+// it. Do not re-inline them -- they were a fourth and fifth copy that nothing
+// here compared, and `consultingPage.subtitle` in particular is preferred over
+// the fallback at runtime, so a stale literal shipped wrong page copy and wrong
+// JSON-LD together. Only `siteSettings` is read below, and it must stay a flat
+// block of literals for that reader to work.
 
 const repoRoot = resolve(process.cwd(), "../..");
 

@@ -1,22 +1,29 @@
 /**
- * Pushes the repo's canonical site location into the two Strapi records that
+ * Pushes the repo's canonical site identity into the two Strapi records that
  * override it at runtime.
  *
- * Why this exists (#91): both location values are CMS-backed and the CMS wins.
+ * Why this exists (#91, #100): these values are CMS-backed and the CMS wins.
  *
  *   site-setting.locationLine        -> the footer
  *   author(mehdi-zare).address*      -> Person JSON-LD on /, /contact,
  *                                       /consulting and /author/[slug]
+ *   author(mehdi-zare).worksFor*     -> Person `worksFor` in the same markup
+ *
+ * Started life as `sync-site-location.ts` for the address alone. The employer
+ * fields turned out to need exactly the same treatment for exactly the same
+ * reason -- #100's Sev1Tech -> Entarian rename was invisible in production
+ * until the CMS author record was written, because `/author/[slug]` reads that
+ * record raw with no repo-side fallback at all. Renamed rather than duplicated.
  *
  * `seed.ts` would also fix them, but it is a full upsert: it rewrites
  * site-settings, the home/about/consulting pages, and every tag and category,
  * so any hand-edit made in the Strapi admin since the last seed is lost. This
- * sends exactly the four fields above and nothing else.
+ * sends exactly the fields above and nothing else.
  *
  * *Sends* -- not "changes". `author` has Draft & Publish enabled, and Strapi 5's
  * REST update writes the payload onto the DRAFT; `?status=published` then
  * publishes the whole draft row, not just the fields in the payload. So an
- * unrelated, deliberately-unpublished admin edit would go live with the address
+ * unrelated, deliberately-unpublished admin edit would go live with the identity
  * change. The script therefore reads the draft first and refuses to write when
  * it diverges from the published record outside the fields below (override with
  * `--allow-draft-publish`). `site-setting` has Draft & Publish disabled, so its
@@ -30,7 +37,7 @@
  * Usage (dry run -- prints the diff, writes nothing):
  *
  *   STRAPI_URL=https://cms.example.com STRAPI_API_TOKEN=<token> \
- *     npx tsx scripts/sync-site-location.ts
+ *     npx tsx scripts/sync-site-identity.ts
  *
  * Add `--apply` to write. Fields already correct are never sent.
  */
@@ -66,6 +73,8 @@ interface TaxonomyAuthor {
   addressLocality?: string;
   addressRegion?: string;
   addressCountry?: string;
+  worksForName?: string;
+  worksForUrl?: string;
 }
 
 interface StrapiEntity {
@@ -299,7 +308,14 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const { addressLocality, addressRegion, addressCountry } = primaryAuthor;
+  const {
+    addressLocality,
+    addressRegion,
+    addressCountry,
+    worksForName,
+    worksForUrl,
+  } = primaryAuthor;
+
   if (!addressLocality || !addressRegion || !addressCountry) {
     console.error(
       `data/taxonomy.json: author ${primaryAuthor.slug} is missing part of its address; refusing to write a partial one.`
@@ -307,7 +323,21 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const desiredAuthor = { addressLocality, addressRegion, addressCountry };
+  // Same all-or-nothing rule as the address, for the same reason: `worksFor` is
+  // one Organization node, and half of one is worse than none.
+  if (!worksForName !== !worksForUrl) {
+    console.error(
+      `data/taxonomy.json: author ${primaryAuthor.slug} has only one of worksForName/worksForUrl; refusing to write a partial employer.`
+    );
+    process.exit(1);
+  }
+
+  const desiredAuthor: Record<string, string> = {
+    addressLocality,
+    addressRegion,
+    addressCountry,
+    ...(worksForName && worksForUrl ? { worksForName, worksForUrl } : {}),
+  };
   const desiredSettings = { locationLine: `${addressLocality}, ${addressRegion}` };
 
   console.log(`Strapi: ${STRAPI_URL}`);

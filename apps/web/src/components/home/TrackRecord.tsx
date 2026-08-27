@@ -16,12 +16,12 @@ interface TrackRecordEntry {
 
 const entries: TrackRecordEntry[] = [
   {
-    org: "Sev1Tech",
-    monogram: "S1",
+    org: "Entarian",
+    monogram: "EN",
     role: "Principal AI Engineer / Cloud Architect",
     dates: "2025 – Present",
     description:
-      "Built GenAI systems for CISA cybersecurity operations, focused on production observability and threat-informed monitoring in federal environments where reliability is non-negotiable.",
+      "Built GenAI systems for federal cybersecurity operations, focused on production observability and threat-informed monitoring in federal environments where reliability is non-negotiable.",
     category: "Cybersecurity",
     categoryColor: "bg-red-500/10 text-red-700",
     current: true,

@@ -39,8 +39,8 @@ export const DEFAULT_SITE_PROFILE = {
   authorAddressLocality: "Miami",
   authorAddressRegion: "FL",
   authorAddressCountry: "US",
-  authorWorksForName: "Sev1Tech",
-  authorWorksForUrl: "https://sev1tech.com",
+  authorWorksForName: "Entarian",
+  authorWorksForUrl: "https://entarian.com",
   authorAlumniOf: [
     "University of Maryland, Smith School of Business",
     "University of Tehran",
@@ -59,3 +59,23 @@ export const DEFAULT_SITE_PROFILE = {
 } as const;
 
 export type DefaultSiteProfile = typeof DEFAULT_SITE_PROFILE;
+
+/**
+ * The one origin every Person surface canonicalizes identity URLs against.
+ *
+ * Declared here, in the leaf both `site-profile.ts` and `author-identity.ts`
+ * already import, because it previously existed twice under this exact name
+ * with two different sources (#103): `getSiteUrl()` in `author-identity.ts`
+ * and `DEFAULT_SITE_PROFILE.authorWebsiteUrl` here. The same Person was
+ * therefore canonicalized against a different origin depending on which
+ * surface rendered them -- and since the root layout emits its Person on
+ * *every* route, `/author/[slug]` and `/blog/[slug]` consumed both at once.
+ *
+ * Pinned to `authorWebsiteUrl` rather than to `NEXT_PUBLIC_SITE_URL` on
+ * purpose. This value is triple-guarded -- `site-identity-consistency.test.ts`
+ * compares it across `data/taxonomy.json`, the seed and these defaults --
+ * whereas the env var is guarded by nothing and is the *deployment* origin. On
+ * a preview deployment the two differ, which would stop the apex/www folding in
+ * `normalizeIdentityUrl` from recognising the site's own links.
+ */
+export const CANONICAL_IDENTITY_ORIGIN = DEFAULT_SITE_PROFILE.authorWebsiteUrl;

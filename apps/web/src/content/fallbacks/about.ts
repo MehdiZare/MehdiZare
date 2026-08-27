@@ -41,11 +41,11 @@ export const fallbackExperiences: Experience[] = [
   {
     id: 1,
     title: "Principal AI Engineer / Cloud Architect",
-    company: "Sev1Tech",
+    company: "Entarian",
     startDate: "2025",
     current: true,
     description:
-      "Built GenAI systems for CISA cybersecurity operations, focused on production observability and threat-informed monitoring in federal environments where reliability is non-negotiable.",
+      "Built GenAI systems for federal cybersecurity operations, focused on production observability and threat-informed monitoring in federal environments where reliability is non-negotiable.",
   },
   {
     id: 2,

@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const { normalizeSiteProfile } = await import("../src/lib/site-profile.ts");
+const { resolveAuthorAddress } = await import("../src/lib/author-identity.ts");
+const { DEFAULT_SITE_PROFILE } = await import("../src/lib/site-profile-defaults.ts");
 
 const canonicalAuthor = {
   id: 1,
@@ -69,4 +71,59 @@ test("site profile prefers a CMS author address over the geo fallback", () => {
 
   assert.equal(profile.author.addressLocality, "Austin");
   assert.equal(profile.author.addressRegion, "TX");
+});
+
+// #102. The three Person surfaces fed by `resolveSiteProfile` -- the root
+// layout, /contact and /consulting -- used to merge the address field by field
+// here, independently of the rule /author/[slug] applies. That is how the two
+// drifted before (#92), and it is why this assertion lives on the site-profile
+// side rather than only on the resolver: without it, `buildAuthorProfile` can
+// quietly stop delegating and nothing fails.
+test("a partial CMS address is not completed from the geo fallback (#102)", () => {
+  const profile = normalizeSiteProfile(undefined, {
+    author: {
+      ...canonicalAuthor,
+      addressLocality: "Berlin",
+      addressRegion: "",
+      addressCountry: "DE",
+    },
+  });
+
+  assert.equal(profile.author.addressLocality, "Berlin");
+  assert.equal(
+    profile.author.addressRegion,
+    undefined,
+    'the "Berlin, FL" merge is back: a CMS record that speaks for its own address must not inherit the default region'
+  );
+  assert.equal(profile.author.addressCountry, "DE");
+});
+
+test("the site profile and /author/[slug] resolve the same address (#102)", () => {
+  // The two copies agreeing is the actual invariant. Comparing them directly
+  // means a change to either one that does not change the other fails here,
+  // which no per-surface assertion can catch.
+  const author = {
+    ...canonicalAuthor,
+    addressLocality: "Berlin",
+    addressRegion: "",
+    addressCountry: "DE",
+  };
+
+  const profile = normalizeSiteProfile(undefined, { author });
+  const routeAddress = resolveAuthorAddress(author, {
+    slug: DEFAULT_SITE_PROFILE.authorSlug,
+    addressLocality: DEFAULT_SITE_PROFILE.authorAddressLocality,
+    addressRegion: DEFAULT_SITE_PROFILE.authorAddressRegion,
+    addressCountry: DEFAULT_SITE_PROFILE.authorAddressCountry,
+  });
+
+  assert.deepEqual(
+    {
+      addressLocality: profile.author.addressLocality,
+      addressRegion: profile.author.addressRegion,
+      addressCountry: profile.author.addressCountry,
+    },
+    routeAddress,
+    "the Person on / , /contact and /consulting disagrees with the Person on /author/[slug] -- the #92 drift is back"
+  );
 });

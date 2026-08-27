@@ -1,4 +1,3 @@
-import { getSiteUrl } from "@/lib/seo";
 import { blankToUndefined, firstFilled, formatSlugName } from "@/lib/strings";
 import { normalizeIdentityUrl } from "@/lib/url-normalization";
 
@@ -19,12 +18,18 @@ import { normalizeIdentityUrl } from "@/lib/url-normalization";
  */
 
 /**
- * The origin identity URLs are canonicalized against. Exported so
+ * The origin identity URLs are canonicalized against. Re-exported so
  * `/author/[slug]` and `/blog/[slug]` cannot pick different ones -- the two
  * routes emitting different `url` values for the same Person is the drift #83
  * calls out.
+ *
+ * Defined in `site-profile-defaults` rather than here: this constant used to be
+ * `getSiteUrl()` while `site-profile.ts` had a second one of the same name
+ * bound to `DEFAULT_SITE_PROFILE.authorWebsiteUrl`, so the guarantee in the
+ * paragraph above held only for these two routes and not against the Person the
+ * root layout emits alongside them (#103).
  */
-export const CANONICAL_IDENTITY_ORIGIN = getSiteUrl();
+export { CANONICAL_IDENTITY_ORIGIN } from "@/lib/site-profile-defaults";
 
 const TITLE_SEPARATOR = " | ";
 
@@ -218,6 +223,20 @@ export interface AuthorAddress {
  * be a worse error than omitting it, so a non-owner gets only their own values.
  * `isPrimary` is optional on the CMS record, so a slug match against the
  * resolved site owner is accepted as the same signal.
+ *
+ * The address is resolved as **one unit**, not field by field (#102). A record
+ * that supplies any of the three supplies all of it; only a record with no
+ * address at all inherits the owner's. Merging per field published a Person at
+ * an address that never existed: clearing `addressRegion` while setting
+ * `addressLocality` to `Berlin` -- the ordinary shape of an international move,
+ * where there is no state to name -- emitted `Berlin, FL, DE`. Google reads
+ * `PostalAddress` as a single unit, and because every property on it is
+ * optional free text, no validator flags the result. It is wrong in a way
+ * nothing reports.
+ *
+ * Failing toward an incomplete address rather than a confidently wrong one is
+ * the same rule `apps/cms/scripts/sync-site-identity.ts` already applies when
+ * it refuses to write a partial address.
  */
 export function resolveAuthorAddress(
   source: {
@@ -238,15 +257,23 @@ export function resolveAuthorAddress(
     source.isPrimary === true ||
     blankToUndefined(source.slug) === blankToUndefined(siteOwner.slug);
 
-  const resolve = (
-    own: string | null | undefined,
-    fallback: string | undefined
-  ): string | undefined =>
-    isSiteOwner ? firstFilled(own, fallback) : blankToUndefined(own);
+  const own: AuthorAddress = {
+    addressLocality: blankToUndefined(source.addressLocality),
+    addressRegion: blankToUndefined(source.addressRegion),
+    addressCountry: blankToUndefined(source.addressCountry),
+  };
+
+  const suppliesAnyAddress = Boolean(
+    firstFilled(own.addressLocality, own.addressRegion, own.addressCountry)
+  );
+
+  if (!isSiteOwner || suppliesAnyAddress) {
+    return own;
+  }
 
   return {
-    addressLocality: resolve(source.addressLocality, siteOwner.addressLocality),
-    addressRegion: resolve(source.addressRegion, siteOwner.addressRegion),
-    addressCountry: resolve(source.addressCountry, siteOwner.addressCountry),
+    addressLocality: siteOwner.addressLocality,
+    addressRegion: siteOwner.addressRegion,
+    addressCountry: siteOwner.addressCountry,
   };
 }
