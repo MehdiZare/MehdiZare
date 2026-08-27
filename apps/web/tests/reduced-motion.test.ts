@@ -53,3 +53,15 @@ test("CountUp renders its final value on the server", () => {
   assert.match(source, /useState\(end\)/);
   assert.match(source, /prefers-reduced-motion:\s*reduce/);
 });
+
+test("CareerTimeline reveals by transform and never branches initial on useReducedMotion", () => {
+  // HTML cannot show a hydration footgun: branching `initial` on
+  // `useReducedMotion()` mismatches SSR vs client. MotionProvider already sets
+  // reducedMotion="user", so the source must keep a stable initial.
+  const source = readSource("src/components/about/CareerTimeline.tsx");
+
+  assert.match(source, /initial="hidden"/);
+  assert.match(source, /hidden:\s*\{\s*y:\s*24\s*\}/);
+  assert.doesNotMatch(source, /useReducedMotion/);
+  assert.doesNotMatch(source, /opacity:\s*0/);
+});

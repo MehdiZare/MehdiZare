@@ -22,6 +22,10 @@ import { join, relative, resolve } from "node:path";
 //
 // Runs after `next build` rather than with the main suite -- see the
 // `test:postbuild` script and the CI step that follows Build.
+//
+// CI builds with DISABLE_STRAPI_CMS=true, so article/author/category/tag
+// templates are never scanned here. Shared reveal components still surface on
+// the seven repo-owned pages; template-local markup is tracked in #114.
 
 const BUILD_DIR = resolve(import.meta.dirname, "../../.next/server/app");
 
@@ -59,7 +63,8 @@ const ALWAYS_PRERENDERED = [
  */
 const HIDING_DECLARATIONS: Array<{ pattern: RegExp; why: string }> = [
   { pattern: /(^|[;\s])opacity:\s*0(?![.\d])/, why: "opacity:0" },
-  { pattern: /transform:[^;]*\bscale(?:3d)?\(\s*0(?![.\d])/, why: "scale(0)" },
+  // scale / scale3d / scaleX / scaleY — axis forms hide the same way as scale(0).
+  { pattern: /transform:[^;]*\bscale(?:3d|[XY])?\(\s*0(?![.\d])/, why: "scale(0)" },
   { pattern: /(^|[;\s])(?:width|height):\s*0(?![.\d])(?:px|%|r?em|v[wh])?\s*(?:;|$)/, why: "zero size" },
   { pattern: /(^|[;\s])visibility:\s*hidden/, why: "visibility:hidden" },
   { pattern: /(^|[;\s])display:\s*none/, why: "display:none" },
@@ -127,7 +132,11 @@ test("the build output this contract reads actually exists", () => {
 });
 
 test("no prerendered page ships content hidden by an inline style", () => {
-  if (!buildExists) return;
+  // Fail closed: a missing build must not soft-pass when this test is run alone.
+  assert.ok(
+    buildExists,
+    `No prerendered output at ${BUILD_DIR}. Run \`pnpm --filter=web build\` before \`test:postbuild\`.`
+  );
 
   const offenders: string[] = [];
   for (const file of listHtmlFiles(BUILD_DIR).filter(isAuthoredPage)) {
@@ -147,7 +156,10 @@ test("no prerendered page ships content hidden by an inline style", () => {
 });
 
 test("reveal animations still ship, so the check above is not passing on an empty set", () => {
-  if (!buildExists) return;
+  assert.ok(
+    buildExists,
+    `No prerendered output at ${BUILD_DIR}. Run \`pnpm --filter=web build\` before \`test:postbuild\`.`
+  );
 
   // The contract is "reveal by transform", not "no animation". If the inline
   // transforms ever vanish entirely, the assertion above starts passing for the
