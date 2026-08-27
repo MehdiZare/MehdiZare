@@ -25,7 +25,7 @@
  * The desired values come from `data/taxonomy.json` -- the same record the seed
  * writes -- so this script cannot disagree with the repo. `locationLine` is
  * derived as `${locality}, ${region}`, the composition
- * `apps/web/tests/site-identity-consistency.test.ts` (added in #98) pins.
+ * `apps/web/tests/site-identity-consistency.test.ts` pins.
  *
  * Usage (dry run -- prints the diff, writes nothing):
  *
