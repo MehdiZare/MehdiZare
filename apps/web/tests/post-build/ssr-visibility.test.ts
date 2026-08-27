@@ -60,12 +60,23 @@ const ALWAYS_PRERENDERED = [
  * Deliberately narrow: `opacity:0.5` and `translateY(24px)` are *reveal*
  * animations that keep the content readable and in the layout, which is the
  * pattern this contract steers toward. Only a fully-zeroed value hides.
+ *
+ * `ZERO` covers `0`, `0.0`, `.0`, and `-0` without matching `0.5` / `10`.
  */
+const ZERO = String.raw`-?(?:0(?:\.0+)?|\.0+)(?![.\d])`;
 const HIDING_DECLARATIONS: Array<{ pattern: RegExp; why: string }> = [
-  { pattern: /(^|[;\s])opacity:\s*0(?![.\d])/, why: "opacity:0" },
+  { pattern: new RegExp(String.raw`(^|[;\s])opacity:\s*${ZERO}`), why: "opacity:0" },
   // scale / scale3d / scaleX / scaleY — axis forms hide the same way as scale(0).
-  { pattern: /transform:[^;]*\bscale(?:3d|[XY])?\(\s*0(?![.\d])/, why: "scale(0)" },
-  { pattern: /(^|[;\s])(?:width|height):\s*0(?![.\d])(?:px|%|r?em|v[wh])?\s*(?:;|$)/, why: "zero size" },
+  {
+    pattern: new RegExp(String.raw`transform:[^;]*\bscale(?:3d|[XY])?\(\s*${ZERO}`),
+    why: "scale(0)",
+  },
+  {
+    pattern: new RegExp(
+      String.raw`(^|[;\s])(?:width|height):\s*${ZERO}(?:px|%|r?em|v[wh])?\s*(?:;|$)`
+    ),
+    why: "zero size",
+  },
   { pattern: /(^|[;\s])visibility:\s*hidden/, why: "visibility:hidden" },
   { pattern: /(^|[;\s])display:\s*none/, why: "display:none" },
 ];
@@ -107,6 +118,20 @@ function hidingStyles(html: string): string[] {
 }
 
 const buildExists = existsSync(BUILD_DIR);
+
+test("hidingStyles detects decimal and signed zero forms", () => {
+  // Framer Motion emits `opacity:0` today; CSS/authors can still write 0.0 / .0 / -0.
+  assert.deepEqual(hidingStyles('x style="opacity:0.0"'), ["opacity:0 in style=\"opacity:0.0\""]);
+  assert.deepEqual(hidingStyles('x style="opacity:.0"'), ["opacity:0 in style=\"opacity:.0\""]);
+  assert.deepEqual(hidingStyles('x style="opacity:-0"'), ["opacity:0 in style=\"opacity:-0\""]);
+  assert.deepEqual(
+    hidingStyles('x style="transform:scaleX(0.0)"'),
+    ["scale(0) in style=\"transform:scaleX(0.0)\""]
+  );
+  assert.deepEqual(hidingStyles('x style="height:.0px"'), ["zero size in style=\"height:.0px\""]);
+  assert.deepEqual(hidingStyles('x style="opacity:0.5"'), []);
+  assert.deepEqual(hidingStyles('x style="transform:translateY(24px)"'), []);
+});
 
 test("the build output this contract reads actually exists", () => {
   // Without this, every assertion below would pass vacuously on a missing

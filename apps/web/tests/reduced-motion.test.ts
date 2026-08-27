@@ -21,7 +21,7 @@ function readSource(relativePath: string): string {
 test("CSS smooth scroll is disabled for reduced-motion users", () => {
   const css = readSource("src/app/globals.css");
 
-  assert.match(css, /scroll-behavior:\s*smooth/);
+  assert.match(css, /html\s*\{[^}]*scroll-behavior:\s*smooth/);
   assert.match(
     css,
     /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{\s*html\s*\{\s*scroll-behavior:\s*auto/,
@@ -51,7 +51,10 @@ test("CountUp renders its final value on the server", () => {
   // not exercise it -- this stays a source assertion for that reason.
   assert.doesNotMatch(source, /useState\(0\)/);
   assert.match(source, /useState\(end\)/);
-  assert.match(source, /prefers-reduced-motion:\s*reduce/);
+  assert.match(
+    source,
+    /if\s*\(\s*window\.matchMedia\(\s*["']\(prefers-reduced-motion:\s*reduce\)["']\s*\)\.matches\s*\)\s*return/
+  );
 });
 
 test("CareerTimeline reveals by transform and never branches initial on useReducedMotion", () => {
@@ -62,6 +65,7 @@ test("CareerTimeline reveals by transform and never branches initial on useReduc
 
   assert.match(source, /initial="hidden"/);
   assert.match(source, /hidden:\s*\{\s*y:\s*24\s*\}/);
+  assert.match(source, /visible:\s*\([^)]*\)\s*=>\s*\(\s*\{[^}]*\by:\s*0\b/);
   assert.doesNotMatch(source, /useReducedMotion/);
   assert.doesNotMatch(source, /opacity:\s*0/);
 });
