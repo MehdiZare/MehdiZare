@@ -195,3 +195,58 @@ export function resolveArticleAuthorIdentity(
     canonicalOrigin
   );
 }
+
+/** The three PostalAddress fields the Person JSON-LD carries. */
+export interface AuthorAddress {
+  addressLocality?: string;
+  addressRegion?: string;
+  addressCountry?: string;
+}
+
+/**
+ * Resolves the address for `/author/[slug]`'s `Person` JSON-LD (#92).
+ *
+ * `/`, `/contact` and `/consulting` all resolve their address through
+ * `resolveSiteProfile`, which falls back to `DEFAULT_SITE_PROFILE` when the CMS
+ * author carries none. `/author/[slug]` read the raw CMS record, so the same
+ * Person could carry a full address on `/` and no address at all on
+ * `/author/mehdi-zare` -- the NAP inconsistency structured data exists to
+ * remove.
+ *
+ * The fallback is deliberately scoped to the **site owner**. On a multi-author
+ * site, stamping the owner's address onto a guest author's Person markup would
+ * be a worse error than omitting it, so a non-owner gets only their own values.
+ * `isPrimary` is optional on the CMS record, so a slug match against the
+ * resolved site owner is accepted as the same signal.
+ */
+export function resolveAuthorAddress(
+  source: {
+    slug?: string | null;
+    isPrimary?: boolean;
+    addressLocality?: string | null;
+    addressRegion?: string | null;
+    addressCountry?: string | null;
+  },
+  siteOwner: {
+    slug: string;
+    addressLocality?: string;
+    addressRegion?: string;
+    addressCountry?: string;
+  }
+): AuthorAddress {
+  const isSiteOwner =
+    source.isPrimary === true ||
+    blankToUndefined(source.slug) === blankToUndefined(siteOwner.slug);
+
+  const resolve = (
+    own: string | null | undefined,
+    fallback: string | undefined
+  ): string | undefined =>
+    isSiteOwner ? firstFilled(own, fallback) : blankToUndefined(own);
+
+  return {
+    addressLocality: resolve(source.addressLocality, siteOwner.addressLocality),
+    addressRegion: resolve(source.addressRegion, siteOwner.addressRegion),
+    addressCountry: resolve(source.addressCountry, siteOwner.addressCountry),
+  };
+}

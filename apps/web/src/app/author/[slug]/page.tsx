@@ -20,6 +20,7 @@ import { identityUrlKey, normalizeIdentityUrl } from "@/lib/url-normalization";
 import {
   CANONICAL_IDENTITY_ORIGIN,
   authorIdentityFallbacks,
+  resolveAuthorAddress,
   resolveAuthorPageIdentity,
 } from "@/lib/author-identity";
 
@@ -153,6 +154,11 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
     CANONICAL_IDENTITY_ORIGIN
   );
   const { name: authorName, role, description, websiteUrl, linkedinUrl } = identity;
+  // #92. The other three PostalAddress surfaces fall back to the Site Profile;
+  // this one read the raw CMS record. The fallback applies to the site owner
+  // only -- inventing an address for a guest author would be worse than
+  // omitting it.
+  const address = resolveAuthorAddress(author, siteProfile.author);
   const sameAs = dedupeUrls([
     websiteUrl,
     linkedinUrl,
@@ -190,9 +196,9 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
               url: credential.url,
               description: credential.description,
             })) ?? [],
-          addressLocality: author.addressLocality,
-          addressRegion: author.addressRegion,
-          addressCountry: author.addressCountry,
+          addressLocality: address.addressLocality,
+          addressRegion: address.addressRegion,
+          addressCountry: address.addressCountry,
           mainEntityOfPagePath: authorPath,
           sameAs,
           knowsAbout:

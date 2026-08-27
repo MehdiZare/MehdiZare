@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { assertCallsHelper } from "./contract-assertions.ts";
+import {
+  assertCallsHelper,
+  assertDoesNotReadField,
+} from "./contract-assertions.ts";
 
 const source = readFileSync(resolve(process.cwd(), "src/lib/seo.ts"), "utf8");
 
@@ -78,6 +81,26 @@ test("author identity is not re-derived with the raw nullish chains it replaced"
     /Articles by \$\{/,
     "the articles-by sentence lives in buildAuthorListingDescription, which refuses a blank name (#83)"
   );
+});
+
+test("author page address routes through the shared site-owner fallback", () => {
+  // #92. Three of the four PostalAddress surfaces fall back to
+  // DEFAULT_SITE_PROFILE; this one read the raw CMS record, so the same Person
+  // could carry a full address on / and none on /author/mehdi-zare.
+  const pageSource = readSource("src/app/author/[slug]/page.tsx");
+  assertCallsHelper(pageSource, "resolveAuthorAddress", "#92, #94");
+  for (const field of ["addressLocality", "addressRegion", "addressCountry"]) {
+    // Through the shared shape, so `author?.addressRegion` -- the way this repo
+    // actually writes an optional relation, and a one-line revert of the #92
+    // fix -- cannot slip past while assertCallsHelper above stays green.
+    assertDoesNotReadField(
+      pageSource,
+      "author",
+      field,
+      "#92",
+      "author page"
+    );
+  }
 });
 
 test("article metadata does not fall back to the homepage site description", () => {
