@@ -8,6 +8,7 @@ import {
   DEFAULT_SITE_PROFILE,
   DEFAULT_SOCIAL_LINKS,
 } from "../src/lib/site-profile-defaults.ts";
+import { fallbackExperiences } from "../src/content/fallbacks/about.ts";
 
 // Site identity copy lives in three hand-maintained places (#93):
 //
@@ -406,5 +407,43 @@ test("the footer location line matches the structured address defaults", () => {
   assert.equal(
     DEFAULT_SITE_PROFILE.locationLine,
     `${DEFAULT_SITE_PROFILE.authorAddressLocality}, ${DEFAULT_SITE_PROFILE.authorAddressRegion}`
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Visible current-employer copies (#105)
+// ---------------------------------------------------------------------------
+
+test("the current employer name agrees across visible copies and structured data (#105)", () => {
+  assert.ok(primaryAuthor, "data/taxonomy.json: expected a primary author");
+
+  const canonical = primaryAuthor.worksForName;
+  assert.equal(
+    canonical,
+    DEFAULT_SITE_PROFILE.authorWorksForName,
+    "taxonomy worksForName and DEFAULT_SITE_PROFILE.authorWorksForName must agree before comparing visible copies"
+  );
+
+  const trackRecordSource = readFileSync(
+    resolve(repoRoot, "apps/web/src/components/home/TrackRecord.tsx"),
+    "utf8"
+  );
+  assert.match(
+    trackRecordSource,
+    /DEFAULT_SITE_PROFILE\.authorWorksForName/,
+    "TrackRecord must source the current employer from DEFAULT_SITE_PROFILE.authorWorksForName, not a hardcoded literal"
+  );
+
+  const seedSource = readFileSync(SEED_PATH, "utf8");
+  assert.match(
+    seedSource,
+    /company:\s*primaryAuthor\.worksForName/,
+    "the seed's current experience company must read from taxonomy via primaryAuthor.worksForName"
+  );
+
+  assert.equal(
+    fallbackExperiences[0]?.company,
+    DEFAULT_SITE_PROFILE.authorWorksForName,
+    "the about fallback's current experience company must match authorWorksForName"
   );
 });

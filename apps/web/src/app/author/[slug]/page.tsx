@@ -21,7 +21,9 @@ import {
   CANONICAL_IDENTITY_ORIGIN,
   authorIdentityFallbacks,
   resolveAuthorAddress,
+  resolveAuthorAlumniOf,
   resolveAuthorPageIdentity,
+  resolveAuthorWorksFor,
 } from "@/lib/author-identity";
 
 interface AuthorPageProps {
@@ -159,6 +161,8 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
   // only -- inventing an address for a guest author would be worse than
   // omitting it.
   const address = resolveAuthorAddress(author, siteProfile.author);
+  const worksFor = resolveAuthorWorksFor(author, siteProfile.author);
+  const { alumniOf } = resolveAuthorAlumniOf(author, siteProfile.author);
   const sameAs = dedupeUrls([
     websiteUrl,
     linkedinUrl,
@@ -186,9 +190,9 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
           description,
           url: websiteUrl,
           imageUrl: toAbsoluteMediaUrl(author.profileImage?.url),
-          worksForName: author.worksForName,
-          worksForUrl: author.worksForUrl,
-          alumniOf: author.alumniOf,
+          worksForName: worksFor.worksForName,
+          worksForUrl: worksFor.worksForUrl,
+          alumniOf,
           credentials:
             author.credentials?.map((credential) => ({
               name: credential.title,

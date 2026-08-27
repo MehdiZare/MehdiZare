@@ -103,6 +103,26 @@ test("author page address routes through the shared site-owner fallback", () => 
   }
 });
 
+test("author page worksFor routes through the shared site-owner fallback", () => {
+  const pageSource = readSource("src/app/author/[slug]/page.tsx");
+  assertCallsHelper(pageSource, "resolveAuthorWorksFor", "#106");
+  for (const field of ["worksForName", "worksForUrl"]) {
+    assertDoesNotReadField(
+      pageSource,
+      "author",
+      field,
+      "#106",
+      "author page"
+    );
+  }
+});
+
+test("author page alumniOf routes through the shared site-owner fallback", () => {
+  const pageSource = readSource("src/app/author/[slug]/page.tsx");
+  assertCallsHelper(pageSource, "resolveAuthorAlumniOf", "#106");
+  assertDoesNotReadField(pageSource, "author", "alumniOf", "#106", "author page");
+});
+
 test("article metadata does not fall back to the homepage site description", () => {
   const pageSource = readSource("src/app/blog/[slug]/page.tsx");
   assert.doesNotMatch(pageSource, /siteDescription/);

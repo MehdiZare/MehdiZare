@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Label } from "@/components/shared/Label";
+import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 
 interface TrackRecordEntry {
   org: string;
@@ -16,7 +17,7 @@ interface TrackRecordEntry {
 
 const entries: TrackRecordEntry[] = [
   {
-    org: "Entarian",
+    org: DEFAULT_SITE_PROFILE.authorWorksForName,
     monogram: "EN",
     role: "Principal AI Engineer / Cloud Architect",
     dates: "2025 – Present",

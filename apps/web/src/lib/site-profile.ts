@@ -8,7 +8,11 @@ import { identityUrlKey, normalizeIdentityUrl } from "./url-normalization";
 import { isBinaPrintEnabled } from "./feature-flags";
 import { serverEnv } from "./server-env";
 import { blankToUndefined } from "./strings";
-import { resolveAuthorAddress } from "./author-identity";
+import {
+  resolveAuthorAddress,
+  resolveAuthorAlumniOf,
+  resolveAuthorWorksFor,
+} from "./author-identity";
 import type {
   Author,
   Credential,
@@ -299,7 +303,6 @@ function buildAuthorProfile(
     DEFAULT_SITE_PROFILE.authorLinkedinUrl;
 
   const knowsAbout = normalizeStringArray(author?.knowsAbout);
-  const alumniOf = normalizeStringArray(author?.alumniOf);
 
   return {
     id: author?.id,
@@ -318,11 +321,21 @@ function buildAuthorProfile(
     sameAs: canonicalSocialLinks,
     profileImage: author?.profileImage,
     jobTitle: deriveRole(author, settings),
-    worksForName:
-      blankToUndefined(author?.worksForName) ?? DEFAULT_SITE_PROFILE.authorWorksForName,
-    worksForUrl:
-      blankToUndefined(author?.worksForUrl) ?? DEFAULT_SITE_PROFILE.authorWorksForUrl,
-    alumniOf: alumniOf.length > 0 ? alumniOf : [...DEFAULT_SITE_PROFILE.authorAlumniOf],
+    ...resolveAuthorWorksFor(
+      { ...author, slug },
+      {
+        slug,
+        worksForName: DEFAULT_SITE_PROFILE.authorWorksForName,
+        worksForUrl: DEFAULT_SITE_PROFILE.authorWorksForUrl,
+      }
+    ),
+    ...resolveAuthorAlumniOf(
+      { ...author, slug },
+      {
+        slug,
+        alumniOf: DEFAULT_SITE_PROFILE.authorAlumniOf,
+      }
+    ),
     knowsAbout: knowsAbout.length > 0 ? knowsAbout : [...DEFAULT_SITE_PROFILE.knowsAbout],
     credentials: normalizeCredentials(author?.credentials),
     // Delegated rather than repeated (#102). This resolved the three fields
