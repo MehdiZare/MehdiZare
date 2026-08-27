@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { blankToUndefined } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 import type { Experience } from "@/types/strapi";
 
@@ -31,6 +32,10 @@ export function CareerTimeline({ experiences }: CareerTimelineProps) {
       <div className="space-y-12">
         {experiences.map((experience, index) => {
           const isEven = index % 2 === 0;
+          // A cleared CMS field arrives as `""` and a field left with a space
+          // as `"   "`. The latter is truthy, so guarding on the raw value
+          // renders an empty paragraph and a stray gap (#89).
+          const description = blankToUndefined(experience.description);
 
           return (
             <motion.div
@@ -72,9 +77,9 @@ export function CareerTimeline({ experiences }: CareerTimelineProps) {
                   <p className="mt-1 font-mono text-xs text-mid-gray">
                     {formatPeriod(experience.startDate, experience.endDate, experience.current)}
                   </p>
-                  {experience.description && (
+                  {description && (
                     <p className="mt-3 text-sm text-mid-gray">
-                      {experience.description}
+                      {description}
                     </p>
                   )}
                 </div>

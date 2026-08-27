@@ -321,3 +321,47 @@ test("subcategory cards key seed children by slug when the CMS id is absent", ()
   assert.equal(zeroId.id, 0);
   assert.equal(seedChild.id, "evals");
 });
+
+// #90: the category `slug` attribute is a Strapi `uid` with `targetField: name`
+// and, unlike the author content type, it is *not* `required` — so an empty
+// slug is reachable from the CMS. It would otherwise produce a card linking to
+// `/blog/category/` (a dead path), an empty title from `formatSlugName("")`,
+// and an entry in `childSlugs` costing a pointless `getArticles` call on every
+// render of the parent page. The seed path already drops these in
+// `toCategorySeed`; this puts the same guarantee on the CMS path.
+test("subcategory cards drop a child whose slug is blank", () => {
+  const cards = resolveSubcategoryCards([
+    { id: 1, name: "Agents", slug: "agents" },
+    { id: 2, name: "No Slug", slug: "" },
+    { id: 3, name: "Whitespace Slug", slug: "   " },
+    { id: 4, name: "Evals", slug: "evals" },
+  ]);
+
+  assert.deepEqual(
+    cards.map((card) => card.slug),
+    ["agents", "evals"]
+  );
+});
+
+test("subcategory cards drop a child whose slug is missing entirely", () => {
+  // Strapi can return `null` for an unset uid; the declared type says `string`,
+  // so only a runtime guard catches it.
+  const cards = resolveSubcategoryCards([
+    { id: 1, name: "Agents", slug: "agents" },
+    { id: 2, name: "Null Slug", slug: null as unknown as string },
+    { id: 3, name: "Undefined Slug", slug: undefined as unknown as string },
+  ]);
+
+  assert.deepEqual(
+    cards.map((card) => card.slug),
+    ["agents"]
+  );
+});
+
+test("subcategory cards trim a slug they keep so the href has no stray space", () => {
+  const [card] = resolveSubcategoryCards([
+    { id: 1, name: "Agents", slug: "  agents  " },
+  ]);
+
+  assert.equal(card.slug, "agents");
+});

@@ -6,6 +6,7 @@ import {
 import { identityUrlKey, normalizeIdentityUrl } from "./url-normalization";
 import { isBinaPrintEnabled } from "./feature-flags";
 import { serverEnv } from "./server-env";
+import { blankToUndefined } from "./strings";
 import type {
   Author,
   Credential,
@@ -106,22 +107,13 @@ export class SiteProfileValidationError extends Error {
   }
 }
 
-function normalizeString(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return trimmed ? trimmed : undefined;
-}
-
 function normalizeStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];
   }
 
   return value
-    .map((item) => normalizeString(item))
+    .map((item) => blankToUndefined(item))
     .filter((item): item is string => Boolean(item));
 }
 
@@ -132,8 +124,8 @@ function normalizeNavItems(items: SiteSettings["navItems"]): NavItem[] {
 
   const normalized: NavItem[] = [];
   items.forEach((item, index) => {
-    const label = normalizeString(item?.label);
-    const href = normalizeString(item?.href);
+    const label = blankToUndefined(item?.label);
+    const href = blankToUndefined(item?.href);
     if (!label || !href) {
       return;
     }
@@ -172,8 +164,8 @@ function normalizeSocialLinks(items: SiteSettings["socialLinks"]): SocialLink[] 
 
   const normalized = items
     .map((item, index) => {
-      const platform = normalizeString(item?.platform);
-      const url = normalizeString(item?.url);
+      const platform = blankToUndefined(item?.platform);
+      const url = blankToUndefined(item?.url);
       const normalizedUrl = normalizeIdentityUrl(url, CANONICAL_IDENTITY_ORIGIN);
       if (!platform || !normalizedUrl) {
         return null;
@@ -222,9 +214,9 @@ function buildCanonicalSocialLinks(
   const normalizedAuthorLinks = Array.isArray(author?.sameAs)
     ? author.sameAs
         .map((item, index) => {
-          const platform = normalizeString(item?.platform);
+          const platform = blankToUndefined(item?.platform);
           const normalizedUrl = normalizeIdentityUrl(
-            normalizeString(item?.url),
+            blankToUndefined(item?.url),
             CANONICAL_IDENTITY_ORIGIN
           );
 
@@ -242,10 +234,10 @@ function buildCanonicalSocialLinks(
     : [];
 
   const websiteUrl =
-    normalizeIdentityUrl(normalizeString(author?.websiteUrl), CANONICAL_IDENTITY_ORIGIN) ??
+    normalizeIdentityUrl(blankToUndefined(author?.websiteUrl), CANONICAL_IDENTITY_ORIGIN) ??
     DEFAULT_SITE_PROFILE.authorWebsiteUrl;
   const linkedinUrl =
-    normalizeIdentityUrl(normalizeString(author?.linkedinUrl), CANONICAL_IDENTITY_ORIGIN) ??
+    normalizeIdentityUrl(blankToUndefined(author?.linkedinUrl), CANONICAL_IDENTITY_ORIGIN) ??
     DEFAULT_SITE_PROFILE.authorLinkedinUrl;
 
   const canonical = dedupeSocialLinks([
@@ -265,7 +257,7 @@ function normalizeCredentials(credentials: Author["credentials"]): Credential[] 
 
   return credentials
     .map((credential, index): Credential | null => {
-      const title = normalizeString(credential?.title);
+      const title = blankToUndefined(credential?.title);
       if (!title) {
         return null;
       }
@@ -273,9 +265,9 @@ function normalizeCredentials(credentials: Author["credentials"]): Credential[] 
       return {
         id: credential.id ?? index + 1,
         title,
-        issuer: normalizeString(credential.issuer),
-        description: normalizeString(credential.description),
-        url: normalizeString(credential.url),
+        issuer: blankToUndefined(credential.issuer),
+        description: blankToUndefined(credential.description),
+        url: blankToUndefined(credential.url),
       };
     })
     .filter((credential): credential is Credential => credential !== null);
@@ -283,9 +275,9 @@ function normalizeCredentials(credentials: Author["credentials"]): Credential[] 
 
 function deriveRole(author: Author | null | undefined, settings: SiteSettings | null | undefined): string {
   return (
-    normalizeString(author?.jobTitle) ??
-    normalizeString(author?.headline) ??
-    normalizeString(settings?.authorRole) ??
+    blankToUndefined(author?.jobTitle) ??
+    blankToUndefined(author?.headline) ??
+    blankToUndefined(settings?.authorRole) ??
     DEFAULT_SITE_PROFILE.authorRole
   );
 }
@@ -295,14 +287,14 @@ function buildAuthorProfile(
   settings: SiteSettings | null | undefined
 ): AuthorProfile {
   const fallbackSlug = DEFAULT_SITE_PROFILE.authorSlug;
-  const slug = normalizeString(author?.slug) ?? fallbackSlug;
+  const slug = blankToUndefined(author?.slug) ?? fallbackSlug;
   const canonicalSocialLinks = buildCanonicalSocialLinks(author, settings?.socialLinks);
   const websiteUrl =
-    normalizeIdentityUrl(normalizeString(author?.websiteUrl), CANONICAL_IDENTITY_ORIGIN) ??
+    normalizeIdentityUrl(blankToUndefined(author?.websiteUrl), CANONICAL_IDENTITY_ORIGIN) ??
     canonicalSocialLinks.find((link) => link.platform.toLowerCase() === "website")?.url ??
     DEFAULT_SITE_PROFILE.authorWebsiteUrl;
   const linkedinUrl =
-    normalizeIdentityUrl(normalizeString(author?.linkedinUrl), CANONICAL_IDENTITY_ORIGIN) ??
+    normalizeIdentityUrl(blankToUndefined(author?.linkedinUrl), CANONICAL_IDENTITY_ORIGIN) ??
     canonicalSocialLinks.find((link) => link.platform.toLowerCase() === "linkedin")?.url ??
     DEFAULT_SITE_PROFILE.authorLinkedinUrl;
 
@@ -312,13 +304,13 @@ function buildAuthorProfile(
   return {
     id: author?.id,
     documentId: author?.documentId,
-    name: normalizeString(author?.name) ?? normalizeString(settings?.authorName) ?? DEFAULT_SITE_PROFILE.authorName,
+    name: blankToUndefined(author?.name) ?? blankToUndefined(settings?.authorName) ?? DEFAULT_SITE_PROFILE.authorName,
     slug,
     profilePath: `/author/${slug}`,
-    headline: normalizeString(author?.headline),
+    headline: blankToUndefined(author?.headline),
     bioShort:
-      normalizeString(author?.bioShort) ??
-      normalizeString(settings?.authorBioShort) ??
+      blankToUndefined(author?.bioShort) ??
+      blankToUndefined(settings?.authorBioShort) ??
       DEFAULT_SITE_PROFILE.authorBioShort,
     bioLong: author?.bioLong,
     websiteUrl,
@@ -327,18 +319,18 @@ function buildAuthorProfile(
     profileImage: author?.profileImage,
     jobTitle: deriveRole(author, settings),
     worksForName:
-      normalizeString(author?.worksForName) ?? DEFAULT_SITE_PROFILE.authorWorksForName,
+      blankToUndefined(author?.worksForName) ?? DEFAULT_SITE_PROFILE.authorWorksForName,
     worksForUrl:
-      normalizeString(author?.worksForUrl) ?? DEFAULT_SITE_PROFILE.authorWorksForUrl,
+      blankToUndefined(author?.worksForUrl) ?? DEFAULT_SITE_PROFILE.authorWorksForUrl,
     alumniOf: alumniOf.length > 0 ? alumniOf : [...DEFAULT_SITE_PROFILE.authorAlumniOf],
     knowsAbout: knowsAbout.length > 0 ? knowsAbout : [...DEFAULT_SITE_PROFILE.knowsAbout],
     credentials: normalizeCredentials(author?.credentials),
     addressLocality:
-      normalizeString(author?.addressLocality) ?? DEFAULT_SITE_PROFILE.authorAddressLocality,
+      blankToUndefined(author?.addressLocality) ?? DEFAULT_SITE_PROFILE.authorAddressLocality,
     addressRegion:
-      normalizeString(author?.addressRegion) ?? DEFAULT_SITE_PROFILE.authorAddressRegion,
+      blankToUndefined(author?.addressRegion) ?? DEFAULT_SITE_PROFILE.authorAddressRegion,
     addressCountry:
-      normalizeString(author?.addressCountry) ?? DEFAULT_SITE_PROFILE.authorAddressCountry,
+      blankToUndefined(author?.addressCountry) ?? DEFAULT_SITE_PROFILE.authorAddressCountry,
   };
 }
 
@@ -348,7 +340,7 @@ function hasValidNavItems(items: SiteSettings["navItems"]): boolean {
   }
 
   return items.some(
-    (item) => Boolean(normalizeString(item?.label)) && Boolean(normalizeString(item?.href))
+    (item) => Boolean(blankToUndefined(item?.label)) && Boolean(blankToUndefined(item?.href))
   );
 }
 
@@ -359,25 +351,25 @@ function hasValidSocialLinks(items: SiteSettings["socialLinks"]): boolean {
 
   return items.some(
     (item) =>
-      Boolean(normalizeString(item?.platform)) &&
-      Boolean(normalizeIdentityUrl(normalizeString(item?.url), CANONICAL_IDENTITY_ORIGIN))
+      Boolean(blankToUndefined(item?.platform)) &&
+      Boolean(normalizeIdentityUrl(blankToUndefined(item?.url), CANONICAL_IDENTITY_ORIGIN))
   );
 }
 
 function hasCanonicalAuthorData(author: Author | null | undefined): boolean {
   return Boolean(
-    normalizeString(author?.name) &&
+    blankToUndefined(author?.name) &&
       deriveRole(author, undefined) &&
-      normalizeString(author?.bioShort)
+      blankToUndefined(author?.bioShort)
   );
 }
 
 function hasCanonicalSocialData(author: Author | null | undefined): boolean {
   const hasWebsite = Boolean(
-    normalizeIdentityUrl(normalizeString(author?.websiteUrl), CANONICAL_IDENTITY_ORIGIN)
+    normalizeIdentityUrl(blankToUndefined(author?.websiteUrl), CANONICAL_IDENTITY_ORIGIN)
   );
   const hasLinkedIn = Boolean(
-    normalizeIdentityUrl(normalizeString(author?.linkedinUrl), CANONICAL_IDENTITY_ORIGIN)
+    normalizeIdentityUrl(blankToUndefined(author?.linkedinUrl), CANONICAL_IDENTITY_ORIGIN)
   );
 
   if (hasWebsite && hasLinkedIn) {
@@ -390,8 +382,8 @@ function hasCanonicalSocialData(author: Author | null | undefined): boolean {
 
   return author.sameAs.some(
     (item) =>
-      Boolean(normalizeString(item?.platform)) &&
-      Boolean(normalizeIdentityUrl(normalizeString(item?.url), CANONICAL_IDENTITY_ORIGIN))
+      Boolean(blankToUndefined(item?.platform)) &&
+      Boolean(normalizeIdentityUrl(blankToUndefined(item?.url), CANONICAL_IDENTITY_ORIGIN))
   );
 }
 
@@ -417,18 +409,18 @@ function collectMissingRequiredFields(
 
   const missing: string[] = REQUIRED_SITE_PROFILE_FIELDS.filter((field) => {
     if (field === "authorName") {
-      return !normalizeString(settings.authorName) && !normalizeString(author?.name);
+      return !blankToUndefined(settings.authorName) && !blankToUndefined(author?.name);
     }
 
     if (field === "authorRole") {
-      return !normalizeString(settings.authorRole) && !normalizeString(author?.jobTitle) && !normalizeString(author?.headline);
+      return !blankToUndefined(settings.authorRole) && !blankToUndefined(author?.jobTitle) && !blankToUndefined(author?.headline);
     }
 
     if (field === "authorBioShort") {
-      return !normalizeString(settings.authorBioShort) && !normalizeString(author?.bioShort);
+      return !blankToUndefined(settings.authorBioShort) && !blankToUndefined(author?.bioShort);
     }
 
-    return !normalizeString(settings[field as RequiredSiteProfileField]);
+    return !blankToUndefined(settings[field as RequiredSiteProfileField]);
   });
 
   if (!hasValidNavItems(settings.navItems)) {
@@ -458,40 +450,40 @@ function mergeProfile(settings: SiteSettings | null | undefined, author?: Author
   const canonicalAuthor = buildAuthorProfile(author, settings);
 
   return {
-    siteName: normalizeString(settings?.siteName) ?? DEFAULT_SITE_PROFILE.siteName,
+    siteName: blankToUndefined(settings?.siteName) ?? DEFAULT_SITE_PROFILE.siteName,
     siteDescription:
-      normalizeString(settings?.siteDescription) ?? DEFAULT_SITE_PROFILE.siteDescription,
+      blankToUndefined(settings?.siteDescription) ?? DEFAULT_SITE_PROFILE.siteDescription,
     positioningHeadline:
-      normalizeString(settings?.positioningHeadline) ??
+      blankToUndefined(settings?.positioningHeadline) ??
       DEFAULT_SITE_PROFILE.positioningHeadline,
     positioningSubheadline:
-      normalizeString(settings?.positioningSubheadline) ??
+      blankToUndefined(settings?.positioningSubheadline) ??
       DEFAULT_SITE_PROFILE.positioningSubheadline,
     positioningHighlight:
-      normalizeString(settings?.positioningHighlight) ??
+      blankToUndefined(settings?.positioningHighlight) ??
       DEFAULT_SITE_PROFILE.positioningHighlight,
     credentialLine:
-      normalizeString(settings?.credentialLine) ?? DEFAULT_SITE_PROFILE.credentialLine,
+      blankToUndefined(settings?.credentialLine) ?? DEFAULT_SITE_PROFILE.credentialLine,
     industriesLine:
-      normalizeString(settings?.industriesLine) ?? DEFAULT_SITE_PROFILE.industriesLine,
+      blankToUndefined(settings?.industriesLine) ?? DEFAULT_SITE_PROFILE.industriesLine,
     locationLine:
-      normalizeString(settings?.locationLine) ?? DEFAULT_SITE_PROFILE.locationLine,
+      blankToUndefined(settings?.locationLine) ?? DEFAULT_SITE_PROFILE.locationLine,
     primaryCtaLabel:
-      normalizeString(settings?.primaryCtaLabel) ?? DEFAULT_SITE_PROFILE.primaryCtaLabel,
+      blankToUndefined(settings?.primaryCtaLabel) ?? DEFAULT_SITE_PROFILE.primaryCtaLabel,
     primaryCtaHref:
-      normalizeString(settings?.primaryCtaHref) ?? DEFAULT_SITE_PROFILE.primaryCtaHref,
+      blankToUndefined(settings?.primaryCtaHref) ?? DEFAULT_SITE_PROFILE.primaryCtaHref,
     secondaryCtaLabel:
-      normalizeString(settings?.secondaryCtaLabel) ?? DEFAULT_SITE_PROFILE.secondaryCtaLabel,
+      blankToUndefined(settings?.secondaryCtaLabel) ?? DEFAULT_SITE_PROFILE.secondaryCtaLabel,
     secondaryCtaHref:
-      normalizeString(settings?.secondaryCtaHref) ?? DEFAULT_SITE_PROFILE.secondaryCtaHref,
+      blankToUndefined(settings?.secondaryCtaHref) ?? DEFAULT_SITE_PROFILE.secondaryCtaHref,
     contactPrompt:
-      normalizeString(settings?.contactPrompt) ?? DEFAULT_SITE_PROFILE.contactPrompt,
+      blankToUndefined(settings?.contactPrompt) ?? DEFAULT_SITE_PROFILE.contactPrompt,
     authorName: canonicalAuthor.name,
     authorRole: canonicalAuthor.jobTitle,
     authorBioShort: canonicalAuthor.bioShort,
-    footerText: normalizeString(settings?.footerText) ?? DEFAULT_SITE_PROFILE.footerText,
+    footerText: blankToUndefined(settings?.footerText) ?? DEFAULT_SITE_PROFILE.footerText,
     bookCallHref:
-      normalizeString(settings?.bookCallHref) ?? DEFAULT_SITE_PROFILE.bookCallHref,
+      blankToUndefined(settings?.bookCallHref) ?? DEFAULT_SITE_PROFILE.bookCallHref,
     knowsAbout: [...canonicalAuthor.knowsAbout],
     navItems: normalizeNavItems(settings?.navItems),
     socialLinks: [...canonicalAuthor.sameAs],

@@ -1,4 +1,5 @@
 import taxonomy from "../../../../data/taxonomy.json";
+import { blankToUndefined } from "./strings";
 
 interface TaxonomyCategoryNode {
   name?: unknown;
@@ -46,64 +47,55 @@ export interface TagSeed {
   intro?: string;
 }
 
-function normalizeString(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
-
 function toCategorySeed(
   node: TaxonomyCategoryNode,
   parentSlug?: string
 ): CategorySeed | null {
-  const slug = normalizeString(node.slug);
+  const slug = blankToUndefined(node.slug);
   if (!slug) {
     return null;
   }
 
   const children = (node.children ?? [])
     .map((child) => {
-      const childSlug = normalizeString(child.slug);
+      const childSlug = blankToUndefined(child.slug);
       if (!childSlug) {
         return null;
       }
 
       return {
-        name: normalizeString(child.name),
+        name: blankToUndefined(child.name),
         slug: childSlug,
-        description: normalizeString(child.description),
-        headline: normalizeString(child.headline),
-        intro: normalizeString(child.intro),
+        description: blankToUndefined(child.description),
+        headline: blankToUndefined(child.headline),
+        intro: blankToUndefined(child.intro),
       };
     })
     .filter((child): child is NonNullable<typeof child> => child !== null);
 
   return {
-    name: normalizeString(node.name),
+    name: blankToUndefined(node.name),
     slug,
-    description: normalizeString(node.description),
-    headline: normalizeString(node.headline),
-    intro: normalizeString(node.intro),
+    description: blankToUndefined(node.description),
+    headline: blankToUndefined(node.headline),
+    intro: blankToUndefined(node.intro),
     parentSlug,
     children,
   };
 }
 
 function toTagSeed(node: TaxonomyTagNode): TagSeed | null {
-  const slug = normalizeString(node.slug);
+  const slug = blankToUndefined(node.slug);
   if (!slug) {
     return null;
   }
 
   return {
-    name: normalizeString(node.name),
+    name: blankToUndefined(node.name),
     slug,
-    description: normalizeString(node.description),
-    headline: normalizeString(node.headline),
-    intro: normalizeString(node.intro),
+    description: blankToUndefined(node.description),
+    headline: blankToUndefined(node.headline),
+    intro: blankToUndefined(node.intro),
   };
 }
 

@@ -1,3 +1,9 @@
+// Everything this module returns is rendered into an `href` or into `Person`
+// JSON-LD `url` / `sameAs`. `new URL()` happily parses `javascript:alert(1)`
+// and `data:text/html,…`, so parsing alone is not a validity check — an
+// identity URL has to be a web address (#83).
+const WEB_PROTOCOLS = new Set(["http:", "https:"]);
+
 function stripWww(hostname: string): string {
   return hostname.startsWith("www.") ? hostname.slice(4) : hostname;
 }
@@ -36,6 +42,10 @@ export function normalizeIdentityUrl(
     parsed = new URL(value.trim());
     canonical = new URL(canonicalOrigin);
   } catch {
+    return null;
+  }
+
+  if (!WEB_PROTOCOLS.has(parsed.protocol)) {
     return null;
   }
 

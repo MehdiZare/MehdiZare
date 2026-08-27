@@ -1,33 +1,14 @@
 import { getArticles, getCategories } from "@/lib/strapi";
+import { firstFilled, formatSlugName } from "@/lib/strings";
+
+// Re-exported: this module is where taxonomy callers already look for it.
+export { formatSlugName };
 
 export const BLOG_PAGE_SIZE = 9;
 
 export const BLOG_PAGE_DESCRIPTION =
   "Writing on production AI systems, LLM architecture, and shipping AI in finance, defense, healthcare, and enterprise.";
 
-function firstFilled(
-  ...values: Array<string | null | undefined>
-): string | undefined {
-  for (const value of values) {
-    if (typeof value === "string") {
-      const trimmed = value.trim();
-      if (trimmed) {
-        return trimmed;
-      }
-    }
-  }
-
-  return undefined;
-}
-
-/** Title-cases a taxonomy slug for use as a last-resort display label. */
-export function formatSlugName(slug: string): string {
-  return slug
-    .split("-")
-    .filter(Boolean)
-    .map((part) => part[0].toUpperCase() + part.slice(1))
-    .join(" ");
-}
 
 /**
  * Picks the first non-blank candidate, treating CMS empty strings and
@@ -56,6 +37,14 @@ export interface SubcategoryCard {
  * CMS children carry a numeric `id`; seed children have none and are keyed
  * by slug — the fallback is nullish-coalescing, so a present-but-falsy `id`
  * keeps its own key rather than silently falling back to the slug.
+ *
+ * A child with a blank slug is dropped rather than rendered (#90). The category
+ * `slug` attribute is a Strapi `uid` that is not `required`, so an empty value
+ * is reachable; keeping it would render a card linking to `/blog/category/`
+ * under an empty title and add a slug to `childSlugs`, costing a `getArticles`
+ * call that can never match. The seed path already drops these in
+ * `toCategorySeed` — this puts the same guarantee on the CMS path, so the
+ * caller does not have to re-check.
  */
 export function resolveSubcategoryCards(
   children: Array<{
@@ -66,12 +55,21 @@ export function resolveSubcategoryCards(
     description?: string | null;
   }>
 ): SubcategoryCard[] {
-  return children.map((child) => ({
-    id: child.id ?? child.slug,
-    name: resolveTaxonomyDisplayName(child.slug, child.name, child.headline),
-    slug: child.slug,
-    description: firstFilled(child.description),
-  }));
+  return children.flatMap((child) => {
+    const slug = firstFilled(child.slug);
+    if (!slug) {
+      return [];
+    }
+
+    return [
+      {
+        id: child.id ?? slug,
+        name: resolveTaxonomyDisplayName(slug, child.name, child.headline),
+        slug,
+        description: firstFilled(child.description),
+      },
+    ];
+  });
 }
 
 export function buildTagListingDescription(tagName: string): string {

@@ -12,6 +12,12 @@ import { TableOfContents } from "@/components/blog/TableOfContents";
 import { TagBadge } from "@/components/blog/TagBadge";
 import { getSiteProfile } from "@/lib/site-profile";
 import {
+  CANONICAL_IDENTITY_ORIGIN,
+  authorIdentityFallbacks,
+  resolveArticleAuthorIdentity,
+} from "@/lib/author-identity";
+import { blankToUndefined } from "@/lib/strings";
+import {
   buildBlogPostingJsonLd,
   buildBreadcrumbJsonLd,
   buildNoIndexMetadata,
@@ -152,17 +158,25 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     article.publishedDate ?? article.publishedAt;
   const articlePath = `/blog/${article.slug}`;
   const articleAuthor = article.author;
-  const authorName = articleAuthor?.name ?? siteProfile.authorName;
-  const authorRole =
-    articleAuthor?.jobTitle ?? articleAuthor?.headline ?? siteProfile.authorRole;
-  const authorBio =
-    articleAuthor?.bioShort ?? siteProfile.authorBioShort;
-  const authorPath = articleAuthor?.slug
-    ? `/author/${articleAuthor.slug}`
+  // Shared with /author/[slug] (#83). A cleared CMS field is `""`, which `??`
+  // treats as present -- it used to reach the byline, the avatar initials and,
+  // for the two URLs, Person `url` / `sameAs` as invalid structured data.
+  const authorIdentity = resolveArticleAuthorIdentity(
+    articleAuthor,
+    authorIdentityFallbacks(siteProfile),
+    CANONICAL_IDENTITY_ORIGIN
+  );
+  const {
+    name: authorName,
+    role: authorRole,
+    bioShort: authorBio,
+    websiteUrl: authorWebsite,
+    linkedinUrl: authorLinkedIn,
+  } = authorIdentity;
+  const authorPath = blankToUndefined(articleAuthor?.slug)
+    ? `/author/${blankToUndefined(articleAuthor?.slug)}`
     : siteProfile.author.profilePath;
   const authorPersonId = toPersonId(authorPath);
-  const authorWebsite = articleAuthor?.websiteUrl ?? siteProfile.author.websiteUrl;
-  const authorLinkedIn = articleAuthor?.linkedinUrl ?? siteProfile.author.linkedinUrl;
   const authorInitials = buildInitials(authorName);
   const articleDescription =
     article.excerpt?.trim() || article.title;

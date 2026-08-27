@@ -13,22 +13,21 @@ import {
   buildPageMetadata,
   buildPersonJsonLd,
   buildProfilePageJsonLd,
-  getSiteUrl,
   toAbsoluteMediaUrl,
   toPersonId,
 } from "@/lib/seo";
 import { identityUrlKey, normalizeIdentityUrl } from "@/lib/url-normalization";
+import {
+  CANONICAL_IDENTITY_ORIGIN,
+  authorIdentityFallbacks,
+  resolveAuthorPageIdentity,
+} from "@/lib/author-identity";
 
 interface AuthorPageProps {
   params: Promise<{ slug: string }>;
 }
 
 type AuthorList = Awaited<ReturnType<typeof getAuthors>>["data"];
-
-function authorListingDescription(name: string, bioShort?: string | null): string {
-  const bio = bioShort?.trim();
-  return bio ? bio : `Articles by ${name}.`;
-}
 
 function getAllAuthors(): Promise<AuthorList> {
   // Shared STRAPI_MAX_PAGES cap. Extra slugs still render on demand
@@ -58,14 +57,16 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
       return buildNoIndexMetadata("Author Not Found");
     }
 
-    const role = author.jobTitle ?? author.headline ?? siteProfile.authorRole;
-    const title = `${author.name} | ${role}`;
-    const description = authorListingDescription(author.name, author.bioShort);
+    const identity = resolveAuthorPageIdentity(
+      author,
+      authorIdentityFallbacks(siteProfile),
+      CANONICAL_IDENTITY_ORIGIN
+    );
 
     return buildPageMetadata({
       pathname: `/author/${author.slug}`,
-      title,
-      description,
+      title: identity.title,
+      description: identity.description,
       image: author.profileImage,
       type: "website",
       keywords: [
@@ -80,8 +81,6 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
     return buildNoIndexMetadata("Author Not Found");
   }
 }
-
-const CANONICAL_IDENTITY_ORIGIN = getSiteUrl();
 
 function dedupeUrls(urls: Array<string | null | undefined>): string[] {
   const seen = new Set<string>();
@@ -148,14 +147,12 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
 
   const authorPath = `/author/${author.slug}`;
   const personId = toPersonId(authorPath);
-  const role = author.jobTitle ?? author.headline ?? siteProfile.authorRole;
-  const description = authorListingDescription(author.name, author.bioShort);
-  const websiteUrl =
-    normalizeIdentityUrl(author.websiteUrl, CANONICAL_IDENTITY_ORIGIN) ??
-    siteProfile.author.websiteUrl;
-  const linkedinUrl =
-    normalizeIdentityUrl(author.linkedinUrl, CANONICAL_IDENTITY_ORIGIN) ??
-    siteProfile.author.linkedinUrl;
+  const identity = resolveAuthorPageIdentity(
+    author,
+    authorIdentityFallbacks(siteProfile),
+    CANONICAL_IDENTITY_ORIGIN
+  );
+  const { name: authorName, role, description, websiteUrl, linkedinUrl } = identity;
   const sameAs = dedupeUrls([
     websiteUrl,
     linkedinUrl,
@@ -168,7 +165,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
         id="author-profilepage-jsonld"
         data={buildProfilePageJsonLd({
           pathname: authorPath,
-          title: author.name,
+          title: authorName,
           description,
           personId,
         })}
@@ -178,7 +175,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
         data={buildPersonJsonLd({
           id: personId,
           path: authorPath,
-          name: author.name,
+          name: authorName,
           title: role,
           description,
           url: websiteUrl,
@@ -225,7 +222,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
                 />
               ) : (
                 <div className="flex h-full items-center justify-center font-serif text-4xl text-ink">
-                  {author.name
+                  {authorName
                     .split(" ")
                     .map((part) => part[0])
                     .filter(Boolean)
@@ -238,7 +235,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
 
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">Author</p>
-              <h1 className="mt-3 font-serif text-4xl leading-tight text-ink sm:text-5xl">{author.name}</h1>
+              <h1 className="mt-3 font-serif text-4xl leading-tight text-ink sm:text-5xl">{authorName}</h1>
               <p className="mt-3 font-mono text-xs uppercase tracking-[0.2em] text-accent-warm">{role}</p>
               <p className="mt-5 max-w-3xl text-lg leading-relaxed text-mid-gray">{description}</p>
 
@@ -284,7 +281,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
         ) : null}
 
         <div className="mt-10">
-          <h2 className="font-serif text-2xl text-ink">Articles by {author.name}</h2>
+          <h2 className="font-serif text-2xl text-ink">Articles by {authorName}</h2>
           {authoredArticles.length > 0 ? (
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {authoredArticles.map((article) => {
