@@ -54,8 +54,8 @@ export interface SubcategoryCard {
  * description as absent so a whitespace-only value cannot render an empty
  * paragraph under the card title. A kept description is returned trimmed.
  * CMS children carry a numeric `id`; seed children have none and are keyed
- * by slug — the fallback is nullish-coalescing, so a CMS `id` of `0` keeps
- * its own key.
+ * by slug — the fallback is nullish-coalescing, so a present-but-falsy `id`
+ * keeps its own key rather than silently falling back to the slug.
  */
 export function resolveSubcategoryCards(
   children: Array<{
