@@ -80,6 +80,21 @@ test("author identity is not re-derived with the raw nullish chains it replaced"
   );
 });
 
+test("author page address routes through the shared site-owner fallback", () => {
+  // #92. Three of the four PostalAddress surfaces fall back to
+  // DEFAULT_SITE_PROFILE; this one read the raw CMS record, so the same Person
+  // could carry a full address on / and none on /author/mehdi-zare.
+  const pageSource = readSource("src/app/author/[slug]/page.tsx");
+  assertCallsHelper(pageSource, "resolveAuthorAddress", "#92, #94");
+  for (const field of ["addressLocality", "addressRegion", "addressCountry"]) {
+    assert.doesNotMatch(
+      pageSource,
+      new RegExp(`author\\.${field}`),
+      `author ${field} must come from resolveAuthorAddress, not straight off the CMS record (#92)`
+    );
+  }
+});
+
 test("article metadata does not fall back to the homepage site description", () => {
   const pageSource = readSource("src/app/blog/[slug]/page.tsx");
   assert.doesNotMatch(pageSource, /siteDescription/);

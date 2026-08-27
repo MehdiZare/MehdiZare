@@ -6,6 +6,7 @@ import {
   buildAuthorListingDescription,
   composeAuthorTitle,
   resolveArticleAuthorIdentity,
+  resolveAuthorAddress,
   resolveAuthorPageIdentity,
 } from "../src/lib/author-identity.ts";
 
@@ -326,4 +327,112 @@ test("authorIdentityFallbacks projects the Site Profile fields both routes need"
   };
 
   assert.deepEqual(authorIdentityFallbacks(siteProfile), FALLBACKS);
+});
+
+// ---------------------------------------------------------------------------
+// resolveAuthorAddress -- #92
+// ---------------------------------------------------------------------------
+//
+// Three of the four surfaces that emit a PostalAddress resolve it through
+// resolveSiteProfile, which falls back to DEFAULT_SITE_PROFILE when the CMS
+// author carries no address. /author/[slug] read the raw CMS author instead,
+// so the same Person could carry a full address on / and none on
+// /author/mehdi-zare -- exactly the NAP inconsistency structured data exists
+// to remove.
+//
+// The fix is deliberately narrow: the fallback applies to the *site owner*
+// only. Stamping the owner's address onto a guest author's Person markup would
+// be worse than omitting it.
+
+const SITE_OWNER = {
+  slug: "mehdi-zare",
+  addressLocality: "Miami",
+  addressRegion: "FL",
+  addressCountry: "US",
+};
+
+test("author address falls back to the site profile for the primary author", () => {
+  const address = resolveAuthorAddress(
+    { slug: "mehdi-zare", isPrimary: true },
+    SITE_OWNER
+  );
+
+  assert.deepEqual(address, {
+    addressLocality: "Miami",
+    addressRegion: "FL",
+    addressCountry: "US",
+  });
+});
+
+test("author address falls back when the slug matches the site owner without isPrimary", () => {
+  // isPrimary is optional on the CMS record; the slug is the durable signal.
+  const address = resolveAuthorAddress({ slug: "mehdi-zare" }, SITE_OWNER);
+
+  assert.equal(address.addressLocality, "Miami");
+  assert.equal(address.addressRegion, "FL");
+});
+
+test("author address does not invent an address for a different author", () => {
+  const address = resolveAuthorAddress({ slug: "jane-doe" }, SITE_OWNER);
+
+  assert.deepEqual(address, {
+    addressLocality: undefined,
+    addressRegion: undefined,
+    addressCountry: undefined,
+  });
+});
+
+test("author address keeps a guest author's own address untouched", () => {
+  const address = resolveAuthorAddress(
+    {
+      slug: "jane-doe",
+      addressLocality: "Berlin",
+      addressRegion: "BE",
+      addressCountry: "DE",
+    },
+    SITE_OWNER
+  );
+
+  assert.deepEqual(address, {
+    addressLocality: "Berlin",
+    addressRegion: "BE",
+    addressCountry: "DE",
+  });
+});
+
+test("author address prefers the author's own values over the fallback", () => {
+  const address = resolveAuthorAddress(
+    { slug: "mehdi-zare", isPrimary: true, addressLocality: "Austin", addressRegion: "TX" },
+    SITE_OWNER
+  );
+
+  assert.equal(address.addressLocality, "Austin");
+  assert.equal(address.addressRegion, "TX");
+  assert.equal(address.addressCountry, "US");
+});
+
+test("author address treats a blank CMS address field as absent", () => {
+  // Same defect class as the rest of #83: "" and "   " are *present* to `??`.
+  const owner = resolveAuthorAddress(
+    { slug: "mehdi-zare", isPrimary: true, addressLocality: "   ", addressRegion: "" },
+    SITE_OWNER
+  );
+  const guest = resolveAuthorAddress(
+    { slug: "jane-doe", addressLocality: "  ", addressRegion: "" },
+    SITE_OWNER
+  );
+
+  assert.equal(owner.addressLocality, "Miami");
+  assert.equal(owner.addressRegion, "FL");
+  assert.equal(guest.addressLocality, undefined);
+  assert.equal(guest.addressRegion, undefined);
+});
+
+test("author address trims the values it returns", () => {
+  const address = resolveAuthorAddress(
+    { slug: "jane-doe", addressLocality: "  Berlin  " },
+    SITE_OWNER
+  );
+
+  assert.equal(address.addressLocality, "Berlin");
 });

@@ -67,3 +67,48 @@ export function assertRendersComponent(
     `${subject} must render <${component}>, not merely import it (${contract})`
   );
 }
+
+/** Escapes a literal so it can be matched exactly inside a RegExp. */
+function escapeForRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Asserts that a shared layout component reads an identity string from Site
+ * Profile instead of hardcoding it.
+ *
+ * Two assertions, and both matter (#96):
+ *
+ *   - the source must not contain `value`, the *canonical* string taken from
+ *     `DEFAULT_SITE_PROFILE` at call time. Pinning a remembered literal
+ *     instead ("Let's Talk") only guards the one string that was once wrong:
+ *     it goes quiet the moment the canonical value changes, and it never fired
+ *     for a *different* hardcoded string in the first place.
+ *   - the source must render `{field}`. A bare `/field/` match is satisfied by
+ *     the props-interface line alone (`siteName: string;`), so a component can
+ *     declare the prop, drop the destructure, hardcode the string, and still
+ *     pass -- the object-field analogue of the import-only weakness #94 closed
+ *     for functions.
+ */
+export function assertConsumesProfileValue(
+  source: string,
+  options: { field: string; value: string; contract: string; subject?: string }
+): void {
+  const { field, value, contract, subject = "component" } = options;
+  assertIdentifier(field);
+  assert.ok(
+    value.trim(),
+    `${subject}: the canonical value for ${field} is blank, so the hardcoding guard would match everything (${contract})`
+  );
+
+  assert.doesNotMatch(
+    source,
+    new RegExp(escapeForRegExp(value)),
+    `${subject} must not hardcode ${JSON.stringify(value)} -- it is the current value of ${field} in Site Profile, so hardcoding it silently freezes the page at today's copy (${contract})`
+  );
+  assert.match(
+    source,
+    new RegExp(`\\{\\s*${field}\\s*\\}`),
+    `${subject} must render {${field}}, not merely declare it as a prop -- a props-interface line alone satisfies a bare name match (${contract})`
+  );
+}

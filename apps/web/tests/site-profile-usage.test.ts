@@ -1,9 +1,12 @@
 import test from "node:test";
-import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { assertCallsHelper } from "./contract-assertions.ts";
+import { DEFAULT_SITE_PROFILE } from "../src/lib/site-profile-defaults.ts";
+import {
+  assertCallsHelper,
+  assertConsumesProfileValue,
+} from "./contract-assertions.ts";
 
 const pageFiles = [
   "src/app/layout.tsx",
@@ -27,15 +30,44 @@ test("key pages consume Site Profile as canonical source", () => {
   }
 });
 
-test("global navigation no longer hardcodes CTA text", () => {
-  const source = readSource("src/components/layout/Navbar.tsx");
-  assert.doesNotMatch(source, /Let's Talk/);
-  assert.match(source, /ctaLabel/);
-});
+// Each entry pins a component field against the *canonical* value read from
+// DEFAULT_SITE_PROFILE, rather than against a literal remembered from whenever
+// the guard was written (#96). When the copy changes, the guard follows it; a
+// guard that names a string nobody uses any more protects nothing.
 
-test("global footer no longer hardcodes identity strings", () => {
-  const source = readSource("src/components/layout/Footer.tsx");
-  assert.doesNotMatch(source, /CFA Charterholder/);
-  assert.match(source, /siteName/);
-  assert.match(source, /credentialLine/);
-});
+const NAVBAR = "src/components/layout/Navbar.tsx";
+const FOOTER = "src/components/layout/Footer.tsx";
+
+const consumptionContracts: Array<{
+  file: string;
+  field: string;
+  value: string;
+}> = [
+  { file: NAVBAR, field: "siteName", value: DEFAULT_SITE_PROFILE.siteName },
+  { file: NAVBAR, field: "ctaLabel", value: DEFAULT_SITE_PROFILE.primaryCtaLabel },
+  { file: FOOTER, field: "siteName", value: DEFAULT_SITE_PROFILE.siteName },
+  {
+    file: FOOTER,
+    field: "credentialLine",
+    value: DEFAULT_SITE_PROFILE.credentialLine,
+  },
+  // locationLine is the value #87 moved and #91 had to chase into production.
+  // A hardcoded copy in the footer is exactly how that becomes unfixable.
+  {
+    file: FOOTER,
+    field: "locationLine",
+    value: DEFAULT_SITE_PROFILE.locationLine,
+  },
+  { file: FOOTER, field: "footerText", value: DEFAULT_SITE_PROFILE.footerText },
+];
+
+for (const { file, field, value } of consumptionContracts) {
+  test(`${file.split("/").pop()} reads ${field} from Site Profile rather than hardcoding it`, () => {
+    assertConsumesProfileValue(readSource(file), {
+      field,
+      value,
+      contract: "#96",
+      subject: file,
+    });
+  });
+}
