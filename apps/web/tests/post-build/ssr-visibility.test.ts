@@ -26,6 +26,31 @@ import { join, relative, resolve } from "node:path";
 const BUILD_DIR = resolve(import.meta.dirname, "../../.next/server/app");
 
 /**
+ * Every route that prerenders from repo-owned data alone, so it is present in
+ * *any* build of this app.
+ *
+ * Naming them, rather than counting pages, is what makes this contract
+ * CMS-independent: CI builds with `DISABLE_STRAPI_CMS=true`, so article,
+ * category, tag and author pages emit no HTML there, while a local build with
+ * Strapi reachable emits ~58 files. A page count calibrated on one is wrong on
+ * the other; this list is right on both, and it says which page went missing
+ * instead of only how many did.
+ *
+ * Adding a static route without adding it here is deliberately not a failure
+ * -- the scan below covers whatever the build emitted. The list exists to
+ * prove the build is real, not to pin the route table.
+ */
+const ALWAYS_PRERENDERED = [
+  "index.html",
+  "about.html",
+  "ai-engineer.html",
+  "bina-print.html",
+  "blog.html",
+  "consulting.html",
+  "contact.html",
+];
+
+/**
  * Inline declarations that leave content invisible or collapsed at paint.
  *
  * Deliberately narrow: `opacity:0.5` and `translateY(24px)` are *reveal*
@@ -86,10 +111,18 @@ test("the build output this contract reads actually exists", () => {
     `No prerendered output at ${BUILD_DIR}. Run \`pnpm --filter=web build\` before \`test:postbuild\`.`
   );
 
-  const pages = listHtmlFiles(BUILD_DIR).filter(isAuthoredPage);
-  assert.ok(
-    pages.length >= 10,
-    `Expected the build to prerender the site's pages, found ${pages.length}. A build that emitted almost nothing would make this file assert nothing.`
+  const pages = new Set(
+    listHtmlFiles(BUILD_DIR)
+      .filter(isAuthoredPage)
+      .map((file) => relative(BUILD_DIR, file))
+  );
+  const missing = ALWAYS_PRERENDERED.filter((page) => !pages.has(page));
+  assert.deepEqual(
+    missing,
+    [],
+    `The build prerendered ${pages.size} authored page(s) but not ${missing.join(", ")}. ` +
+      "A build that emitted almost nothing would make this file assert nothing, so " +
+      "the scans below are only meaningful once every repo-owned page is present."
   );
 });
 
