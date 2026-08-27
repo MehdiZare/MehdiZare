@@ -102,16 +102,18 @@ export async function POST(request: Request): Promise<Response> {
   revalidateTag("strapi", "max");
 
   for (const path of paths) {
-    if ((path.includes("[") && path.includes("]")) || path === "/sitemap.xml") {
-      // Metadata routes ignore a typeless revalidatePath, so "page" is the
-      // type that would mark /sitemap.xml stale after a publish.
-      //
-      // It is inert as things stand: this PR also makes the sitemap route
-      // `force-dynamic`, and a route with no cache entry has nothing to
-      // invalidate. Kept because it is the correct call, and because a bounded
-      // `revalidate` is the obvious answer if per-request CMS walks ever turn
-      // out to cost too much -- at which point publish -> sitemap propagation
-      // has to work, and would silently not.
+    // `"page"` is for dynamic *page* routes, whose implicit tag set includes
+    // `_N_T_<route>/page`. `/sitemap.xml` is a metadata route: its tags are
+    // `_N_T_/sitemap.xml/route` and `_N_T_/sitemap.xml`, never `/page`. Read
+    // straight off a build: `.next/server/app/sitemap.xml.meta` carries
+    // `x-next-cache-tags: ...,_N_T_/sitemap.xml/route,_N_T_/sitemap.xml,strapi`.
+    //
+    // So a typeless `revalidatePath("/sitemap.xml")` emits exactly the tag the
+    // route registers and has always worked. Passing `"page"` emits
+    // `_N_T_/sitemap.xml/page`, which nothing registers -- it would quietly
+    // never invalidate. There is no `"route"` type to pass instead; typeless is
+    // the correct call, so `/sitemap.xml` takes the branch below.
+    if (path.includes("[") && path.includes("]")) {
       revalidatePath(path, "page");
     } else {
       revalidatePath(path);
