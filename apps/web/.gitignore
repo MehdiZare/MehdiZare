@@ -14,7 +14,10 @@
 /coverage
 
 # next.js
-/.next/
+# `/.next/` only matches a directory. A symlink named `.next` is a file to git
+# (mode 120000), so it can be committed and then break Linux CI: `next build`
+# follows the dangling path and `mkdir` fails with ENOENT.
+.next
 /out/
 
 # production
