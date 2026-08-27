@@ -5,7 +5,9 @@ process.env.DISABLE_STRAPI_CMS = "true";
 delete process.env.ENABLE_BINA_PRINT;
 delete process.env.NEXT_PUBLIC_ENABLE_BINA_PRINT;
 
-const { default: sitemap, maxDuration, maxValidDate } = await import("../src/app/sitemap.ts");
+const { default: sitemap, dynamic, maxDuration, maxValidDate, revalidate } = await import(
+  "../src/app/sitemap.ts"
+);
 
 test("sitemap includes fallback category/tag entries when CMS is disabled", async () => {
   const entries = await sitemap();
@@ -24,6 +26,8 @@ test("sitemap includes fallback category/tag entries when CMS is disabled", asyn
   assert.ok(urls.includes("https://www.mehdi-zare.com/blog/tag/llms"));
   assert.ok(urls.includes("https://www.mehdi-zare.com/author/mehdi-zare"));
   assert.equal(maxDuration, 20);
+  assert.equal(dynamic, "force-dynamic");
+  assert.equal(revalidate, 0);
 });
 
 test("blog lastModified uses the newest valid article updatedAt, not wall-clock now", () => {

@@ -151,16 +151,29 @@ async function fetchStrapi(input: URL, init: RequestInit & { path: string }): Pr
   return response;
 }
 
-export async function fetchAPI<T>(path: string, params?: FetchAPIParams): Promise<T> {
+/** Optional fetch cache mode. Do not put this on FetchAPIParams — those keys are serialized into the Strapi URL. */
+export interface StrapiFetchInit {
+  cache?: RequestCache;
+}
+
+export async function fetchAPI<T>(
+  path: string,
+  params?: FetchAPIParams,
+  init?: StrapiFetchInit
+): Promise<T> {
   const url = buildApiUrl(path, params);
   const response = await fetchStrapi(url, {
     method: "GET",
     headers: buildHeaders(),
-    next: {
-      revalidate: STRAPI_FETCH_REVALIDATE_SECONDS,
-      tags: ["strapi"],
-    },
     path,
+    ...(init?.cache === "no-store"
+      ? { cache: "no-store" as const }
+      : {
+          next: {
+            revalidate: STRAPI_FETCH_REVALIDATE_SECONDS,
+            tags: ["strapi"],
+          },
+        }),
   });
 
   return (await response.json()) as T;
@@ -311,12 +324,17 @@ const authorPopulate = {
 };
 
 export async function getArticles(
-  params?: FetchAPIParams
+  params?: FetchAPIParams,
+  init?: StrapiFetchInit
 ): Promise<StrapiCollectionResponse<Article>> {
-  return fetchAPI<StrapiCollectionResponse<Article>>("/articles", {
-    populate: articlePopulate,
-    ...params,
-  });
+  return fetchAPI<StrapiCollectionResponse<Article>>(
+    "/articles",
+    {
+      populate: articlePopulate,
+      ...params,
+    },
+    init
+  );
 }
 
 export async function getArticleBySlug(
@@ -331,12 +349,17 @@ export async function getArticleBySlug(
 }
 
 export async function getAuthors(
-  params?: FetchAPIParams
+  params?: FetchAPIParams,
+  init?: StrapiFetchInit
 ): Promise<StrapiCollectionResponse<Author>> {
-  return fetchAPI<StrapiCollectionResponse<Author>>("/authors", {
-    populate: authorPopulate,
-    ...params,
-  });
+  return fetchAPI<StrapiCollectionResponse<Author>>(
+    "/authors",
+    {
+      populate: authorPopulate,
+      ...params,
+    },
+    init
+  );
 }
 
 export async function getAuthorBySlug(
@@ -382,29 +405,39 @@ export async function getPrimaryAuthor(): Promise<Author | undefined> {
 }
 
 export async function getCategories(
-  params?: FetchAPIParams
+  params?: FetchAPIParams,
+  init?: StrapiFetchInit
 ): Promise<StrapiCollectionResponse<Category>> {
-  return fetchAPI<StrapiCollectionResponse<Category>>("/categories", {
-    populate: {
-      children: { populate: "*" },
-      parent: { populate: "*" },
-      seo: { populate: { metaImage: { populate: "*" } } },
+  return fetchAPI<StrapiCollectionResponse<Category>>(
+    "/categories",
+    {
+      populate: {
+        children: { populate: "*" },
+        parent: { populate: "*" },
+        seo: { populate: { metaImage: { populate: "*" } } },
+      },
+      sort: "order:asc",
+      ...params,
     },
-    sort: "order:asc",
-    ...params,
-  });
+    init
+  );
 }
 
 export async function getTags(
-  params?: FetchAPIParams
+  params?: FetchAPIParams,
+  init?: StrapiFetchInit
 ): Promise<StrapiCollectionResponse<Tag>> {
-  return fetchAPI<StrapiCollectionResponse<Tag>>("/tags", {
-    populate: {
-      seo: { populate: { metaImage: { populate: "*" } } },
+  return fetchAPI<StrapiCollectionResponse<Tag>>(
+    "/tags",
+    {
+      populate: {
+        seo: { populate: { metaImage: { populate: "*" } } },
+      },
+      sort: "name:asc",
+      ...params,
     },
-    sort: "name:asc",
-    ...params,
-  });
+    init
+  );
 }
 
 export async function getCategoryBySlug(

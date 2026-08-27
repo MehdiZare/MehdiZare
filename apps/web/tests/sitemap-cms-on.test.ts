@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 
 // The CMS-off contract lives in sitemap-route.test.ts. This file covers the
 // opposite branch: a reachable Strapi, so mapArticlePages / mapAuthorPages,
-// empty-slug skips, STRAPI_MAX_PAGES, the narrowed article query, and
+// empty-slug skips, STRAPI_MAX_PAGES, the narrowed article query, new-post
+// membership + /blog lastmod, cache: "no-store" on collection reads, and
 // SITEMAP_DEADLINE_MS < maxDuration actually execute.
 //
 // `serverEnv` freezes DISABLE_STRAPI_CMS at module scope, so this has to be its
@@ -36,6 +37,7 @@ function emptyScenario(): Scenario {
 let scenario: Scenario = emptyScenario();
 let requestedPaths: string[] = [];
 let requestedUrls: URL[] = [];
+let requestedCaches: Array<RequestCache | undefined> = [];
 let stallCms = false;
 const stalledRejects: Array<(reason?: unknown) => void> = [];
 
@@ -49,7 +51,7 @@ function jsonResponse(body: unknown): Response {
 // Stub the single choke point every Strapi read funnels through
 // (fetchAPI -> fetchStrapi -> fetch). This covers URL building and pagination
 // param serialization too, which mocking `@/lib/strapi` would skip.
-globalThis.fetch = (async (input: RequestInfo | URL) => {
+globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   if (stallCms) {
     return new Promise<Response>((_resolve, reject) => {
       stalledRejects.push(reject);
@@ -59,6 +61,7 @@ globalThis.fetch = (async (input: RequestInfo | URL) => {
   const url = new URL(String(input));
   requestedPaths.push(url.pathname);
   requestedUrls.push(url);
+  requestedCaches.push(init?.cache);
 
   const page = Number(url.searchParams.get("pagination[page]") ?? "1");
   const collection = (rows: Row[], pageCount: number) =>
@@ -94,6 +97,7 @@ async function runSitemap(next: Partial<Scenario> = {}) {
   scenario = { ...emptyScenario(), ...next };
   requestedPaths = [];
   requestedUrls = [];
+  requestedCaches = [];
   const entries = await sitemap();
   return { entries, urls: entries.map((entry) => entry.url) };
 }
@@ -263,8 +267,8 @@ test("the article query asks only for what the sitemap renders", async () => {
 
   const params = articleRequest.searchParams;
   assert.deepEqual(
-    [params.get("fields[0]"), params.get("fields[1]")],
-    ["slug", "updatedAt"],
+    [params.get("fields[0]"), params.get("fields[1]"), params.get("fields[2]")],
+    ["slug", "updatedAt", "publishedAt"],
     "narrowing the query is what keeps the full article populate out of the sitemap read"
   );
   assert.equal(params.get("populate[featuredImage][fields][0]"), "url");
@@ -307,6 +311,68 @@ test("the sitemap never reads page single types or site-setting", async () => {
     home.lastModified instanceof Date ? home.lastModified.toISOString() : home.lastModified,
     "2026-01-01T00:00:00.000Z",
     "static lastmod must not come from the stub single-type updatedAt fixture"
+  );
+});
+
+test("a newly published CMS article is included and /blog lastModified tracks it", async () => {
+  const { entries, urls } = await runSitemap({
+    articles: [
+      {
+        slug: "older-post",
+        updatedAt: "2026-08-24T14:51:40.766Z",
+        publishedAt: "2026-08-24T14:51:40.766Z",
+      },
+      {
+        slug: "how-i-actually-use-grok-bot",
+        updatedAt: "2026-08-27T18:20:00.000Z",
+        publishedAt: "2026-08-27T18:30:00.000Z",
+      },
+    ],
+  });
+
+  assert.ok(
+    urls.includes(`${SITE_URL}/blog/older-post`),
+    "existing CMS posts must stay in the sitemap"
+  );
+  assert.ok(
+    urls.includes(`${SITE_URL}/blog/how-i-actually-use-grok-bot`),
+    "a newly published CMS slug must appear without being hardcoded in sitemap.ts"
+  );
+
+  const blog = entries.find((entry) => entry.url === `${SITE_URL}/blog`);
+  assert.ok(blog, "/blog must remain in the sitemap");
+  assert.equal(
+    blog.lastModified instanceof Date ? blog.lastModified.toISOString() : blog.lastModified,
+    "2026-08-27T18:30:00.000Z",
+    "/blog lastModified must bump to the newest article publishedAt/updatedAt"
+  );
+
+  const grok = entries.find(
+    (entry) => entry.url === `${SITE_URL}/blog/how-i-actually-use-grok-bot`
+  );
+  assert.equal(
+    grok?.lastModified instanceof Date ? grok.lastModified.toISOString() : grok?.lastModified,
+    "2026-08-27T18:30:00.000Z",
+    "article lastmod is max(updatedAt, publishedAt) so it is not older than publish time"
+  );
+});
+
+test("sitemap collection reads bypass the shared Strapi fetch cache", async () => {
+  await runSitemap({
+    articles: [{ slug: "valid-post", updatedAt: "2026-02-02T00:00:00.000Z" }],
+  });
+
+  const articleCaches = requestedUrls
+    .map((url, index) => ({ path: url.pathname, cache: requestedCaches[index] }))
+    .filter(({ path }) =>
+      ["/api/articles", "/api/authors", "/api/categories", "/api/tags"].includes(path)
+    )
+    .map(({ cache }) => cache);
+
+  assert.ok(articleCaches.length > 0, "the sitemap must read CMS collections");
+  assert.ok(
+    articleCaches.every((cache) => cache === "no-store"),
+    "sitemap CMS reads must not reuse the 600s Strapi fetch cache that listing pages use"
   );
 });
 

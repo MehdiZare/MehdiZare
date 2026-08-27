@@ -102,7 +102,9 @@ export async function POST(request: Request): Promise<Response> {
   revalidateTag("strapi", "max");
 
   for (const path of paths) {
-    if (path.includes("[") && path.includes("]")) {
+    if ((path.includes("[") && path.includes("]")) || path === "/sitemap.xml") {
+      // Metadata routes ignore a typeless revalidatePath; "page" is what
+      // actually marks /sitemap.xml stale after a CMS publish.
       revalidatePath(path, "page");
     } else {
       revalidatePath(path);

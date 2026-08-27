@@ -14,7 +14,15 @@ import taxonomy from "../../../../data/taxonomy.json";
 
 const SITE_URL = getSiteUrl();
 
-export const revalidate = 3600;
+/**
+ * sitemap.ts is a special Route Handler, cached unless it is marked dynamic.
+ * `revalidate = 3600` left production frozen at the last deploy: /blog already
+ * listed new CMS posts while sitemap.xml kept the build-time article set and
+ * /blog lastmod. Request-time generation is what lets a publish (or the next
+ * hit) pick up new slugs.
+ */
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 /** Isolate budget: must exceed SITEMAP_DEADLINE_MS so a slow CMS walk can still return the fallback. */
 export const maxDuration = 20;
 
@@ -65,18 +73,21 @@ export function maxValidDate(values: Array<string | undefined>, fallback: Date):
 }
 
 /**
- * Sitemap rows only need slug, updatedAt, and featuredImage.url.
- * Passing this populate overrides getArticles' default articlePopulate
- * (category, tags, author credentials, seo.metaImage).
+ * Sitemap rows need slug plus the timestamps lastmod is derived from, and
+ * featuredImage.url. Passing this populate overrides getArticles' default
+ * articlePopulate (category, tags, author credentials, seo.metaImage).
  */
 const SITEMAP_ARTICLE_FIELDS = {
-  fields: ["slug", "updatedAt"],
+  fields: ["slug", "updatedAt", "publishedAt"],
   populate: { featuredImage: { fields: ["url"] } },
 } as const;
 
+/** Bypass the shared 600s Strapi fetch cache so a sitemap rebuild sees current published posts. */
+const SITEMAP_FETCH_INIT = { cache: "no-store" as const };
+
 function getAllArticlesForSitemap(deadlineMs?: number): Promise<Article[]> {
   return fetchAllPages(
-    getArticles,
+    (params) => getArticles(params, SITEMAP_FETCH_INIT),
     "articles",
     {
       ...SITEMAP_ARTICLE_FIELDS,
@@ -87,15 +98,30 @@ function getAllArticlesForSitemap(deadlineMs?: number): Promise<Article[]> {
 }
 
 function getAllAuthorsForSitemap(deadlineMs?: number): Promise<Author[]> {
-  return fetchAllPages(getAuthors, "authors", { sort: "updatedAt:desc" }, { deadlineMs });
+  return fetchAllPages(
+    (params) => getAuthors(params, SITEMAP_FETCH_INIT),
+    "authors",
+    { sort: "updatedAt:desc" },
+    { deadlineMs }
+  );
 }
 
 function getAllCategoriesForSitemap(deadlineMs?: number): Promise<Category[]> {
-  return fetchAllPages(getCategories, "categories", { sort: "order:asc" }, { deadlineMs });
+  return fetchAllPages(
+    (params) => getCategories(params, SITEMAP_FETCH_INIT),
+    "categories",
+    { sort: "order:asc" },
+    { deadlineMs }
+  );
 }
 
 function getAllTagsForSitemap(deadlineMs?: number): Promise<Tag[]> {
-  return fetchAllPages(getTags, "tags", { sort: "name:asc" }, { deadlineMs });
+  return fetchAllPages(
+    (params) => getTags(params, SITEMAP_FETCH_INIT),
+    "tags",
+    { sort: "name:asc" },
+    { deadlineMs }
+  );
 }
 
 interface TaxonomyCategoryNode {
@@ -284,7 +310,7 @@ function mapArticlePages(articles: Article[], now: Date): MetadataRoute.Sitemap 
     }
     pages.push({
       url: `${SITE_URL}/blog/${slug}`,
-      lastModified: safeDate(article.updatedAt, now),
+      lastModified: maxValidDate([article.updatedAt, article.publishedAt], now),
       changeFrequency: "weekly",
       priority: 0.7,
       images: imageUrl ? [imageUrl] : undefined,
@@ -345,7 +371,7 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
   if (articlesResult.status === "fulfilled") {
     const articles = articlesResult.value;
     pageTimestamps.blog = maxValidDate(
-      articles.map((article) => article.updatedAt),
+      articles.flatMap((article) => [article.updatedAt, article.publishedAt]),
       pageTimestamps.blog
     );
     articlePages = mapArticlePages(articles, now);
