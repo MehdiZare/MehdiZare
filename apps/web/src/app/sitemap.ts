@@ -2,13 +2,9 @@ import type { MetadataRoute } from "next";
 import type { Article, Author, Category, Tag } from "@/types/strapi";
 import {
   fetchAllPages,
-  getAboutPage,
   getArticles,
   getAuthors,
-  getBinaPrintPage,
   getCategories,
-  getConsultingPage,
-  getHomePage,
   getTags,
 } from "@/lib/strapi";
 import { isBinaPrintEnabled } from "@/lib/feature-flags";
@@ -304,35 +300,18 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     blog: now,
   };
 
-  const timestampWork = (async () => {
-    // Share this Promise.all so bina-print cannot add a serial STRAPI_TIMEOUT_MS
-    // hop after home/about/consulting.
-    const [homeRes, aboutRes, consultingRes, binaPrintRes] = await Promise.all([
-      getHomePage(),
-      getAboutPage(),
-      getConsultingPage(),
-      showBinaPrint ? getBinaPrintPage() : Promise.resolve(null),
-    ]);
-    pageTimestamps.home = safeDate(homeRes.data?.updatedAt, now);
-    pageTimestamps.about = safeDate(aboutRes.data?.updatedAt, now);
-    pageTimestamps.consulting = safeDate(consultingRes.data?.updatedAt, now);
-    if (binaPrintRes) {
-      pageTimestamps.binaPrint = safeDate(binaPrintRes.data?.updatedAt, now);
-    }
-  })();
-
-  const [timestampResult, articlesResult, authorsResult, categoriesResult, tagsResult] =
+  // The static pages' copy lives in the repo, so their lastmod is the build,
+  // not a CMS row (#100). Reading it from Strapi reported 2026-02-25 for pages
+  // that had in fact changed that morning: the records were seeded once and
+  // never touched again, so their updatedAt tracked the seed rather than the
+  // deploy that changed what the page says.
+  const [articlesResult, authorsResult, categoriesResult, tagsResult] =
     await Promise.allSettled([
-      timestampWork,
       getAllArticlesForSitemap(deadlineMs),
       getAllAuthorsForSitemap(deadlineMs),
       getAllCategoriesForSitemap(deadlineMs),
       getAllTagsForSitemap(deadlineMs),
     ]);
-
-  if (timestampResult.status === "rejected") {
-    degradedSources.push("pages");
-  }
 
   let articlePages: MetadataRoute.Sitemap = [];
   if (articlesResult.status === "fulfilled") {

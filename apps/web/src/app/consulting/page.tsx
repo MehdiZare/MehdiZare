@@ -3,11 +3,9 @@ import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { FAQ } from "@/components/consulting/FAQ";
 import { CalComTrigger } from "@/components/scheduling/CalComTrigger";
-import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
-import { DevCmsBanner } from "@/components/shared/DevCmsBanner";
 import { buildConsultingFallback } from "@/content/fallbacks";
 import {
   buildBreadcrumbJsonLd,
@@ -17,14 +15,17 @@ import {
   getSiteUrl,
 } from "@/lib/seo";
 import { getSiteProfile } from "@/lib/site-profile";
-import { getConsultingPage } from "@/lib/strapi";
 
-const consultingMetadataTitle = "Consulting";
 const schedulerSectionId = "book";
 const schedulerAnchorHref = `#${schedulerSectionId}`;
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteProfile = await getSiteProfile();
+  // The CMS row used to supply this title and the repo constant was only the
+  // outage fallback, so dropping the CMS read silently retitled the page from
+  // "AI Consulting for High-Stakes Teams" to "Consulting". #100 pins that title
+  // for GSC, so take it from the same fallback the <h1> renders.
+  const { title: consultingTitle } = buildConsultingFallback(siteProfile);
   const consultingKeywords = [
     "AI consulting",
     "production AI systems",
@@ -33,58 +34,19 @@ export async function generateMetadata(): Promise<Metadata> {
     "fractional AI leadership",
   ];
 
-  try {
-    const response = await getConsultingPage();
-    const cmsData = response.data;
-
-    return buildPageMetadata({
-      pathname: "/consulting",
-      title: cmsData?.title || consultingMetadataTitle,
-      description: cmsData?.subtitle || siteProfile.positioningSubheadline,
-      seo: cmsData?.seo,
-      type: "website",
-      keywords: consultingKeywords,
-    });
-  } catch {
-    return buildPageMetadata({
-      pathname: "/consulting",
-      title: consultingMetadataTitle,
-      description: siteProfile.positioningSubheadline,
-      type: "website",
-      keywords: consultingKeywords,
-    });
-  }
+  return buildPageMetadata({
+    pathname: "/consulting",
+    title: consultingTitle,
+    description: siteProfile.positioningSubheadline,
+    type: "website",
+    keywords: consultingKeywords,
+  });
 }
 
 export default async function ConsultingPage() {
   const siteProfile = await getSiteProfile();
   const siteUrl = getSiteUrl();
-  const fallbackData = buildConsultingFallback(siteProfile);
-
-  let data = fallbackData;
-  let cmsStructuredData: unknown;
-  let cmsFailed = false;
-
-  try {
-    const response = await getConsultingPage();
-    const cmsData = response.data;
-    cmsStructuredData = cmsData?.seo?.structuredData;
-
-    if (cmsData) {
-      data = {
-        title: cmsData.title || fallbackData.title,
-        subtitle: cmsData.subtitle || fallbackData.subtitle,
-        audiences:
-          cmsData.audiences && cmsData.audiences.length > 0
-            ? cmsData.audiences
-            : fallbackData.audiences,
-        services: fallbackData.services,
-        faq: cmsData.faq && cmsData.faq.length > 0 ? cmsData.faq : fallbackData.faq,
-      };
-    }
-  } catch {
-    cmsFailed = true;
-  }
+  const data = buildConsultingFallback(siteProfile);
 
   const faqJsonLd = buildFAQJsonLd(
     data.faq
@@ -150,11 +112,6 @@ export default async function ConsultingPage() {
 
   return (
     <div className="bg-paper pb-24">
-      {cmsFailed && <DevCmsBanner page="consulting-page" />}
-      <CmsStructuredData
-        idPrefix="consulting-cms-jsonld"
-        data={cmsStructuredData}
-      />
       <JsonLd
         id="consulting-webpage-jsonld"
         data={buildWebPageJsonLd({

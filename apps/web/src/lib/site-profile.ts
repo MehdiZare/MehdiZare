@@ -468,6 +468,19 @@ function resolveStrictMode(explicit?: boolean): boolean {
   return process.env.SITE_PROFILE_STRICT === "true";
 }
 
+/**
+ * Merges CMS site settings over the repo defaults.
+ *
+ * As of #100 the production path always passes `settings` as `undefined`:
+ * `getSiteProfile` no longer reads the `site-setting` row, so every
+ * `blankToUndefined(settings?.x) ?? DEFAULT_SITE_PROFILE.x` chain below now
+ * resolves to the default. The parameter is kept because `normalizeSiteProfile`
+ * is still called directly with settings in tests, and because deleting the
+ * merge is a larger change than removing the read.
+ *
+ * If nothing comes to need CMS-supplied site settings, this collapses to a
+ * spread of DEFAULT_SITE_PROFILE plus the author-derived fields.
+ */
 function mergeProfile(settings: SiteSettings | null | undefined, author?: Author | null): SiteProfile {
   const canonicalAuthor = buildAuthorProfile(author, settings);
 
@@ -538,31 +551,31 @@ export function normalizeSiteProfile(
 }
 
 export async function getSiteProfile(options: SiteProfileOptions = {}): Promise<SiteProfile> {
-  const strict = resolveStrictMode(options.strict);
-
   try {
-    const { getPrimaryAuthor, getSiteSettings } = await import("./strapi");
+    const { getPrimaryAuthor } = await import("./strapi");
 
-    const [settingsResponse, author] = await Promise.all([
-      getSiteSettings(),
-      getPrimaryAuthor().catch(() => undefined),
-    ]);
+    // `site-setting` is no longer read (#100). Its row was seeded once in
+    // February and never edited again, yet it *won* over the repo at runtime --
+    // so moving the site's location took a production CMS write (#87, #91), and
+    // so did renaming the employer. Every value it held was a copy of
+    // DEFAULT_SITE_PROFILE; the repo is now simply the source.
+    //
+    // The author record still comes from Strapi: articles relate to it, and
+    // `/author/[slug]` renders it.
+    const author = await getPrimaryAuthor().catch(() => undefined);
 
-    return normalizeSiteProfile(settingsResponse.data, {
-      strict,
+    // No strict validation here any more. It existed to fail the build when the
+    // CMS `site-setting` row was missing required fields; with the row out of
+    // the read path there is nothing to validate -- DEFAULT_SITE_PROFILE has
+    // every required field by construction, and passing `strict` now would
+    // throw on every request. `normalizeSiteProfile` keeps the option for
+    // callers that pass settings directly.
+    return normalizeSiteProfile(undefined, {
       author: author ?? options.author,
     });
   } catch (error) {
-    if (strict) {
-      const message = error instanceof Error ? error.message : "unknown_error";
-      throw new SiteProfileValidationError(
-        `Unable to load Site Profile in strict mode: ${message}`,
-        ["site-setting"]
-      );
-    }
-
     console.warn(
-      "⚠ CMS unavailable — site profile falling back to default content.",
+      "⚠ CMS author unavailable — site profile falling back to default content.",
       error instanceof Error ? error.message : error
     );
     return mergeProfile(undefined, options.author);

@@ -5,11 +5,9 @@ import { CredentialBadges } from "@/components/about/CredentialBadges";
 import { EducationList } from "@/components/about/EducationList";
 import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
 import { AiEngineerProfileLink } from "@/components/seo/AiEngineerProfileLink";
-import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
-import { DevCmsBanner } from "@/components/shared/DevCmsBanner";
 import { buildAboutFallback } from "@/content/fallbacks";
 import {
   buildBreadcrumbJsonLd,
@@ -17,7 +15,6 @@ import {
   buildWebPageJsonLd,
 } from "@/lib/seo";
 import { getSiteProfile } from "@/lib/site-profile";
-import { getAboutPage } from "@/lib/strapi";
 
 const aboutMetadataTitle = "About";
 
@@ -31,81 +28,22 @@ export async function generateMetadata(): Promise<Metadata> {
     "AI consulting",
   ];
 
-  try {
-    const response = await getAboutPage();
-    const cmsData = response.data;
-
-    return buildPageMetadata({
-      pathname: "/about",
-      title: aboutMetadataTitle,
-      description: siteProfile.positioningSubheadline,
-      seo: cmsData?.seo,
-      type: "website",
-      keywords: aboutKeywords,
-    });
-  } catch {
-    return buildPageMetadata({
-      pathname: "/about",
-      title: aboutMetadataTitle,
-      description: siteProfile.positioningSubheadline,
-      type: "website",
-      keywords: aboutKeywords,
-    });
-  }
+  return buildPageMetadata({
+    pathname: "/about",
+    title: aboutMetadataTitle,
+    description: siteProfile.positioningSubheadline,
+    type: "website",
+    keywords: aboutKeywords,
+  });
 }
 
 export default async function AboutPage() {
   const siteProfile = await getSiteProfile();
   const consultingCallHref = siteProfile.bookCallHref;
-  const fallbackData = buildAboutFallback(siteProfile);
-
-  let data = fallbackData;
-  let cmsStructuredData: unknown;
-  let cmsFailed = false;
-
-  try {
-    const response = await getAboutPage();
-    const cmsData = response.data;
-    cmsStructuredData = cmsData?.seo?.structuredData;
-
-    if (cmsData) {
-      const experiences =
-        cmsData.experiences && cmsData.experiences.length > 0
-          ? cmsData.experiences
-          : fallbackData.experiences;
-
-      data = {
-        title: fallbackData.title,
-        positioningStatement: fallbackData.positioningStatement,
-        story: fallbackData.story,
-        storyBlocks: fallbackData.storyBlocks,
-        stats: cmsData.stats && cmsData.stats.length > 0 ? cmsData.stats : fallbackData.stats,
-        credentials:
-          cmsData.credentials && cmsData.credentials.length > 0
-            ? cmsData.credentials
-            : fallbackData.credentials,
-        experiences,
-        education:
-          cmsData.education && cmsData.education.length > 0
-            ? cmsData.education
-            : fallbackData.education,
-        socialLinks:
-          cmsData.socialLinks && cmsData.socialLinks.length > 0
-            ? cmsData.socialLinks
-            : fallbackData.socialLinks,
-      };
-    }
-  } catch {
-    cmsFailed = true;
-  }
+  const data = buildAboutFallback(siteProfile);
 
   return (
     <div className="bg-paper pb-20">
-      {cmsFailed && <DevCmsBanner page="about-page" />}
-      <CmsStructuredData
-        idPrefix="about-cms-jsonld"
-        data={cmsStructuredData}
-      />
       <JsonLd
         id="about-webpage-jsonld"
         data={buildWebPageJsonLd({

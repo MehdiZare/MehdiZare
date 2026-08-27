@@ -8,15 +8,11 @@ import { TrackRecord } from "@/components/home/TrackRecord";
 import { ProofOfWork } from "@/components/home/ProofOfWork";
 import { WritingSection } from "@/components/home/WritingSection";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
-import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildHomeFallback, splitIndustries } from "@/content/fallbacks";
 import { isBinaPrintEnabled } from "@/lib/feature-flags";
 import { getSiteProfile } from "@/lib/site-profile";
-import { getHomePage } from "@/lib/strapi";
 import { buildPageMetadata, buildWebPageJsonLd } from "@/lib/seo";
-import { DevCmsBanner } from "@/components/shared/DevCmsBanner";
-import type { SEO } from "@/types/strapi";
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteProfile = await getSiteProfile();
@@ -25,66 +21,21 @@ export async function generateMetadata(): Promise<Metadata> {
   const homeMetadataTitle =
     `${siteProfile.siteName} — ${siteProfile.authorRole} · CFA Charterholder`;
 
-  try {
-    const response = await getHomePage();
-    const data = response.data;
-
-    return buildPageMetadata({
-      pathname: "/",
-      title: homeMetadataTitle,
-      description: siteProfile.siteDescription,
-      seo: data?.seo,
-      image: data?.heroImage,
-      type: "website",
-    });
-  } catch {
-    return buildPageMetadata({
-      pathname: "/",
-      title: homeMetadataTitle,
-      description: siteProfile.siteDescription,
-      type: "website",
-    });
-  }
+  return buildPageMetadata({
+    pathname: "/",
+    title: homeMetadataTitle,
+    description: siteProfile.siteDescription,
+    type: "website",
+  });
 }
 
 export default async function Home() {
   const showBinaPrint = isBinaPrintEnabled();
   const siteProfile = await getSiteProfile();
-  const fallbackHome = buildHomeFallback(siteProfile);
-  let homeData = fallbackHome;
-  let pageSeo: SEO | undefined;
-  let cmsFailed = false;
-
-  try {
-    const response = await getHomePage();
-    const data = response.data;
-    pageSeo = data?.seo;
-
-    if (data) {
-      homeData = {
-        heroHeadline: data.heroHeadline || fallbackHome.heroHeadline,
-        heroSubheadline: data.heroSubheadline || fallbackHome.heroSubheadline,
-        heroPrimaryCtaLabel:
-          data.heroPrimaryCtaLabel || fallbackHome.heroPrimaryCtaLabel,
-        heroPrimaryCtaHref: data.heroPrimaryCtaHref || fallbackHome.heroPrimaryCtaHref,
-        heroSecondaryCtaLabel:
-          data.heroSecondaryCtaLabel || fallbackHome.heroSecondaryCtaLabel,
-        heroSecondaryCtaHref:
-          data.heroSecondaryCtaHref || fallbackHome.heroSecondaryCtaHref,
-        heroImage: data.heroImage,
-      };
-    }
-  } catch {
-    cmsFailed = true;
-  }
+  const homeData = buildHomeFallback(siteProfile);
 
   return (
     <>
-      {cmsFailed && <DevCmsBanner page="home-page" />}
-      <CmsStructuredData
-        idPrefix="home-cms-jsonld"
-        data={pageSeo?.structuredData}
-      />
       <JsonLd
         id="home-webpage-jsonld"
         data={buildWebPageJsonLd({
