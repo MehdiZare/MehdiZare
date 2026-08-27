@@ -21,7 +21,11 @@ function readSource(relativePath: string): string {
 test("key pages consume Site Profile as canonical source", () => {
   for (const file of pageFiles) {
     const source = readSource(file);
-    assert.match(source, /getSiteProfile/);
+    assert.match(
+      source,
+      /getSiteProfile\(/,
+      `${file} must call getSiteProfile, not merely import it (#94)`
+    );
   }
 });
 
