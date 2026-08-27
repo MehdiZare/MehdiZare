@@ -40,6 +40,38 @@ export function resolveTaxonomyDisplayName(
   return firstFilled(...candidates) ?? formatSlugName(slug);
 }
 
+/** A subcategory link card rendered on a parent category listing. */
+export interface SubcategoryCard {
+  id: number | string;
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+/**
+ * Maps CMS or seed child categories onto subcategory cards, resolving the
+ * label through the shared display-name rule and treating a blank CMS
+ * description as absent so a whitespace-only value cannot render an empty
+ * paragraph under the card title. CMS children carry a numeric `id`; seed
+ * children have none and are keyed by slug.
+ */
+export function resolveSubcategoryCards(
+  children: Array<{
+    id?: number | string;
+    name?: string | null;
+    slug: string;
+    headline?: string | null;
+    description?: string | null;
+  }>
+): SubcategoryCard[] {
+  return children.map((child) => ({
+    id: child.id ?? child.slug,
+    name: resolveTaxonomyDisplayName(child.slug, child.name, child.headline),
+    slug: child.slug,
+    description: firstFilled(child.description),
+  }));
+}
+
 export function buildTagListingDescription(tagName: string): string {
   return `Articles tagged ${tagName}.`;
 }
