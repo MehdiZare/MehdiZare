@@ -103,8 +103,15 @@ export async function POST(request: Request): Promise<Response> {
 
   for (const path of paths) {
     if ((path.includes("[") && path.includes("]")) || path === "/sitemap.xml") {
-      // Metadata routes ignore a typeless revalidatePath; "page" is what
-      // actually marks /sitemap.xml stale after a CMS publish.
+      // Metadata routes ignore a typeless revalidatePath, so "page" is the
+      // type that would mark /sitemap.xml stale after a publish.
+      //
+      // It is inert as things stand: this PR also makes the sitemap route
+      // `force-dynamic`, and a route with no cache entry has nothing to
+      // invalidate. Kept because it is the correct call, and because a bounded
+      // `revalidate` is the obvious answer if per-request CMS walks ever turn
+      // out to cost too much -- at which point publish -> sitemap propagation
+      // has to work, and would silently not.
       revalidatePath(path, "page");
     } else {
       revalidatePath(path);
