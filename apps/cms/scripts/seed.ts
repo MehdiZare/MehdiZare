@@ -426,7 +426,7 @@ const siteSettings = {
   positioningHighlight: "because I learn your domain before I write a line of code.",
   credentialLine: "Principal AI Engineer · CFA Charterholder",
   industriesLine: "Finance · Defense · Healthcare · Enterprise",
-  locationLine: "Arlington, VA",
+  locationLine: "Miami, FL",
   primaryCtaLabel: "Let's Talk",
   primaryCtaHref: "/consulting#book",
   secondaryCtaLabel: "How I work",
