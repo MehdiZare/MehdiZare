@@ -5,7 +5,9 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { PostCard } from "@/components/blog/PostCard";
 import {
   resolveCategoryListingCopy,
+  resolveSubcategoryCards,
   resolveTaxonomyDisplayName,
+  type SubcategoryCard,
 } from "@/lib/blog-listing";
 import { getCategorySeedBySlug } from "@/lib/taxonomy-seed";
 import { getCategories, getCategoryBySlug, getArticles } from "@/lib/strapi";
@@ -20,13 +22,6 @@ type ArticleList = Awaited<ReturnType<typeof getArticles>>["data"];
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
-}
-
-interface SubcategoryCard {
-  id: number | string;
-  name: string;
-  slug: string;
-  description?: string;
 }
 
 function buildWhatYouWillFindPoints(
@@ -181,28 +176,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         }
       : null;
 
-  const subcategories: SubcategoryCard[] =
+  const subcategories: SubcategoryCard[] = resolveSubcategoryCards(
     category?.children && category.children.length > 0
-      ? category.children.map((child) => ({
-          id: child.id,
-          name: resolveTaxonomyDisplayName(
-            child.slug,
-            child.name,
-            child.headline
-          ),
-          slug: child.slug,
-          description: child.description,
-        }))
-      : (seed?.children ?? []).map((child) => ({
-          id: child.slug,
-          name: resolveTaxonomyDisplayName(
-            child.slug,
-            child.name,
-            child.headline
-          ),
-          slug: child.slug,
-          description: child.description,
-        }));
+      ? category.children
+      : (seed?.children ?? [])
+  );
 
   const childSlugs = subcategories.map((subcategory) => subcategory.slug);
   const isParent = subcategories.length > 0;

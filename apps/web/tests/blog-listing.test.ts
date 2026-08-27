@@ -10,6 +10,7 @@ const {
   resolveTaxonomyDisplayName,
   resolveTagListingCopy,
   resolveCategoryListingCopy,
+  resolveSubcategoryCards,
 } = await import("../src/lib/blog-listing.ts");
 
 test("buildTagListingDescription uses the shared tagged-articles sentence", () => {
@@ -272,4 +273,47 @@ test("category listing copy title falls back to the slug label when name and hea
   assert.equal(copy.categoryTitle, "Production Ai");
   assert.equal(copy.categoryName, "Production Ai");
   assert.equal(copy.pageDescription, "Articles in Production Ai.");
+});
+
+test("subcategory cards drop whitespace-only descriptions", () => {
+  const [card] = resolveSubcategoryCards([
+    { id: 7, name: "Agents", slug: "agents", description: "   " },
+  ]);
+
+  assert.equal(card.description, undefined);
+});
+
+test("subcategory cards trim the descriptions they keep", () => {
+  const [card] = resolveSubcategoryCards([
+    { id: 7, name: "Agents", slug: "agents", description: "  Focused track.  " },
+  ]);
+
+  assert.equal(card.description, "Focused track.");
+});
+
+test("subcategory cards resolve names through the shared display-name helper", () => {
+  const [card] = resolveSubcategoryCards([
+    { id: 7, name: "   ", headline: "Agent Frameworks", slug: "agent-frameworks" },
+  ]);
+
+  assert.equal(card.name, "Agent Frameworks");
+});
+
+test("subcategory cards fall back to the slug label when name and headline are blank", () => {
+  const [card] = resolveSubcategoryCards([
+    { name: "", headline: "  ", slug: "agent-frameworks", description: null },
+  ]);
+
+  assert.equal(card.name, "Agent Frameworks");
+  assert.equal(card.description, undefined);
+});
+
+test("subcategory cards key seed children by slug when the CMS id is absent", () => {
+  const [cms, seedChild] = resolveSubcategoryCards([
+    { id: 12, name: "Agents", slug: "agents" },
+    { name: "Evals", slug: "evals" },
+  ]);
+
+  assert.equal(cms.id, 12);
+  assert.equal(seedChild.id, "evals");
 });
