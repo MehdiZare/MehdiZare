@@ -471,14 +471,12 @@ if (!primaryAuthor) {
 
 // Derived from `siteSettings`, not restated (#101).
 //
-// The home page prefers this seeded `home-page` record over the Site Profile
-// fallback, and `buildHomeFallback` in apps/web/src/content/fallbacks/home.ts
-// already maps every one of these fields back to the same positioning copy --
-// so the two can never legitimately differ. Written out as literals they were
-// a fourth hand-maintained copy that nothing compared: rewording the
-// positioning copy in siteSettings and DEFAULT_SITE_PROFILE left this block
-// stale, and the next seed shipped a hero contradicting the site's own
-// structured data. Referencing the source makes that drift unrepresentable.
+// Seed-only after #100: apps/web reads `buildHomeFallback` / DEFAULT_SITE_PROFILE
+// directly and no longer prefers this `home-page` row at runtime. Kept so an
+// admin who opens Strapi still sees copy that matches the repo, and so the
+// identity tripwire can flag seed↔repo drift before anyone reintroduces the
+// round trip. Referencing siteSettings (instead of restating literals) is what
+// keeps that drift unrepresentable.
 const homePage = {
   heroHeadline: siteSettings.positioningHeadline,
   heroSubheadline: siteSettings.positioningSubheadline,
@@ -597,11 +595,11 @@ const aboutPage = {
 
 const consultingPage = {
   title: "AI Consulting for High-Stakes Teams",
-  // Same derivation as homePage above (#101). This one is live-exposed:
-  // apps/web/src/app/consulting/page.tsx prefers `cmsData.subtitle` over the
-  // fallback, and it reaches both the visible lede and the page's JSON-LD
-  // description, so a stale literal here shipped wrong copy and wrong
-  // structured data together.
+  // Same derivation as homePage above (#101). Seed-only after #100: apps/web
+  // reads buildConsultingFallback for both the <h1> and generateMetadata, so a
+  // stale literal here no longer reaches production. Still derived from
+  // siteSettings so seed↔repo drift stays unrepresentable until the CMS page
+  // types are retired.
   subtitle: siteSettings.positioningSubheadline,
   audiences: [
     {

@@ -280,6 +280,36 @@ test("the article query asks only for what the sitemap renders", async () => {
 // not add a serial STRAPI_TIMEOUT_MS hop. The sitemap no longer reads any page
 // single type -- their copy is in the repo -- so there is no round to share.
 
+test("the sitemap never reads page single types or site-setting", async () => {
+  const { entries } = await runSitemap({
+    articles: [{ slug: "valid-post", updatedAt: "2026-02-02T00:00:00.000Z" }],
+  });
+
+  const forbidden = requestedPaths.filter((path) =>
+    [
+      "/api/home-page",
+      "/api/about-page",
+      "/api/consulting-page",
+      "/api/bina-print-page",
+      "/api/site-setting",
+      "/api/newsletter-page",
+    ].includes(path)
+  );
+  assert.deepEqual(
+    forbidden,
+    [],
+    "page copy is repo-owned (#100); reintroducing these fetches would resurrect stale lastmods"
+  );
+
+  const home = entries.find((entry) => entry.url === SITE_URL);
+  assert.ok(home, "home must remain in the sitemap");
+  assert.notEqual(
+    home.lastModified instanceof Date ? home.lastModified.toISOString() : home.lastModified,
+    "2026-01-01T00:00:00.000Z",
+    "static lastmod must not come from the stub single-type updatedAt fixture"
+  );
+});
+
 test("the CMS deadline leaves room to serve the fallback", () => {
   assert.ok(
     SITEMAP_DEADLINE_MS < maxDuration * 1000,
