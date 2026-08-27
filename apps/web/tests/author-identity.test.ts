@@ -436,3 +436,29 @@ test("author address trims the values it returns", () => {
 
   assert.equal(address.addressLocality, "Berlin");
 });
+
+test("author address falls back field by field for the site owner (see #102)", () => {
+  // Pins today's behavior rather than endorsing it. The three components are
+  // resolved independently, so a site-owner record that fills some of them
+  // inherits the rest -- "Berlin, FL" is reachable from a half-finished edit in
+  // the Strapi admin.
+  //
+  // Deliberately NOT changed here: `buildAuthorProfile` in site-profile.ts
+  // merges the same way for the other three Person surfaces, so fixing only
+  // this one would make /author/[slug] a fourth variant and re-open the very
+  // drift #92 closed. #102 tracks fixing both together.
+  const address = resolveAuthorAddress(
+    {
+      slug: "mehdi-zare",
+      isPrimary: true,
+      addressLocality: "Berlin",
+      addressRegion: "",
+      addressCountry: "DE",
+    },
+    SITE_OWNER
+  );
+
+  assert.equal(address.addressLocality, "Berlin");
+  assert.equal(address.addressRegion, SITE_OWNER.addressRegion);
+  assert.equal(address.addressCountry, "DE");
+});

@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { assertCallsHelper } from "./contract-assertions.ts";
+import {
+  assertCallsHelper,
+  assertDoesNotReadField,
+} from "./contract-assertions.ts";
 
 const source = readFileSync(resolve(process.cwd(), "src/lib/seo.ts"), "utf8");
 
@@ -87,10 +90,15 @@ test("author page address routes through the shared site-owner fallback", () => 
   const pageSource = readSource("src/app/author/[slug]/page.tsx");
   assertCallsHelper(pageSource, "resolveAuthorAddress", "#92, #94");
   for (const field of ["addressLocality", "addressRegion", "addressCountry"]) {
-    assert.doesNotMatch(
+    // Through the shared shape, so `author?.addressRegion` -- the way this repo
+    // actually writes an optional relation, and a one-line revert of the #92
+    // fix -- cannot slip past while assertCallsHelper above stays green.
+    assertDoesNotReadField(
       pageSource,
-      new RegExp(`author\\.${field}`),
-      `author ${field} must come from resolveAuthorAddress, not straight off the CMS record (#92)`
+      "author",
+      field,
+      "#92",
+      "author page"
     );
   }
 });

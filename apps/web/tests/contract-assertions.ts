@@ -68,9 +68,77 @@ export function assertRendersComponent(
   );
 }
 
+/**
+ * Asserts that `source` never reads `object.field` directly, in any spelling.
+ *
+ * The inverse of `assertCallsHelper`: some contracts are "route through the
+ * helper" *and* "do not read the raw record". A hand-rolled
+ * `new RegExp(\`author\\.${"field"}\`)` misses `author?.field`, which is exactly
+ * how this repo writes an optional CMS relation -- so the guard against the #92
+ * defect passed on a one-line revert to `author?.addressRegion`. The optional
+ * chain and the left anchor belong here with the other two shapes, for the same
+ * reason those do.
+ */
+export function assertDoesNotReadField(
+  source: string,
+  object: string,
+  field: string,
+  contract: string,
+  subject = "page"
+): void {
+  assertIdentifier(object);
+  assertIdentifier(field);
+  assert.doesNotMatch(
+    source,
+    new RegExp(`\\b${object}\\s*\\??\\.\\s*${field}\\b`),
+    `${subject} must not read ${object}.${field} straight off the record (${contract})`
+  );
+}
+
 /** Escapes a literal so it can be matched exactly inside a RegExp. */
 function escapeForRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * How a character in Site Profile copy can legitimately be spelled in JSX.
+ *
+ * Matching the raw value alone misses the *likeliest* hardcoding: three of the
+ * contracted values contain `'`, `·` or `©`, and this codebase writes those as
+ * entities all over `src/` (`Let&apos;s Connect`, `&rsquo;`, `&mdash;`) because
+ * `react/no-unescaped-entities` pushes authors there. `Let&apos;s Talk` is one
+ * character away from the string the guard is supposed to catch.
+ */
+const CHARACTER_SPELLINGS = new Map<string, string[]>([
+  ["'", ["'", "’", "&apos;", "&rsquo;", "&#39;", "&#x27;"]],
+  ["’", ["'", "’", "&apos;", "&rsquo;", "&#39;", "&#x27;"]],
+  ["·", ["·", "&middot;", "&#183;"]],
+  ["©", ["©", "&copy;", "&#169;"]],
+  ["—", ["—", "&mdash;", "&#8212;"]],
+  ["–", ["–", "&ndash;", "&#8211;"]],
+  ["&", ["&", "&amp;"]],
+]);
+
+/**
+ * A pattern matching `value` however JSX spells it: entity forms for the
+ * characters above, and any whitespace run where the value has a space, since
+ * a hardcoded line wrapped by the formatter is still a hardcoded line.
+ */
+function hardcodePattern(value: string): RegExp {
+  const body = [...value]
+    .map((character) => {
+      if (/\s/.test(character)) {
+        return "\\s+";
+      }
+
+      const spellings = CHARACTER_SPELLINGS.get(character);
+      return spellings
+        ? `(?:${spellings.map(escapeForRegExp).join("|")})`
+        : escapeForRegExp(character);
+    })
+    .join("");
+
+  return new RegExp(body);
 }
 
 /**
@@ -92,9 +160,29 @@ function escapeForRegExp(value: string): string {
  */
 export function assertConsumesProfileValue(
   source: string,
-  options: { field: string; value: string; contract: string; subject?: string }
+  options: {
+    field: string;
+    value: string;
+    contract: string;
+    subject?: string;
+    /**
+     * Distinctive substrings of `value` that must not appear either.
+     *
+     * Matching only the whole value is weaker than the per-literal guards this
+     * replaced: those pinned fragments like `/CFA Charterholder/`, which caught
+     * a redesign that splits the line across two elements while still rendering
+     * `{credentialLine}` somewhere. Widening the guard should not cost that.
+     */
+    fragments?: string[];
+  }
 ): void {
-  const { field, value, contract, subject = "component" } = options;
+  const {
+    field,
+    value,
+    contract,
+    subject = "component",
+    fragments = [],
+  } = options;
   assertIdentifier(field);
   assert.ok(
     value.trim(),
@@ -103,9 +191,20 @@ export function assertConsumesProfileValue(
 
   assert.doesNotMatch(
     source,
-    new RegExp(escapeForRegExp(value)),
+    hardcodePattern(value),
     `${subject} must not hardcode ${JSON.stringify(value)} -- it is the current value of ${field} in Site Profile, so hardcoding it silently freezes the page at today's copy (${contract})`
   );
+  for (const fragment of fragments) {
+    assert.ok(
+      value.includes(fragment),
+      `${subject}: ${JSON.stringify(fragment)} is not part of ${field}'s current value, so the fragment guard has rotted (${contract})`
+    );
+    assert.doesNotMatch(
+      source,
+      hardcodePattern(fragment),
+      `${subject} must not hardcode ${JSON.stringify(fragment)} -- it is part of ${field} in Site Profile, and a partial copy freezes the page just as thoroughly as a whole one (${contract})`
+    );
+  }
   assert.match(
     source,
     new RegExp(`\\{\\s*${field}\\s*\\}`),

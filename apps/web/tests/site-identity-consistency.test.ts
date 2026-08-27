@@ -179,6 +179,30 @@ const AUTHOR_KEY_ALIASES = new Map<string, string>([
   ["jobTitle", "authorRole"],
 ]);
 
+/**
+ * The taxonomy author fields that currently resolve to a DEFAULT_SITE_PROFILE
+ * counterpart, and are therefore value-compared below.
+ *
+ * Asserted as a set rather than as a count: a floor with slack silently
+ * tolerates a field dropping out of the mapping, which is exactly the failure
+ * the exemption lists exist to prevent.
+ */
+const COMPARED_AUTHOR_KEYS = [
+  "name",
+  "slug",
+  "bioShort",
+  "websiteUrl",
+  "linkedinUrl",
+  "jobTitle",
+  "worksForName",
+  "worksForUrl",
+  "alumniOf",
+  "knowsAbout",
+  "addressLocality",
+  "addressRegion",
+  "addressCountry",
+];
+
 function pascalCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
@@ -258,9 +282,14 @@ test("every taxonomy author field with a defaults counterpart carries the same v
     );
   }
 
-  assert.ok(
-    compared.length >= 12,
-    `expected to compare the author identity fields, compared only ${compared.length} (${compared.join(", ")})`
+  // A floor with slack (">= 12" against 13) lets one field leave the compared
+  // set unnoticed, which is the same silent-exemption hole the exemption lists
+  // exist to close. Naming the set means a deletion on either side, or a
+  // rename that drops a key out of the mapping, has to be declared here.
+  assert.deepEqual(
+    [...compared].sort(),
+    [...COMPARED_AUTHOR_KEYS].sort(),
+    `the set of taxonomy author fields compared against DEFAULT_SITE_PROFILE changed. If a field was deliberately removed or renamed, update COMPARED_AUTHOR_KEYS; if it silently stopped mapping, that is the bug this test exists to catch.`
   );
 });
 
@@ -281,6 +310,16 @@ test("declared exemptions still exist, so the lists cannot rot into noise", () =
     assert.ok(
       key in primaryAuthor,
       `AUTHOR_ONLY_KEYS names "${key}", which is no longer a taxonomy author field -- drop it`
+    );
+    // The author loop consults AUTHOR_ONLY_KEYS *before* defaultsKeyFor, so an
+    // exemption that later gains a counterpart shadows it forever -- the field
+    // becomes duplicated copy that nothing compares. The seed half has no
+    // equivalent hole, because its shared-key set is derived without consulting
+    // SEED_ONLY_KEYS at all. Without this, "covered the day it is added" is
+    // only true for keys nobody ever exempted.
+    assert.ok(
+      !defaultsKeyFor(key),
+      `AUTHOR_ONLY_KEYS exempts "${key}", but DEFAULT_SITE_PROFILE now has a counterpart (${defaultsKeyFor(key)}) -- drop the exemption so the value is compared`
     );
   }
   for (const key of SEED_ONLY_KEYS) {
