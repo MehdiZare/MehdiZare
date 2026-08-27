@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { assertCallsHelper } from "./contract-assertions.ts";
+
 const pageFiles = [
   "src/app/layout.tsx",
   "src/app/page.tsx",
@@ -21,7 +23,7 @@ function readSource(relativePath: string): string {
 test("key pages consume Site Profile as canonical source", () => {
   for (const file of pageFiles) {
     const source = readSource(file);
-    assert.match(source, /getSiteProfile/);
+    assertCallsHelper(source, "getSiteProfile", "#94", file);
   }
 });
 
