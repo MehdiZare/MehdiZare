@@ -44,25 +44,74 @@ export function buildTagListingDescription(tagName: string): string {
   return `Articles tagged ${tagName}.`;
 }
 
-export function resolveTagListingCopy(input: {
+/**
+ * Shared resolution for every taxonomy listing: the display name used for
+ * breadcrumbs, the title used for metadata / h1 / JSON-LD, and the page
+ * description. Every candidate goes through `firstFilled`, so a CMS empty
+ * string or whitespace-only value is treated as absent instead of winning
+ * the chain and rendering blank. Tags and categories share this so the two
+ * routes cannot drift apart again.
+ */
+function resolveTaxonomyListingCopy(input: {
   slug: string;
   name?: string | null;
   seedName?: string | null;
+  headline?: string | null;
+  seedHeadline?: string | null;
   intro?: string | null;
   seedIntro?: string | null;
-  tagDescription?: string | null;
+  description?: string | null;
   seedDescription?: string | null;
-}): { tagName: string; pageDescription: string } {
-  const tagName = resolveTaxonomyDisplayName(input.slug, input.name, input.seedName);
+  buildFallbackDescription: (displayName: string) => string;
+}): { displayName: string; title: string; pageDescription: string } {
+  const displayName = resolveTaxonomyDisplayName(
+    input.slug,
+    input.name,
+    input.seedName
+  );
+  const title = firstFilled(input.headline, input.seedHeadline) ?? displayName;
   const pageDescription =
     firstFilled(
       input.intro,
       input.seedIntro,
-      input.tagDescription,
+      input.description,
       input.seedDescription
-    ) ?? buildTagListingDescription(tagName);
+    ) ?? input.buildFallbackDescription(displayName);
 
-  return { tagName, pageDescription };
+  return { displayName, title, pageDescription };
+}
+
+/**
+ * Resolves the three strings a tag listing renders -- breadcrumb name,
+ * display title, and description -- from CMS values with seed fallbacks.
+ * Headline wins over name across both sources so the metadata title, the h1,
+ * and the JSON-LD name always agree.
+ */
+export function resolveTagListingCopy(input: {
+  slug: string;
+  name?: string | null;
+  seedName?: string | null;
+  headline?: string | null;
+  seedHeadline?: string | null;
+  intro?: string | null;
+  seedIntro?: string | null;
+  tagDescription?: string | null;
+  seedDescription?: string | null;
+}): { tagName: string; tagTitle: string; pageDescription: string } {
+  const { displayName, title, pageDescription } = resolveTaxonomyListingCopy({
+    slug: input.slug,
+    name: input.name,
+    seedName: input.seedName,
+    headline: input.headline,
+    seedHeadline: input.seedHeadline,
+    intro: input.intro,
+    seedIntro: input.seedIntro,
+    description: input.tagDescription,
+    seedDescription: input.seedDescription,
+    buildFallbackDescription: buildTagListingDescription,
+  });
+
+  return { tagName: displayName, tagTitle: title, pageDescription };
 }
 
 export function buildCategoryListingDescription(categoryName: string): string {
@@ -86,22 +135,20 @@ export function resolveCategoryListingCopy(input: {
   categoryDescription?: string | null;
   seedDescription?: string | null;
 }): { categoryName: string; categoryTitle: string; pageDescription: string } {
-  const categoryName = resolveTaxonomyDisplayName(
-    input.slug,
-    input.name,
-    input.seedName
-  );
-  const categoryTitle =
-    firstFilled(input.headline, input.seedHeadline) ?? categoryName;
-  const pageDescription =
-    firstFilled(
-      input.intro,
-      input.seedIntro,
-      input.categoryDescription,
-      input.seedDescription
-    ) ?? buildCategoryListingDescription(categoryName);
+  const { displayName, title, pageDescription } = resolveTaxonomyListingCopy({
+    slug: input.slug,
+    name: input.name,
+    seedName: input.seedName,
+    headline: input.headline,
+    seedHeadline: input.seedHeadline,
+    intro: input.intro,
+    seedIntro: input.seedIntro,
+    description: input.categoryDescription,
+    seedDescription: input.seedDescription,
+    buildFallbackDescription: buildCategoryListingDescription,
+  });
 
-  return { categoryName, categoryTitle, pageDescription };
+  return { categoryName: displayName, categoryTitle: title, pageDescription };
 }
 
 export function buildBlogPageUrl(page: number): string {

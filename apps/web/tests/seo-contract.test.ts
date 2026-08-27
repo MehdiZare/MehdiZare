@@ -80,6 +80,14 @@ test("tag listing metadata shares the listing copy helper and never uses the sit
   assert.doesNotMatch(pageSource, /getSiteProfile/);
 });
 
+test("tag listing title comes from the shared copy helper, not a raw headline chain", () => {
+  const pageSource = readSource("src/app/blog/tag/[slug]/page.tsx");
+  assert.match(pageSource, /title:\s*tagTitle/);
+  assert.doesNotMatch(pageSource, /tag\?\.headline\s*\?\?/);
+  assert.doesNotMatch(pageSource, /seed\??\.headline\s*\?\?/);
+  assert.doesNotMatch(pageSource, /tag\?\.seo\?\.metaTitle\s*\?\?/);
+});
+
 test("category listing metadata shares the listing copy helper for intro and description", () => {
   const pageSource = readSource("src/app/blog/category/[slug]/page.tsx");
   assert.match(pageSource, /resolveCategoryListingCopy/);
