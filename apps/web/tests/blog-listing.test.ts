@@ -108,7 +108,7 @@ test("category listing copy with empty intro and description does not emit blank
 
   const metadata = buildPageMetadata({
     pathname: "/blog/category/empty-intro-category",
-    title: metadataCopy.categoryName,
+    title: metadataCopy.categoryTitle,
     description: metadataCopy.pageDescription,
     seo: {
       id: 1,
@@ -163,6 +163,13 @@ test("resolveTaxonomyDisplayName falls back to the slug label when every candida
 
 test("resolveTaxonomyDisplayName trims the candidate it returns", () => {
   assert.equal(resolveTaxonomyDisplayName("llm-systems", "  LLM Systems  "), "LLM Systems");
+});
+
+test("resolveTaxonomyDisplayName prefers a filled headline when name is empty", () => {
+  assert.equal(
+    resolveTaxonomyDisplayName("agent-frameworks", "", "Agent Frameworks Headline"),
+    "Agent Frameworks Headline"
+  );
 });
 
 test("category listing copy falls back to the resolved name when every headline is empty", () => {

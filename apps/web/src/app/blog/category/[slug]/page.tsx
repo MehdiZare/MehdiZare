@@ -165,7 +165,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     ? {
         name: resolveTaxonomyDisplayName(
           category.parent.slug,
-          category.parent.name
+          category.parent.name,
+          category.parent.headline
         ),
         slug: category.parent.slug,
       }
@@ -184,7 +185,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     category?.children && category.children.length > 0
       ? category.children.map((child) => ({
           id: child.id,
-          name: resolveTaxonomyDisplayName(child.slug, child.name),
+          name: resolveTaxonomyDisplayName(
+            child.slug,
+            child.name,
+            child.headline
+          ),
           slug: child.slug,
           description: child.description,
         }))

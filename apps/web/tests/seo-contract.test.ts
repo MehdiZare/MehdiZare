@@ -101,6 +101,8 @@ test("category listing title comes from the shared copy helper, not a raw headli
 test("category listing parent and subcategory names route through the display-name helper", () => {
   const pageSource = readSource("src/app/blog/category/[slug]/page.tsx");
   assert.match(pageSource, /resolveTaxonomyDisplayName/);
+  assert.match(pageSource, /category\.parent\.name,\s*category\.parent\.headline/);
+  assert.match(pageSource, /child\.name,\s*child\.headline/);
   assert.doesNotMatch(pageSource, /name:\s*category\.parent\.name,/);
   assert.doesNotMatch(pageSource, /name:\s*child\.name,/);
   assert.doesNotMatch(pageSource, /child\.name\s*\?\?\s*child\.headline/);
