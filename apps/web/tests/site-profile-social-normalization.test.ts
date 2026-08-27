@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const { normalizeSiteProfile } = await import("../src/lib/site-profile.ts");
-const { resolveAuthorAddress } = await import("../src/lib/author-identity.ts");
+const { resolveAuthorAddress, resolveAuthorWorksFor } = await import("../src/lib/author-identity.ts");
 const { DEFAULT_SITE_PROFILE } = await import("../src/lib/site-profile-defaults.ts");
 
 const canonicalAuthor = {
@@ -125,5 +125,46 @@ test("the site profile and /author/[slug] resolve the same address (#102)", () =
     },
     routeAddress,
     "the Person on / , /contact and /consulting disagrees with the Person on /author/[slug] -- the #92 drift is back"
+  );
+});
+
+test("a partial CMS worksFor is not completed from the employer fallback (#106)", () => {
+  const profile = normalizeSiteProfile(undefined, {
+    author: {
+      ...canonicalAuthor,
+      worksForName: "Entarian",
+      worksForUrl: "",
+    },
+  });
+
+  assert.equal(profile.author.worksForName, "Entarian");
+  assert.equal(
+    profile.author.worksForUrl,
+    undefined,
+    'the mixed-employer merge is back: a CMS record that speaks for its own employer must not inherit the default URL'
+  );
+});
+
+test("the site profile and /author/[slug] resolve the same worksFor (#106)", () => {
+  const author = {
+    ...canonicalAuthor,
+    worksForName: "Entarian",
+    worksForUrl: "",
+  };
+
+  const profile = normalizeSiteProfile(undefined, { author });
+  const routeWorksFor = resolveAuthorWorksFor(author, {
+    slug: DEFAULT_SITE_PROFILE.authorSlug,
+    worksForName: DEFAULT_SITE_PROFILE.authorWorksForName,
+    worksForUrl: DEFAULT_SITE_PROFILE.authorWorksForUrl,
+  });
+
+  assert.deepEqual(
+    {
+      worksForName: profile.author.worksForName,
+      worksForUrl: profile.author.worksForUrl,
+    },
+    routeWorksFor,
+    "the Person on / , /contact and /consulting disagrees with the Person on /author/[slug] -- the #92 worksFor drift is back"
   );
 });

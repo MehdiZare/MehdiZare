@@ -277,3 +277,99 @@ export function resolveAuthorAddress(
     addressCountry: siteOwner.addressCountry,
   };
 }
+
+/** The two Organization fields the Person JSON-LD `worksFor` node carries. */
+export interface AuthorWorksFor {
+  worksForName?: string;
+  worksForUrl?: string;
+}
+
+/**
+ * Resolves the employer for `/author/[slug]`'s `Person` JSON-LD (#106).
+ *
+ * Same unit semantics as {@link resolveAuthorAddress}: `worksFor` is one
+ * Organization node, and merging name and url independently published mixed
+ * employers -- `Entarian` with another org's careers URL, or the inverse.
+ * A record that supplies either field supplies both as-is; only a record with
+ * neither inherits the site owner's pair.
+ *
+ * The fallback is scoped to the **site owner** for the same reason as address:
+ * stamping the owner's employer onto a guest author's Person would be worse
+ * than omitting it.
+ */
+export function resolveAuthorWorksFor(
+  source: {
+    slug?: string | null;
+    isPrimary?: boolean;
+    worksForName?: string | null;
+    worksForUrl?: string | null;
+  },
+  siteOwner: {
+    slug: string;
+    worksForName?: string;
+    worksForUrl?: string;
+  }
+): AuthorWorksFor {
+  const isSiteOwner =
+    source.isPrimary === true ||
+    blankToUndefined(source.slug) === blankToUndefined(siteOwner.slug);
+
+  const own: AuthorWorksFor = {
+    worksForName: blankToUndefined(source.worksForName),
+    worksForUrl: blankToUndefined(source.worksForUrl),
+  };
+
+  const suppliesAnyWorksFor = Boolean(firstFilled(own.worksForName, own.worksForUrl));
+
+  if (!isSiteOwner || suppliesAnyWorksFor) {
+    return own;
+  }
+
+  return {
+    worksForName: siteOwner.worksForName,
+    worksForUrl: siteOwner.worksForUrl,
+  };
+}
+
+function normalizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => blankToUndefined(item))
+    .filter((item): item is string => Boolean(item));
+}
+
+/**
+ * Resolves `alumniOf` for `/author/[slug]`'s `Person` JSON-LD (#106).
+ *
+ * Arrays do not merge field-by-field like address or worksFor, but the author
+ * page still read the raw CMS record while the root layout fell back to
+ * `DEFAULT_SITE_PROFILE` -- the same NAP inconsistency #92 fixed for address.
+ * The site owner inherits the default list only when the CMS record carries
+ * none; guest authors never borrow the owner's alumni list.
+ */
+export function resolveAuthorAlumniOf(
+  source: {
+    slug?: string | null;
+    isPrimary?: boolean;
+    alumniOf?: string[] | null;
+  },
+  siteOwner: {
+    slug: string;
+    alumniOf: readonly string[];
+  }
+): { alumniOf: string[] } {
+  const isSiteOwner =
+    source.isPrimary === true ||
+    blankToUndefined(source.slug) === blankToUndefined(siteOwner.slug);
+
+  const own = normalizeStringArray(source.alumniOf);
+
+  if (!isSiteOwner || own.length > 0) {
+    return { alumniOf: own };
+  }
+
+  return { alumniOf: [...siteOwner.alumniOf] };
+}

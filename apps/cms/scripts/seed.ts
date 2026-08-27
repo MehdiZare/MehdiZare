@@ -517,7 +517,7 @@ const aboutPage = {
   experiences: [
     {
       title: "Principal AI Engineer / Cloud Architect",
-      company: "Entarian",
+      company: primaryAuthor.worksForName as string,
       startDate: "2025",
       current: true,
       description:

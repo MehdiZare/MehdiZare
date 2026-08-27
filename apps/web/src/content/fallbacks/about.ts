@@ -7,6 +7,7 @@ import type {
   BlocksContent,
 } from "@/types/strapi";
 import type { SiteProfile } from "@/lib/site-profile";
+import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 
 function buildCanonicalAboutStory(): string[] {
   return [
@@ -41,7 +42,7 @@ export const fallbackExperiences: Experience[] = [
   {
     id: 1,
     title: "Principal AI Engineer / Cloud Architect",
-    company: "Entarian",
+    company: DEFAULT_SITE_PROFILE.authorWorksForName,
     startDate: "2025",
     current: true,
     description:

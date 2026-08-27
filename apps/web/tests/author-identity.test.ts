@@ -7,7 +7,9 @@ import {
   composeAuthorTitle,
   resolveArticleAuthorIdentity,
   resolveAuthorAddress,
+  resolveAuthorAlumniOf,
   resolveAuthorPageIdentity,
+  resolveAuthorWorksFor,
 } from "../src/lib/author-identity.ts";
 
 // #83. `??` treats a CMS empty string as *present*, so a cleared author field
@@ -501,4 +503,129 @@ test("the site owner inherits the full fallback only with no address at all (#10
     addressRegion: undefined,
     addressCountry: "DE",
   });
+});
+
+// ---------------------------------------------------------------------------
+// resolveAuthorWorksFor -- /author/[slug] (#106)
+// ---------------------------------------------------------------------------
+
+const SITE_OWNER_WORKS_FOR = {
+  slug: "mehdi-zare",
+  worksForName: "Entarian",
+  worksForUrl: "https://entarian.com",
+};
+
+test("author worksFor falls back to the site profile for the primary author", () => {
+  const worksFor = resolveAuthorWorksFor(
+    { slug: "mehdi-zare", isPrimary: true },
+    SITE_OWNER_WORKS_FOR
+  );
+
+  assert.deepEqual(worksFor, {
+    worksForName: "Entarian",
+    worksForUrl: "https://entarian.com",
+  });
+});
+
+test("author worksFor does not invent an employer for a different author", () => {
+  const worksFor = resolveAuthorWorksFor({ slug: "jane-doe" }, SITE_OWNER_WORKS_FOR);
+
+  assert.deepEqual(worksFor, {
+    worksForName: undefined,
+    worksForUrl: undefined,
+  });
+});
+
+test("author worksFor keeps a guest author's own employer untouched", () => {
+  const worksFor = resolveAuthorWorksFor(
+    {
+      slug: "jane-doe",
+      worksForName: "Acme Corp",
+      worksForUrl: "https://acme.example",
+    },
+    SITE_OWNER_WORKS_FOR
+  );
+
+  assert.deepEqual(worksFor, {
+    worksForName: "Acme Corp",
+    worksForUrl: "https://acme.example",
+  });
+});
+
+test("a partial site-owner worksFor is emitted as-is, never merged with the fallback (#106)", () => {
+  const worksFor = resolveAuthorWorksFor(
+    {
+      slug: "mehdi-zare",
+      isPrimary: true,
+      worksForName: "Entarian",
+      worksForUrl: "",
+    },
+    SITE_OWNER_WORKS_FOR
+  );
+
+  assert.equal(worksFor.worksForName, "Entarian");
+  assert.equal(worksFor.worksForUrl, undefined);
+  assert.notEqual(
+    worksFor.worksForUrl,
+    SITE_OWNER_WORKS_FOR.worksForUrl,
+    "the owner's URL must not leak into an employer the CMS record already speaks for"
+  );
+});
+
+test("the site owner inherits the full worksFor fallback only with no employer at all (#106)", () => {
+  const blank = resolveAuthorWorksFor(
+    { slug: "mehdi-zare", isPrimary: true },
+    SITE_OWNER_WORKS_FOR
+  );
+
+  assert.deepEqual(blank, {
+    worksForName: SITE_OWNER_WORKS_FOR.worksForName,
+    worksForUrl: SITE_OWNER_WORKS_FOR.worksForUrl,
+  });
+
+  const nameOnly = resolveAuthorWorksFor(
+    { slug: "mehdi-zare", isPrimary: true, worksForName: "Entarian" },
+    SITE_OWNER_WORKS_FOR
+  );
+
+  assert.deepEqual(nameOnly, {
+    worksForName: "Entarian",
+    worksForUrl: undefined,
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveAuthorAlumniOf -- /author/[slug] (#106)
+// ---------------------------------------------------------------------------
+
+const SITE_OWNER_ALUMNI = {
+  slug: "mehdi-zare",
+  alumniOf: [
+    "University of Maryland, Smith School of Business",
+    "University of Tehran",
+  ],
+};
+
+test("author alumniOf falls back to the site profile for the primary author", () => {
+  const { alumniOf } = resolveAuthorAlumniOf(
+    { slug: "mehdi-zare", isPrimary: true },
+    SITE_OWNER_ALUMNI
+  );
+
+  assert.deepEqual(alumniOf, [...SITE_OWNER_ALUMNI.alumniOf]);
+});
+
+test("author alumniOf does not borrow the site owner's list for a guest author", () => {
+  const { alumniOf } = resolveAuthorAlumniOf({ slug: "jane-doe" }, SITE_OWNER_ALUMNI);
+
+  assert.deepEqual(alumniOf, []);
+});
+
+test("author alumniOf keeps a guest author's own list untouched", () => {
+  const { alumniOf } = resolveAuthorAlumniOf(
+    { slug: "jane-doe", alumniOf: ["State University"] },
+    SITE_OWNER_ALUMNI
+  );
+
+  assert.deepEqual(alumniOf, ["State University"]);
 });
