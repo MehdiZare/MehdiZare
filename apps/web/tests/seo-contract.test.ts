@@ -120,9 +120,22 @@ test("category subcategory cards route names and descriptions through the shared
 
   // The child mapping moved out of the page into resolveSubcategoryCards, so
   // the name-resolution contract is asserted where the mapping now lives.
-  assert.match(pageSource, /resolveSubcategoryCards/);
-  assert.doesNotMatch(pageSource, /name:\s*child\.name,/);
-  assert.doesNotMatch(pageSource, /description:\s*child\.description,/);
+  // These guards read the page as text, so they also fire on a comment or a
+  // string that merely quotes the old shape, and on any object literal keyed
+  // over a variable named `child`. Rename the loop variable rather than
+  // loosening a guard.
+  const inlined =
+    "child-card mapping belongs in resolveSubcategoryCards, not the page (#78, #88)";
+
+  assert.match(
+    pageSource,
+    /resolveSubcategoryCards\(/,
+    "page must call resolveSubcategoryCards, not merely import it (#88)"
+  );
+  assert.doesNotMatch(pageSource, /name:\s*child\.name/, inlined);
+  assert.doesNotMatch(pageSource, /child\.name\s*\?\?\s*child\.headline/, inlined);
+  assert.doesNotMatch(pageSource, /description:\s*child\.description/, inlined);
+  assert.doesNotMatch(pageSource, /id:\s*child\.id/, inlined);
   assert.match(listingSource, /child\.name,\s*child\.headline/);
   assert.match(listingSource, /description:\s*firstFilled\(child\.description\)/);
   assert.doesNotMatch(listingSource, /child\.name\s*\?\?\s*child\.headline/);

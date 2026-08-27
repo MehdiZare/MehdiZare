@@ -309,11 +309,15 @@ test("subcategory cards fall back to the slug label when name and headline are b
 });
 
 test("subcategory cards key seed children by slug when the CMS id is absent", () => {
-  const [cms, seedChild] = resolveSubcategoryCards([
+  const [cms, zeroId, seedChild] = resolveSubcategoryCards([
     { id: 12, name: "Agents", slug: "agents" },
+    { id: 0, name: "Zero", slug: "zero" },
     { name: "Evals", slug: "evals" },
   ]);
 
   assert.equal(cms.id, 12);
+  // Nullish-coalescing, not `||`: a falsy-but-present id keeps its own key
+  // rather than silently falling back to the slug.
+  assert.equal(zeroId.id, 0);
   assert.equal(seedChild.id, "evals");
 });
