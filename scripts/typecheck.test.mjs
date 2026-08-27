@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,6 +10,7 @@ const SKIP_DIRS = new Set([
   ".next",
   ".turbo",
   ".cache",
+  ".worktrees",
   "dist",
   "node_modules",
 ]);
@@ -98,5 +99,30 @@ test("no workflow, task, or package script invokes tsc via pnpm exec", () => {
       /exec tsc/,
       `${file} must not invoke tsc via pnpm exec`,
     );
+  }
+});
+
+test("the scanner does not descend into nested worktree checkouts", () => {
+  // A git worktree under .worktrees/ is a second checkout of this repo, so it
+  // carries its own AGENTS.md. That copy is not the allowlisted root path, and
+  // AGENTS.md documents the banned command by name -- scanning it trips the
+  // guard on its own prose and blocks every push.
+  const fixtureDir = resolve(root, ".worktrees/__scanner_fixture__");
+  mkdirSync(fixtureDir, { recursive: true });
+  writeFileSync(resolve(fixtureDir, "AGENTS.md"), "pnpm --filter=* exec tsc\n");
+
+  try {
+    const worktreesRoot = resolve(root, ".worktrees");
+    const scanned = [...walkFiles(root)].filter((file) =>
+      file.startsWith(`${worktreesRoot}/`),
+    );
+
+    assert.deepEqual(
+      scanned,
+      [],
+      "walkFiles must skip .worktrees so sibling checkouts are not scanned",
+    );
+  } finally {
+    rmSync(fixtureDir, { recursive: true, force: true });
   }
 });

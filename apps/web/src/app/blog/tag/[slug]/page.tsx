@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { PostCard } from "@/components/blog/PostCard";
-import { formatTagName, resolveTagListingCopy } from "@/lib/blog-listing";
+import { formatSlugName, resolveTagListingCopy } from "@/lib/blog-listing";
 import { getTagSeedBySlug } from "@/lib/taxonomy-seed";
 import { getTags, getTagBySlug, getArticles } from "@/lib/strapi";
 import { buildBreadcrumbJsonLd, buildNoIndexMetadata, buildPageMetadata, buildWebPageJsonLd } from "@/lib/seo";
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
       tagDescription: tag?.description,
       seedDescription: seed?.description,
     });
-    const fallbackTitle = seed?.headline ?? seed?.name ?? formatTagName(slug);
+    const fallbackTitle = seed?.headline ?? seed?.name ?? formatSlugName(slug);
 
     return buildPageMetadata({
       pathname: `/blog/tag/${slug}`,
@@ -71,7 +71,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
 
     return buildPageMetadata({
       pathname: `/blog/tag/${slug}`,
-      title: seed.headline ?? seed.name ?? formatTagName(slug),
+      title: seed.headline ?? seed.name ?? formatSlugName(slug),
       description: pageDescription,
     });
   }
