@@ -235,7 +235,7 @@ export interface AuthorAddress {
  * nothing reports.
  *
  * Failing toward an incomplete address rather than a confidently wrong one is
- * the same rule `apps/cms/scripts/sync-site-location.ts` already applies when
+ * the same rule `apps/cms/scripts/sync-site-identity.ts` already applies when
  * it refuses to write a partial address.
  */
 export function resolveAuthorAddress(
