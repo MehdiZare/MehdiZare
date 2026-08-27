@@ -48,11 +48,34 @@ const ALWAYS_PRERENDERED = [
   "index.html",
   "about.html",
   "ai-engineer.html",
-  "bina-print.html",
   "blog.html",
   "consulting.html",
   "contact.html",
 ];
+
+/**
+ * The status Next will serve for a prerendered page, from the sibling `.meta`.
+ *
+ * Presence of an HTML file does not mean the route renders. A flipped flag, a
+ * CMS gate or a stray `notFound()` still emits a file -- Next writes the
+ * not-found shell to that path. `bina-print.html` is exactly this: with
+ * `ENABLE_BINA_PRINT` unset the page calls `notFound()`, and its `.meta` reads
+ * `"status": 404` for a file carrying no inline styles at all. Counting it as a
+ * prerendered page is the same "passes for the wrong reason" failure the list
+ * above exists to rule out, so it is not in the list, and any page that starts
+ * 404ing is reported as missing rather than silently accepted.
+ */
+function servedStatus(page: string): number {
+  const meta = join(BUILD_DIR, page.replace(/\.html$/, ".meta"));
+  if (!existsSync(meta)) {
+    return 200;
+  }
+  try {
+    return (JSON.parse(readFileSync(meta, "utf8")) as { status?: number }).status ?? 200;
+  } catch {
+    return 200;
+  }
+}
 
 /**
  * Inline declarations that leave content invisible or collapsed at paint.
@@ -146,11 +169,14 @@ test("the build output this contract reads actually exists", () => {
       .filter(isAuthoredPage)
       .map((file) => relative(BUILD_DIR, file))
   );
-  const missing = ALWAYS_PRERENDERED.filter((page) => !pages.has(page));
+  const missing = ALWAYS_PRERENDERED.filter(
+    (page) => !pages.has(page) || servedStatus(page) !== 200
+  );
   assert.deepEqual(
     missing,
     [],
-    `The build prerendered ${pages.size} authored page(s) but not ${missing.join(", ")}. ` +
+    `The build prerendered ${pages.size} authored page(s), but ${missing.join(", ")} ` +
+      "is absent or does not serve a 200. " +
       "A build that emitted almost nothing would make this file assert nothing, so " +
       "the scans below are only meaningful once every repo-owned page is present."
   );
@@ -186,12 +212,19 @@ test("reveal animations still ship, so the check above is not passing on an empt
     `No prerendered output at ${BUILD_DIR}. Run \`pnpm --filter=web build\` before \`test:postbuild\`.`
   );
 
+  // `transform:none` is excluded deliberately. When a variant is present but
+  // every value sits at its default, Framer still writes a `transform` -- and
+  // `buildTransform` returns the literal string "none". Counting bare
+  // `transform:` would let a neutered reveal (`hidden: { y: 0 }`) satisfy this
+  // guard, which is the exact "passes for the wrong reason" case it exists to
+  // catch: deleting `initial=` would be caught, quietly zeroing it would not.
+  //
   // The contract is "reveal by transform", not "no animation". If the inline
   // transforms ever vanish entirely, the assertion above starts passing for the
   // wrong reason and this catches that.
   const transforms = listHtmlFiles(BUILD_DIR)
     .filter(isAuthoredPage)
-    .flatMap((file) => [...readFileSync(file, "utf8").matchAll(/style="([^"]*transform:[^"]*)"/g)])
+    .flatMap((file) => [...readFileSync(file, "utf8").matchAll(/style="([^"]*transform:(?!none)[^"]*)"/g)])
     .map((match) => match[1]);
 
   assert.ok(
