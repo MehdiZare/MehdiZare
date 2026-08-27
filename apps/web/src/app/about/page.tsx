@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CareerTimeline } from "@/components/about/CareerTimeline";
 import { CredentialBadges } from "@/components/about/CredentialBadges";
+import { EducationList } from "@/components/about/EducationList";
 import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
 import { AiEngineerProfileLink } from "@/components/seo/AiEngineerProfileLink";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
@@ -199,20 +200,7 @@ export default async function AboutPage() {
           </AnimatedSection>
 
           <AnimatedSection delay={0.2} className="mt-10">
-            <div className="grid gap-4 sm:grid-cols-2">
-              {data.education.map((edu) => (
-                <article key={edu.id} className="border border-warm-gray bg-paper p-6">
-                  <h3 className="font-medium text-ink">
-                    {edu.degree}
-                    {edu.field ? `, ${edu.field}` : ""}
-                  </h3>
-                  <p className="mt-1 text-sm text-accent-warm">{edu.institution}</p>
-                  {edu.description ? (
-                    <p className="mt-3 text-sm text-mid-gray">{edu.description}</p>
-                  ) : null}
-                </article>
-              ))}
-            </div>
+            <EducationList education={data.education} />
           </AnimatedSection>
         </div>
       </section>

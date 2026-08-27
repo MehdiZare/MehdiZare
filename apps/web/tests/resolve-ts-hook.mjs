@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import ts from "typescript";
+
 const SRC_BASE = new URL("../src/", import.meta.url);
 const SERVER_ONLY_STUB = new URL("./server-only-stub.mjs", import.meta.url);
 const TAXONOMY_STUB = new URL("./taxonomy-stub.mjs", import.meta.url);
@@ -70,4 +73,32 @@ export async function resolve(specifier, context, nextResolve) {
     }
     throw error;
   }
+}
+
+// `--experimental-strip-types` erases type annotations but does not transform
+// JSX, so a `.tsx` import fails with ERR_UNKNOWN_FILE_EXTENSION. That is why
+// every component contract in this suite used to read source text instead of
+// rendering. This hook hands `.tsx` to the TypeScript compiler (already a
+// devDependency, already used by motion-visibility.test.ts) so components can
+// be rendered with `renderToStaticMarkup` and asserted on their actual output.
+//
+// Transpile-only: no type checking happens here. `pnpm typecheck` is what
+// checks types, and it runs over the same files.
+export async function load(url, context, nextLoad) {
+  if (!url.startsWith("file:") || !url.endsWith(".tsx")) {
+    return nextLoad(url, context);
+  }
+
+  const source = await readFile(new URL(url), "utf8");
+  const { outputText } = ts.transpileModule(source, {
+    fileName: new URL(url).pathname,
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.ESNext,
+      jsx: ts.JsxEmit.ReactJSX,
+      verbatimModuleSyntax: false,
+    },
+  });
+
+  return { format: "module", source: outputText, shortCircuit: true };
 }

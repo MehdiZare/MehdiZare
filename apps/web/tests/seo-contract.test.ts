@@ -55,15 +55,55 @@ test("not-found generateMetadata call sites use buildNoIndexMetadata", () => {
 test("author metadata does not fall back to the homepage site description", () => {
   const pageSource = readSource("src/app/author/[slug]/page.tsx");
   assert.doesNotMatch(pageSource, /siteDescription/);
-  assert.match(pageSource, /authorListingDescription\(author\.name, author\.bioShort\)/);
-  assert.match(pageSource, /bioShort\?\.trim\(\)/);
-  assert.match(pageSource, /Articles by \$\{name\}\./);
+  assertCallsHelper(pageSource, "resolveAuthorPageIdentity", "#83, #94");
+  assertCallsHelper(pageSource, "authorIdentityFallbacks", "#83, #94");
+});
+
+test("author identity is not re-derived with the raw nullish chains it replaced", () => {
+  // #83. Each of these is a shape that shipped and leaked a blank CMS value:
+  // `??` past an empty jobTitle, and a template that left "Name | " behind.
+  const pageSource = readSource("src/app/author/[slug]/page.tsx");
+  assert.doesNotMatch(
+    pageSource,
+    /author\.jobTitle\s*\?\?/,
+    "author role must come from resolveAuthorPageIdentity, not a ?? chain (#83)"
+  );
+  assert.doesNotMatch(
+    pageSource,
+    /\$\{author\.name\}\s*\|/,
+    "author title must come from composeAuthorTitle, which drops the dangling separator (#83)"
+  );
+  assert.doesNotMatch(
+    pageSource,
+    /Articles by \$\{/,
+    "the articles-by sentence lives in buildAuthorListingDescription, which refuses a blank name (#83)"
+  );
 });
 
 test("article metadata does not fall back to the homepage site description", () => {
   const pageSource = readSource("src/app/blog/[slug]/page.tsx");
   assert.doesNotMatch(pageSource, /siteDescription/);
   assert.match(pageSource, /article\.excerpt\?\.trim\(\) \|\| article\.title/);
+});
+
+test("article author identity shares the author-route resolver", () => {
+  const pageSource = readSource("src/app/blog/[slug]/page.tsx");
+  assertCallsHelper(pageSource, "resolveArticleAuthorIdentity", "#83, #94");
+  assertCallsHelper(pageSource, "authorIdentityFallbacks", "#83, #94");
+});
+
+test("article author identity is not re-derived with the raw nullish chains it replaced", () => {
+  // Lines 164-165 of the old page let a blank websiteUrl / linkedinUrl reach
+  // Person `url` and `sameAs` as "" -- invalid structured data, and the exact
+  // inconsistency with the author route that #83 was filed for.
+  const pageSource = readSource("src/app/blog/[slug]/page.tsx");
+  for (const field of ["name", "jobTitle", "bioShort", "websiteUrl", "linkedinUrl"]) {
+    assert.doesNotMatch(
+      pageSource,
+      new RegExp(`articleAuthor\\?\\.${field}\\s*\\?\\?`),
+      `article ${field} must come from resolveArticleAuthorIdentity, not a ?? chain (#83)`
+    );
+  }
 });
 
 test("bina-print metadata does not fall back to the homepage site description", () => {
