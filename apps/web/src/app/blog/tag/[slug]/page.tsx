@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { PostCard } from "@/components/blog/PostCard";
-import { formatSlugName, resolveTagListingCopy } from "@/lib/blog-listing";
+import { resolveTagListingCopy } from "@/lib/blog-listing";
 import { getTagSeedBySlug } from "@/lib/taxonomy-seed";
 import { getTags, getTagBySlug, getArticles } from "@/lib/strapi";
 import { buildBreadcrumbJsonLd, buildNoIndexMetadata, buildPageMetadata, buildWebPageJsonLd } from "@/lib/seo";
@@ -40,20 +40,22 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
       return buildNoIndexMetadata("Tag Not Found");
     }
 
-    const { pageDescription } = resolveTagListingCopy({
+    const { tagTitle, pageDescription } = resolveTagListingCopy({
       slug,
       name: tag?.name,
       seedName: seed?.name,
+      headline: tag?.headline,
+      seedHeadline: seed?.headline,
       intro: tag?.intro,
       seedIntro: seed?.intro,
       tagDescription: tag?.description,
       seedDescription: seed?.description,
     });
-    const fallbackTitle = seed?.headline ?? seed?.name ?? formatSlugName(slug);
 
+    // buildPageMetadata already prefers a filled seo.metaTitle over this title.
     return buildPageMetadata({
       pathname: `/blog/tag/${slug}`,
-      title: tag?.seo?.metaTitle ?? tag?.headline ?? tag?.name ?? fallbackTitle,
+      title: tagTitle,
       description: pageDescription,
       seo: tag?.seo,
     });
@@ -62,16 +64,17 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
       return buildNoIndexMetadata("Tag Not Found");
     }
 
-    const { pageDescription } = resolveTagListingCopy({
+    const { tagTitle, pageDescription } = resolveTagListingCopy({
       slug,
       seedName: seed.name,
+      seedHeadline: seed.headline,
       seedIntro: seed.intro,
       seedDescription: seed.description,
     });
 
     return buildPageMetadata({
       pathname: `/blog/tag/${slug}`,
-      title: seed.headline ?? seed.name ?? formatSlugName(slug),
+      title: tagTitle,
       description: pageDescription,
     });
   }
@@ -114,17 +117,18 @@ export default async function TagPage({ params }: TagPageProps) {
   }
 
   const canonicalPath = `/blog/tag/${slug}`;
-  const { tagName, pageDescription } = resolveTagListingCopy({
+  const { tagName, tagTitle, pageDescription } = resolveTagListingCopy({
     slug,
     name: tag?.name,
     seedName: seed?.name,
+    headline: tag?.headline,
+    seedHeadline: seed?.headline,
     intro: tag?.intro,
     seedIntro: seed?.intro,
     tagDescription: tag?.description,
     seedDescription: seed?.description,
   });
-  const pageTitle = tag?.headline ?? seed?.headline ?? tagName;
-  const highlights = buildTagHighlights(pageTitle);
+  const highlights = buildTagHighlights(tagTitle);
 
   return (
     <>
@@ -132,7 +136,7 @@ export default async function TagPage({ params }: TagPageProps) {
         id="tag-webpage-jsonld"
         data={buildWebPageJsonLd({
           pathname: canonicalPath,
-          title: pageTitle,
+          title: tagTitle,
           description: pageDescription,
           type: "CollectionPage",
         })}
@@ -150,7 +154,7 @@ export default async function TagPage({ params }: TagPageProps) {
           <div className="mb-12">
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">Tag</p>
             <h1 className="mt-4 font-serif text-4xl text-ink sm:text-5xl">
-              {pageTitle}
+              {tagTitle}
             </h1>
             <p className="mt-4 text-lg text-mid-gray">{pageDescription}</p>
           </div>

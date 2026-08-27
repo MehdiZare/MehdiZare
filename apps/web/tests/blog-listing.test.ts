@@ -88,6 +88,57 @@ test("tag listing copy falls back to a slug-derived name when CMS and seed names
   assert.equal(copy.pageDescription, "Articles tagged Production Ai.");
 });
 
+test("tag listing copy prefers a filled headline over the tag name", () => {
+  const copy = resolveTagListingCopy({
+    slug: "llm-systems",
+    name: "LLM Systems",
+    headline: "Shipping LLM Systems",
+    intro: "Real intro copy.",
+  });
+
+  assert.equal(copy.tagTitle, "Shipping LLM Systems");
+  assert.equal(copy.tagName, "LLM Systems");
+});
+
+test("tag listing copy prefers a seed headline over the CMS name", () => {
+  const copy = resolveTagListingCopy({
+    slug: "llm-systems",
+    name: "LLM Systems",
+    headline: "",
+    seedHeadline: "Seed Headline",
+    intro: "Real intro copy.",
+  });
+
+  assert.equal(copy.tagTitle, "Seed Headline");
+});
+
+test("tag listing copy falls back to the resolved name when every headline is empty", () => {
+  const copy = resolveTagListingCopy({
+    slug: "llm-systems",
+    name: "LLM Systems",
+    headline: "",
+    seedHeadline: "   ",
+    intro: "Real intro copy.",
+  });
+
+  assert.equal(copy.tagTitle, "LLM Systems");
+  assert.notEqual(copy.tagTitle, "");
+});
+
+test("tag listing copy title falls back to the slug label when name and headline are blank", () => {
+  const copy = resolveTagListingCopy({
+    slug: "production-ai",
+    name: "",
+    headline: "",
+    seedName: "  ",
+    seedHeadline: null,
+  });
+
+  assert.equal(copy.tagTitle, "Production Ai");
+  assert.equal(copy.tagName, "Production Ai");
+  assert.equal(copy.pageDescription, "Articles tagged Production Ai.");
+});
+
 test("buildCategoryListingDescription uses the shared in-category sentence", () => {
   assert.equal(buildCategoryListingDescription("AI Engineering"), "Articles in AI Engineering.");
 });
