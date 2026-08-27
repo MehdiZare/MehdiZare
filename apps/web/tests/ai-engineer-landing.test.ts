@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import {
+  assertCallsHelper,
+  assertRendersComponent,
+} from "./contract-assertions.ts";
+
 const forbiddenTerms = [
   /\bCISA\b/i,
   /\bgovernment\b/i,
@@ -22,14 +27,19 @@ test("AI engineer landing is a dedicated non-blog route titled to the query", ()
 
   assert.match(page, /pathname = "\/ai-engineer"/);
   assert.match(page, /title: aiEngineerMetadataTitle/);
-  assert.match(page, /getSiteProfile/);
+  assertCallsHelper(page, "getSiteProfile", "#94");
   assert.match(fallback, /export const aiEngineerMetadataTitle = "AI Engineer"/);
   assert.match(fallback, /`AI engineer \$\{siteProfile\.siteName\}/);
   assert.doesNotMatch(fallback, /AI engineer Mehdi Zare/);
   assert.doesNotMatch(page, /\/blog\//);
   assert.match(readSource("src/components/layout/Footer.tsx"), /href: "\/ai-engineer"/);
   assert.match(readSource("src/components/home/ServicesGrid.tsx"), /href: "\/ai-engineer"/);
-  assert.match(readSource("src/app/about/page.tsx"), /AiEngineerProfileLink/);
+  assertRendersComponent(
+    readSource("src/app/about/page.tsx"),
+    "AiEngineerProfileLink",
+    "#94",
+    "about page"
+  );
   assert.match(readSource("src/app/about/page.tsx"), /section="about_hero"/);
   const blogPage = readSource("src/app/blog/[slug]/page.tsx");
   assert.match(blogPage, /how-ai-works-from-data-to-decisions/);
@@ -37,12 +47,12 @@ test("AI engineer landing is a dedicated non-blog route titled to the query", ()
     blogPage,
     /why-most-ai-projects-die-before-production-and-it-s-not-a-tech-problem/
   );
-  assert.match(blogPage, /AiEngineerProfileLink/);
+  assertRendersComponent(blogPage, "AiEngineerProfileLink", "#94", "blog article page");
   assert.match(blogPage, /AI_ENGINEER_IN_CONTENT_BLOG_SLUGS\.has\(article\.slug\)/);
   assert.match(blogPage, /section="blog_body"/);
   const profileLink = readSource("src/components/seo/AiEngineerProfileLink.tsx");
   assert.match(profileLink, /href="\/ai-engineer"/);
-  assert.match(profileLink, /TrackedLink/);
+  assertRendersComponent(profileLink, "TrackedLink", "#94", "AiEngineerProfileLink");
   assert.match(profileLink, /eventName="funnel_cta_click"/);
   assert.match(profileLink, /cta_label: "AI engineer landing"/);
   assert.match(profileLink, /destination: "\/ai-engineer"/);
