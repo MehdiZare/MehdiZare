@@ -74,7 +74,11 @@ test("bina-print metadata does not fall back to the homepage site description", 
 
 test("tag listing metadata shares the listing copy helper and never uses the site blurb", () => {
   const pageSource = readSource("src/app/blog/tag/[slug]/page.tsx");
-  assert.match(pageSource, /resolveTagListingCopy/);
+  assert.match(
+    pageSource,
+    /resolveTagListingCopy\(/,
+    "page must call resolveTagListingCopy, not merely import it (#79, #81, #94)"
+  );
   assert.match(pageSource, /description:\s*pageDescription/);
   assert.doesNotMatch(pageSource, /siteDescription/);
   assert.doesNotMatch(pageSource, /getSiteProfile/);
@@ -90,7 +94,11 @@ test("tag listing title comes from the shared copy helper, not a raw headline ch
 
 test("category listing metadata shares the listing copy helper for intro and description", () => {
   const pageSource = readSource("src/app/blog/category/[slug]/page.tsx");
-  assert.match(pageSource, /resolveCategoryListingCopy/);
+  assert.match(
+    pageSource,
+    /resolveCategoryListingCopy\(/,
+    "page must call resolveCategoryListingCopy, not merely import it (#77, #94)"
+  );
   assert.match(pageSource, /description:\s*pageDescription/);
   assert.doesNotMatch(
     pageSource,
@@ -108,9 +116,19 @@ test("category listing title comes from the shared copy helper, not a raw headli
 
 test("category listing parent names route through the display-name helper", () => {
   const pageSource = readSource("src/app/blog/category/[slug]/page.tsx");
-  assert.match(pageSource, /resolveTaxonomyDisplayName/);
+  assert.match(
+    pageSource,
+    /resolveTaxonomyDisplayName\(/,
+    "page must call resolveTaxonomyDisplayName, not merely import it (#94)"
+  );
   assert.match(pageSource, /category\.parent\.name,\s*category\.parent\.headline/);
-  assert.doesNotMatch(pageSource, /name:\s*category\.parent\.name,/);
+  // No trailing comma: `name: category.parent.name ?? resolveTaxonomyDisplayName(...)`
+  // reinstates the raw-CMS-name-wins bug while leaving the assertion above green.
+  assert.doesNotMatch(
+    pageSource,
+    /name:\s*category\.parent\.name/,
+    "parent name must resolve through resolveTaxonomyDisplayName, not the raw CMS value (#77, #94)"
+  );
   assert.doesNotMatch(pageSource, /formatCategoryName/);
 });
 
@@ -144,7 +162,11 @@ test("category subcategory cards route names and descriptions through the shared
 test("paginated blog 404s use the noindex helper for invalid and out-of-range pages", () => {
   const pageSource = readSource("src/app/blog/page/[page]/page.tsx");
   assert.match(pageSource, /buildNoIndexMetadata\("Blog Page Not Found"\)/);
-  assert.match(pageSource, /parsePositivePageNumber/);
+  assert.match(
+    pageSource,
+    /parsePositivePageNumber\(/,
+    "page must call parsePositivePageNumber, not merely import it (#94)"
+  );
   assert.match(pageSource, /currentPage > pagination\.pageCount/);
 });
 
