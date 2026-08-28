@@ -103,7 +103,6 @@ export interface Tag {
   slug: string;
 }
 
-// About Page (Single Type)
 export interface Credential {
   id: number;
   name: string;
@@ -132,70 +131,16 @@ export interface SocialLink {
   url: string;
 }
 
-export interface AboutPage {
-  title: string;
-  positioningStatement: string | null;
-  bio: BlocksContent;
-  credentials: Credential[];
-  experience: Experience[];
-  education: Education[];
-  socialLinks: SocialLink[];
-}
-
-// Consulting Page (Single Type)
-export interface ConsultingTier {
-  id: number;
-  name: string;
-  priceRange: string;
-  hoursPerMonth: string;
-  scope: string;
-  features: string[];
-  ctaText: string;
-}
-
 export interface FAQ {
   id: number;
   question: string;
   answer: string;
 }
 
-export interface ConsultingPage {
-  headline: string;
-  intro: string | null;
-  tiers: ConsultingTier[];
-  faq: FAQ[];
-}
-
-// Site Settings (Single Type)
 export interface NavItem {
   id: number;
   label: string;
   href: string;
-}
-
-export interface SiteSettings {
-  siteName: string;
-  siteDescription: string | null;
-  positioningHeadline: string | null;
-  positioningSubheadline: string | null;
-  positioningHighlight: string | null;
-  credentialLine: string | null;
-  industriesLine: string | null;
-  locationLine: string | null;
-  primaryCtaLabel: string | null;
-  primaryCtaHref: string | null;
-  secondaryCtaLabel: string | null;
-  secondaryCtaHref: string | null;
-  newsletterTitle: string | null;
-  newsletterOneLiner: string | null;
-  contactPrompt: string | null;
-  authorName: string | null;
-  authorRole: string | null;
-  authorBioShort: string | null;
-  footerText: string | null;
-  bookCallHref: string | null;
-  socialLinks: SocialLink[];
-  navItems: NavItem[];
 }
 
 // Contact Submission

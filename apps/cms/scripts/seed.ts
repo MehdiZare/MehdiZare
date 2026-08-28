@@ -3,10 +3,8 @@
  *
  * Writes the records apps/web still reads: author, categories, tags, and the
  * author relation on articles. Page copy and site identity live in the repo
- * (`apps/web/src/content/fallbacks/` and `site-profile-defaults.ts`); seeding
- * `home-page` / `about-page` / `consulting-page` / `bina-print-page` /
- * `site-setting` was writing rows whose admin edits now silently do
- * nothing (#116). The Strapi types stay so their tables are not dropped.
+ * (`apps/web/src/content/fallbacks/` and `site-profile-defaults.ts`). The
+ * unused page single-types were dropped from the CMS schema (#121).
  *
  * Usage:
  *   STRAPI_URL=https://cms-production-a749.up.railway.app \

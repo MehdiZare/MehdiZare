@@ -430,42 +430,6 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiAboutPageAboutPage extends Struct.SingleTypeSchema {
-  collectionName: 'about_pages';
-  info: {
-    displayName: 'About Page';
-    pluralName: 'about-pages';
-    singularName: 'about-page';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    bio: Schema.Attribute.Blocks;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    credentials: Schema.Attribute.Component<'shared.credential', true>;
-    education: Schema.Attribute.Component<'shared.education', true>;
-    experiences: Schema.Attribute.Component<'shared.experience', true>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::about-page.about-page'
-    > &
-      Schema.Attribute.Private;
-    positioningStatement: Schema.Attribute.Text;
-    publishedAt: Schema.Attribute.DateTime;
-    seo: Schema.Attribute.Component<'shared.seo', false>;
-    socialLinks: Schema.Attribute.Component<'shared.social-link', true>;
-    stats: Schema.Attribute.Component<'shared.stat', true>;
-    title: Schema.Attribute.String;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
   collectionName: 'articles';
   info: {
@@ -552,45 +516,6 @@ export interface ApiAuthorAuthor extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiBinaPrintPageBinaPrintPage extends Struct.SingleTypeSchema {
-  collectionName: 'bina_print_pages';
-  info: {
-    displayName: 'Bina Print Page';
-    pluralName: 'bina-print-pages';
-    singularName: 'bina-print-page';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    emailGateCopy: Schema.Attribute.Text;
-    emailGateHeadline: Schema.Attribute.String;
-    exampleOverallScore: Schema.Attribute.Integer;
-    exampleSubScores: Schema.Attribute.JSON;
-    exampleTicker: Schema.Attribute.String;
-    heroHeadline: Schema.Attribute.String;
-    heroSubheadline: Schema.Attribute.Text;
-    howItWorks: Schema.Attribute.Component<'bina.step', true>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::bina-print-page.bina-print-page'
-    > &
-      Schema.Attribute.Private;
-    methodologySummary: Schema.Attribute.Text;
-    publishedAt: Schema.Attribute.DateTime;
-    searchPlaceholder: Schema.Attribute.String;
-    seo: Schema.Attribute.Component<'shared.seo', false>;
-    topMovers: Schema.Attribute.Component<'bina.mover', true>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
   collectionName: 'categories';
   info: {
@@ -618,42 +543,6 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
       Schema.Attribute.Unique;
     publishedAt: Schema.Attribute.DateTime;
     slug: Schema.Attribute.UID<'name'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiConsultingPageConsultingPage
-  extends Struct.SingleTypeSchema {
-  collectionName: 'consulting_pages';
-  info: {
-    displayName: 'Consulting Page';
-    pluralName: 'consulting-pages';
-    singularName: 'consulting-page';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    audiences: Schema.Attribute.Component<'consulting.audience', true>;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    faq: Schema.Attribute.Component<'consulting.faq', true>;
-    leadMagnetDescription: Schema.Attribute.Text;
-    leadMagnetTitle: Schema.Attribute.String;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::consulting-page.consulting-page'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    seo: Schema.Attribute.Component<'shared.seo', false>;
-    subtitle: Schema.Attribute.Text;
-    tiers: Schema.Attribute.Component<'consulting.tier', true>;
-    title: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -703,131 +592,6 @@ export interface ApiContactSubmissionContactSubmission
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 160;
       }>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiHomePageHomePage extends Struct.SingleTypeSchema {
-  collectionName: 'home_pages';
-  info: {
-    displayName: 'Home Page';
-    pluralName: 'home-pages';
-    singularName: 'home-page';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    credibilityItems: Schema.Attribute.Component<'home.credibility-item', true>;
-    featuredOnItems: Schema.Attribute.Component<'home.featured-on-item', true>;
-    heroHeadline: Schema.Attribute.String;
-    heroImage: Schema.Attribute.Media<'images'>;
-    heroPrimaryCtaHref: Schema.Attribute.String;
-    heroPrimaryCtaLabel: Schema.Attribute.String;
-    heroSecondaryCtaHref: Schema.Attribute.String;
-    heroSecondaryCtaLabel: Schema.Attribute.String;
-    heroSubheadline: Schema.Attribute.Text;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::home-page.home-page'
-    > &
-      Schema.Attribute.Private;
-    newsletterCopy: Schema.Attribute.Text;
-    newsletterHeadline: Schema.Attribute.String;
-    publishedAt: Schema.Attribute.DateTime;
-    seo: Schema.Attribute.Component<'shared.seo', false>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    whatIDoCards: Schema.Attribute.Component<'home.value-card', true>;
-  };
-}
-
-export interface ApiNewsletterPageNewsletterPage
-  extends Struct.SingleTypeSchema {
-  collectionName: 'newsletter_pages';
-  info: {
-    displayName: 'Newsletter Page';
-    pluralName: 'newsletter-pages';
-    singularName: 'newsletter-page';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    archiveLinks: Schema.Attribute.Component<'shared.nav-item', true>;
-    benefits: Schema.Attribute.JSON;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    headline: Schema.Attribute.String;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::newsletter-page.newsletter-page'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    seo: Schema.Attribute.Component<'shared.seo', false>;
-    signupCtaLabel: Schema.Attribute.String;
-    socialProofText: Schema.Attribute.String;
-    subheadline: Schema.Attribute.Text;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiSiteSettingSiteSetting extends Struct.SingleTypeSchema {
-  collectionName: 'site_settings';
-  info: {
-    displayName: 'Site Settings';
-    pluralName: 'site-settings';
-    singularName: 'site-setting';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    authorBioShort: Schema.Attribute.Text;
-    authorName: Schema.Attribute.String;
-    authorRole: Schema.Attribute.String;
-    bookCallHref: Schema.Attribute.String;
-    contactPrompt: Schema.Attribute.String;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    credentialLine: Schema.Attribute.String;
-    defaultSeo: Schema.Attribute.Component<'shared.seo', false>;
-    footerText: Schema.Attribute.Text;
-    industriesLine: Schema.Attribute.String;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::site-setting.site-setting'
-    > &
-      Schema.Attribute.Private;
-    locationLine: Schema.Attribute.String;
-    navItems: Schema.Attribute.Component<'shared.nav-item', true>;
-    newsletterOneLiner: Schema.Attribute.Text;
-    newsletterTitle: Schema.Attribute.String;
-    positioningHeadline: Schema.Attribute.String;
-    positioningHighlight: Schema.Attribute.String;
-    positioningSubheadline: Schema.Attribute.Text;
-    primaryCtaHref: Schema.Attribute.String;
-    primaryCtaLabel: Schema.Attribute.String;
-    publishedAt: Schema.Attribute.DateTime;
-    secondaryCtaHref: Schema.Attribute.String;
-    secondaryCtaLabel: Schema.Attribute.String;
-    siteDescription: Schema.Attribute.Text;
-    siteName: Schema.Attribute.String;
-    socialLinks: Schema.Attribute.Component<'shared.social-link', true>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1374,16 +1138,10 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
-      'api::about-page.about-page': ApiAboutPageAboutPage;
       'api::article.article': ApiArticleArticle;
       'api::author.author': ApiAuthorAuthor;
-      'api::bina-print-page.bina-print-page': ApiBinaPrintPageBinaPrintPage;
       'api::category.category': ApiCategoryCategory;
-      'api::consulting-page.consulting-page': ApiConsultingPageConsultingPage;
       'api::contact-submission.contact-submission': ApiContactSubmissionContactSubmission;
-      'api::home-page.home-page': ApiHomePageHomePage;
-      'api::newsletter-page.newsletter-page': ApiNewsletterPageNewsletterPage;
-      'api::site-setting.site-setting': ApiSiteSettingSiteSetting;
       'api::tag.tag': ApiTagTag;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
