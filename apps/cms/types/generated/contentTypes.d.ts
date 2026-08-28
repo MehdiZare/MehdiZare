@@ -26,6 +26,11 @@ export interface AdminApiToken extends Struct.CollectionTypeSchema {
       Schema.Attribute.SetMinMaxLength<{
         minLength: 1;
       }>;
+    adminPermissions: Schema.Attribute.Relation<
+      'oneToMany',
+      'admin::permission'
+    >;
+    adminUserOwner: Schema.Attribute.Relation<'manyToOne', 'admin::user'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -39,6 +44,9 @@ export interface AdminApiToken extends Struct.CollectionTypeSchema {
         minLength: 1;
       }>;
     expiresAt: Schema.Attribute.DateTime;
+    kind: Schema.Attribute.Enumeration<['content-api', 'admin']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'content-api'>;
     lastUsedAt: Schema.Attribute.DateTime;
     lifespan: Schema.Attribute.BigInteger;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
@@ -56,7 +64,6 @@ export interface AdminApiToken extends Struct.CollectionTypeSchema {
     >;
     publishedAt: Schema.Attribute.DateTime;
     type: Schema.Attribute.Enumeration<['read-only', 'full-access', 'custom']> &
-      Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'read-only'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -134,6 +141,7 @@ export interface AdminPermission extends Struct.CollectionTypeSchema {
         minLength: 1;
       }>;
     actionParameters: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<{}>;
+    apiToken: Schema.Attribute.Relation<'manyToOne', 'admin::api-token'>;
     conditions: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<[]>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -241,6 +249,7 @@ export interface AdminSession extends Struct.CollectionTypeSchema {
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'admin::session'> &
       Schema.Attribute.Private;
+    metadata: Schema.Attribute.JSON & Schema.Attribute.Private;
     origin: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Private;
@@ -385,6 +394,8 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
     };
   };
   attributes: {
+    apiTokens: Schema.Attribute.Relation<'oneToMany', 'admin::api-token'> &
+      Schema.Attribute.Private;
     blocked: Schema.Attribute.Boolean &
       Schema.Attribute.Private &
       Schema.Attribute.DefaultTo<false>;
@@ -421,6 +432,8 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
     publishedAt: Schema.Attribute.DateTime;
     registrationToken: Schema.Attribute.String & Schema.Attribute.Private;
     resetPasswordToken: Schema.Attribute.String & Schema.Attribute.Private;
+    resetPasswordTokenExpiresAt: Schema.Attribute.DateTime &
+      Schema.Attribute.Private;
     roles: Schema.Attribute.Relation<'manyToMany', 'admin::role'> &
       Schema.Attribute.Private;
     updatedAt: Schema.Attribute.DateTime;
@@ -498,7 +511,10 @@ export interface ApiAuthorAuthor extends Struct.CollectionTypeSchema {
     knowsAbout: Schema.Attribute.JSON;
     linkedinUrl: Schema.Attribute.String & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<'oneToMany', 'api::author.author'> &
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::author.author'
+    > &
       Schema.Attribute.Private;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     profileImage: Schema.Attribute.Media<'images'>;
@@ -528,10 +544,13 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
   };
   attributes: {
     articles: Schema.Attribute.Relation<'oneToMany', 'api::article.article'>;
+    children: Schema.Attribute.Relation<'oneToMany', 'api::category.category'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     description: Schema.Attribute.Text;
+    headline: Schema.Attribute.String;
+    intro: Schema.Attribute.Text;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -541,7 +560,10 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
     name: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
+    order: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    parent: Schema.Attribute.Relation<'manyToOne', 'api::category.category'>;
     publishedAt: Schema.Attribute.DateTime;
+    seo: Schema.Attribute.Component<'shared.seo', false>;
     slug: Schema.Attribute.UID<'name'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -613,6 +635,9 @@ export interface ApiTagTag extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    description: Schema.Attribute.Text;
+    headline: Schema.Attribute.String;
+    intro: Schema.Attribute.Text;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::tag.tag'> &
       Schema.Attribute.Private;
@@ -620,6 +645,7 @@ export interface ApiTagTag extends Struct.CollectionTypeSchema {
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
     publishedAt: Schema.Attribute.DateTime;
+    seo: Schema.Attribute.Component<'shared.seo', false>;
     slug: Schema.Attribute.UID<'name'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -1128,7 +1154,7 @@ export interface PluginUsersPermissionsUser
 }
 
 declare module '@strapi/strapi' {
-  export module Public {
+  export namespace Public {
     export interface ContentTypeSchemas {
       'admin::api-token': AdminApiToken;
       'admin::api-token-permission': AdminApiTokenPermission;
