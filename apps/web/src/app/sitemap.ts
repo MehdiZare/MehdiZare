@@ -21,6 +21,28 @@ export const maxDuration = 20;
 /** Must stay below maxDuration * 1000 so buildDegradedSitemap can return before the isolate is killed. Does not abort in-flight CMS fetches. */
 export const SITEMAP_DEADLINE_MS = 16_000;
 
+/**
+ * When the repo-owned pages last changed: the build that shipped them.
+ *
+ * `next.config.ts` stamps `BUILD_TIME` once per build and Next inlines it, so
+ * it is fixed for the life of a deploy rather than advancing on every ISR
+ * regeneration or, under a dynamic route, on every request. That distinction is
+ * the whole point (#113) -- a `lastmod` of "now" tells a crawler every page
+ * changed seconds ago, every time it looks, and Google discounts `lastmod`
+ * sitemap-wide once it decides the value is unreliable.
+ *
+ * Falls back to module-load time, which is still deploy-scoped in practice, if
+ * the stamp is ever missing or unparseable.
+ */
+const MODULE_LOADED_AT = new Date();
+
+export function repoContentLastModified(): Date {
+  const stamped = process.env.BUILD_TIME;
+  if (!stamped) return MODULE_LOADED_AT;
+  const parsed = new Date(stamped);
+  return Number.isNaN(parsed.getTime()) ? MODULE_LOADED_AT : parsed;
+}
+
 function safeDate(input: string | undefined, fallback: Date): Date {
   if (!input) {
     return fallback;
@@ -209,7 +231,7 @@ function buildStaticSitemapPages(
     },
     {
       url: `${SITE_URL}/contact`,
-      lastModified: now,
+      lastModified: repoContentLastModified(),
       changeFrequency: "yearly",
       priority: 0.5,
     },
@@ -228,19 +250,24 @@ function buildStaticSitemapPages(
 }
 
 function buildDegradedSitemap(now: Date, showBinaPrint: boolean): MetadataRoute.Sitemap {
+  // Everything this path can emit is repo-owned -- the static pages, and the
+  // category/tag/author fallbacks from `data/taxonomy.json` -- so all of it
+  // dates from the build. Using `now` here was doubly wrong: it is not a
+  // modification date, and it made a CMS outage look like a site-wide edit.
+  const builtAt = repoContentLastModified();
   const timestamps = {
-    home: now,
-    about: now,
-    binaPrint: now,
-    consulting: now,
-    aiEngineer: now,
-    blog: now,
+    home: builtAt,
+    about: builtAt,
+    binaPrint: builtAt,
+    consulting: builtAt,
+    aiEngineer: builtAt,
+    blog: builtAt,
   };
   return [
     ...buildStaticSitemapPages(now, timestamps, showBinaPrint),
-    ...fallbackAuthorPages(now),
-    ...fallbackCategoryPages(now),
-    ...fallbackTagPages(now),
+    ...fallbackAuthorPages(builtAt),
+    ...fallbackCategoryPages(builtAt),
+    ...fallbackTagPages(builtAt),
   ];
 }
 
@@ -291,12 +318,13 @@ function mapAuthorPages(authors: Author[], now: Date): MetadataRoute.Sitemap {
 async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<MetadataRoute.Sitemap> {
   const deadlineMs = Date.now() + SITEMAP_DEADLINE_MS;
   const degradedSources: string[] = [];
+  const builtAt = repoContentLastModified();
   const pageTimestamps = {
-    home: now,
-    about: now,
-    binaPrint: now,
-    consulting: now,
-    aiEngineer: now,
+    home: builtAt,
+    about: builtAt,
+    binaPrint: builtAt,
+    consulting: builtAt,
+    aiEngineer: builtAt,
     blog: now,
   };
 

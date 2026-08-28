@@ -95,7 +95,22 @@ const securityHeaders = [
   },
 ];
 
+/**
+ * Stamped once per build and inlined into the bundle, so it is stable for the
+ * life of a deploy and moves exactly when a deploy ships.
+ *
+ * The sitemap needs this for the pages whose copy lives in the repo (#113).
+ * Their `lastmod` used to come from CMS rows that were seeded in February and
+ * never edited, then -- once those reads were dropped -- from `new Date()`,
+ * which is the moment the sitemap rendered rather than the moment the page
+ * changed. Neither is a modification date. This is.
+ */
+const buildTime = new Date().toISOString();
+
 const nextConfig: NextConfig = {
+  env: {
+    BUILD_TIME: buildTime,
+  },
   poweredByHeader: false,
   images: {
     remotePatterns: imageRemotePatterns,
