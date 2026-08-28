@@ -27,7 +27,8 @@ import { CMS_PRERENDER_HTML_FILES } from "../../src/content/fixtures/cms-prerend
 // CI builds with DISABLE_STRAPI_CMS=true. Article/author templates have no
 // seed fallback, so a committed fixture catalog prerenders one of each
 // (#114). Category/tag pages render from data/taxonomy.json once
-// generateStaticParams emits those fixture slugs.
+// generateStaticParams emits those fixture slugs. Pagination is the same
+// catalog: CMS-off generateStaticParams emits `/blog/page/2` (#120).
 
 const BUILD_DIR = resolve(import.meta.dirname, "../../.next/server/app");
 
