@@ -73,9 +73,8 @@ test("every schema.json attribute appears on the generated content type", () => 
     const interfaceName = `Api${pascal(apiName)}${pascal(apiName)}`;
     const attrs = attributesBlock(interfaceBody(source, interfaceName));
     for (const field of fields) {
-      assert.match(
-        attrs,
-        new RegExp(`\\n    ${field}: Schema\\.Attribute\\.`),
+      assert.ok(
+        attrs.includes(`\n    ${field}: Schema.Attribute.`),
         `${apiName} schema field "${field}" missing from ${interfaceName}`,
       );
     }
