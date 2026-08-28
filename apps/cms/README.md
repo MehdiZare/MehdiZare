@@ -7,6 +7,7 @@ Strapi 5 backend that powers site content and contact submissions.
 - `pnpm --filter=cms dev`
 - `pnpm --filter=cms build`
 - `pnpm --filter=cms start`
+- `pnpm --filter=cms generate-types` (wipes `dist`, then `strapi ts:generate-types`)
 - `task docker:build:cms` (image build from the repo root)
 
 ## Docker / Corepack pnpm pin
