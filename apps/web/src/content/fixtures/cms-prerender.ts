@@ -3,24 +3,30 @@ import { DEFAULT_SITE_PROFILE, DEFAULT_SOCIAL_LINKS } from "@/lib/site-profile-d
 
 /**
  * Tiny CMS catalog used when `DISABLE_STRAPI_CMS=true` so CI's post-build
- * SSR-visibility scan can see article / author / category / tag templates
- * (#114). Production builds with Strapi reachable never consult this file.
+ * SSR-visibility scan can see article / author / category / tag / pagination
+ * templates (#114, #120). Production builds with Strapi reachable never
+ * consult this file. A Strapi outage (CMS on, fetch failing) still returns
+ * empty `generateStaticParams`, so these paths are not published by accident.
  *
  * Keep this set small. Category and tag pages already fall back to
  * `data/taxonomy.json` once `generateStaticParams` emits a slug; the article
- * and author templates have no seed fallback and need a full record.
+ * and author templates have no seed fallback and need a full record. Pagination
+ * reuses `BlogListPageContent`; the extra route is so that template is scanned.
  */
 
 export const CMS_PRERENDER_ARTICLE_SLUG = "ssr-visibility-fixture";
 export const CMS_PRERENDER_AUTHOR_SLUG = DEFAULT_SITE_PROFILE.authorSlug;
 export const CMS_PRERENDER_CATEGORY_SLUG = "ai-engineering";
 export const CMS_PRERENDER_TAG_SLUG = "llms";
+/** Pagination segment only. `/blog/page/1` redirects to `/blog`. */
+export const CMS_PRERENDER_BLOG_PAGE = "2";
 
 export const CMS_PRERENDER_HTML_FILES = [
   `blog/${CMS_PRERENDER_ARTICLE_SLUG}.html`,
   `author/${CMS_PRERENDER_AUTHOR_SLUG}.html`,
   `blog/category/${CMS_PRERENDER_CATEGORY_SLUG}.html`,
   `blog/tag/${CMS_PRERENDER_TAG_SLUG}.html`,
+  `blog/page/${CMS_PRERENDER_BLOG_PAGE}.html`,
 ] as const;
 
 const STAMP = "2026-01-15T12:00:00.000Z";

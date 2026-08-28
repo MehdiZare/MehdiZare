@@ -10,6 +10,7 @@ import {
   CMS_PRERENDER_AUTHOR,
   CMS_PRERENDER_AUTHOR_SLUG,
   CMS_PRERENDER_CATEGORY_SLUG,
+  CMS_PRERENDER_BLOG_PAGE,
   CMS_PRERENDER_HTML_FILES,
   CMS_PRERENDER_TAG_SLUG,
   findCmsPrerenderArticle,
@@ -25,6 +26,7 @@ test("the prerender fixture slugs match the records and the HTML list", () => {
       `author/${CMS_PRERENDER_AUTHOR_SLUG}.html`,
       `blog/${CMS_PRERENDER_ARTICLE_SLUG}.html`,
       `blog/category/${CMS_PRERENDER_CATEGORY_SLUG}.html`,
+      `blog/page/${CMS_PRERENDER_BLOG_PAGE}.html`,
       `blog/tag/${CMS_PRERENDER_TAG_SLUG}.html`,
     ].sort()
   );
@@ -67,6 +69,11 @@ test("finders return the fixture for its slug and nothing else", () => {
   assert.equal(findCmsPrerenderAuthor("guest-author"), undefined);
 });
 
+test("the pagination fixture is page 2, not the /blog redirect", () => {
+  assert.equal(CMS_PRERENDER_BLOG_PAGE, "2");
+  assert.notEqual(CMS_PRERENDER_BLOG_PAGE, "1");
+});
+
 test("the fake article slug is noindex so a CMS-off public deploy cannot rank it", () => {
   assert.match(
     CMS_PRERENDER_ARTICLE.seo?.metaRobots ?? "",
@@ -81,6 +88,7 @@ test("CMS-off generateStaticParams emits the fixture slugs", () => {
     { file: "src/app/author/[slug]/page.tsx", slug: "CMS_PRERENDER_AUTHOR_SLUG" },
     { file: "src/app/blog/category/[slug]/page.tsx", slug: "CMS_PRERENDER_CATEGORY_SLUG" },
     { file: "src/app/blog/tag/[slug]/page.tsx", slug: "CMS_PRERENDER_TAG_SLUG" },
+    { file: "src/app/blog/page/[page]/page.tsx", slug: "CMS_PRERENDER_BLOG_PAGE" },
   ];
 
   for (const { file, slug } of pages) {
