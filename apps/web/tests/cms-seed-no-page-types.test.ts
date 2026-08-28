@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-// #116. After page copy became repo-owned, seeding these single-types wrote
-// rows that an admin can still edit -- and that edit now silently does
-// nothing in production. Stop writing them. The Strapi types stay (dropping
-// a single type drops its table); the seed must not keep them warm.
+// #116 / #121. After page copy became repo-owned, seeding these single-types
+// wrote rows that an admin could still edit -- and that edit silently did
+// nothing in production. Seed stopped writing them in #116; #121 dropped the
+// schemas. This guard stays so a future seed cannot resurrect the write path.
 
 const seed = readFileSync(
   resolve(process.cwd(), "../../apps/cms/scripts/seed.ts"),

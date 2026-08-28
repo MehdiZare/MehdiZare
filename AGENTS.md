@@ -19,10 +19,10 @@ from either side.
 
 **The repo owns** static page copy and site identity:
 `apps/web/src/content/fallbacks/` and `apps/web/src/lib/site-profile-defaults.ts`.
-Editing `home-page`, `about-page`, `consulting-page`, `bina-print-page` or
-`site-setting` in the Strapi admin has **no effect on the live site** — those
-records are no longer read, and `apps/cms/scripts/seed.ts` no longer writes
-them. The Strapi types stay because dropping a single type drops its table.
+The Strapi single-types `home-page`, `about-page`, `consulting-page`,
+`bina-print-page`, `site-setting`, and `newsletter-page` were dropped (#121)
+because the site no longer reads them. Author, article, category, tag, and
+contact-submission stay CMS-backed.
 
 **The CMS owns** articles, categories, tags, and the Author record.
 `/author/[slug]` reads the author raw, with no repo-side fallback, so an
