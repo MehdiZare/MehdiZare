@@ -9,6 +9,8 @@ import {
 } from "@/lib/blog-listing";
 import { getSiteProfile } from "@/lib/site-profile";
 import { getArticles } from "@/lib/strapi";
+import { serverEnv } from "@/lib/server-env";
+import { CMS_PRERENDER_BLOG_PAGE } from "@/content/fixtures/cms-prerender";
 import { buildNoIndexMetadata, buildPageMetadata, toPersonId } from "@/lib/seo";
 
 interface BlogArchivePageProps {
@@ -16,6 +18,10 @@ interface BlogArchivePageProps {
 }
 
 export async function generateStaticParams(): Promise<Array<{ page: string }>> {
+  if (serverEnv.strapiDisabled) {
+    return [{ page: CMS_PRERENDER_BLOG_PAGE }];
+  }
+
   try {
     const firstPage = await getArticles({
       pagination: {
