@@ -6,6 +6,11 @@ import { AiEngineerProfileLink } from "@/components/seo/AiEngineerProfileLink";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { fetchAllPages, getArticles, getArticleBySlug } from "@/lib/strapi";
+import { serverEnv } from "@/lib/server-env";
+import {
+  CMS_PRERENDER_ARTICLE_SLUG,
+  findCmsPrerenderArticle,
+} from "@/content/fixtures/cms-prerender";
 import { StrapiImage } from "@/components/shared/StrapiImage";
 import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
 import { TableOfContents } from "@/components/blog/TableOfContents";
@@ -46,6 +51,10 @@ function getAllArticles(): Promise<ArticleList> {
 }
 
 export async function generateStaticParams() {
+  if (serverEnv.strapiDisabled) {
+    return [{ slug: CMS_PRERENDER_ARTICLE_SLUG }];
+  }
+
   try {
     const articles = await getAllArticles();
     return articles.map((article) => ({
@@ -62,8 +71,9 @@ export async function generateMetadata({
 }: BlogPostPageProps): Promise<Metadata> {
   try {
     const { slug } = await params;
-    const res = await getArticleBySlug(slug);
-    const article = res.data[0];
+    const article = serverEnv.strapiDisabled
+      ? findCmsPrerenderArticle(slug)
+      : (await getArticleBySlug(slug)).data[0];
 
     if (!article) {
       return buildNoIndexMetadata("Post Not Found");
@@ -123,11 +133,15 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
 
   let article;
-  try {
-    const res = await getArticleBySlug(slug);
-    article = res.data[0];
-  } catch {
-    notFound();
+  if (serverEnv.strapiDisabled) {
+    article = findCmsPrerenderArticle(slug);
+  } else {
+    try {
+      const res = await getArticleBySlug(slug);
+      article = res.data[0];
+    } catch {
+      notFound();
+    }
   }
 
   if (!article) {

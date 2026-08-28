@@ -446,7 +446,7 @@ export async function getTagBySlug(
 /**
  * Single-type page fetchers (`getHomePage`, `getAboutPage`, `getConsultingPage`,
  * `getBinaPrintPage`) and `getSiteSettings` used to live here. #100 moved that
- * copy into the repo, which left them with no callers; they are deleted rather
+ * copy into the repo; #116 stopped seeding those rows. They are deleted rather
  * than kept warm so the CMS round trip cannot quietly grow back. `git log` has
  * them if a page ever genuinely needs to be editor-owned again.
  *

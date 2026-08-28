@@ -14,11 +14,10 @@ test("Site Profile enforces a required field contract", () => {
 });
 
 test("Site Profile keeps strict validation opt-in per call, never ambient", () => {
-  // #100 took the `site-setting` row out of the read path, so production passes
-  // `settings` as `undefined`. An ambient `SITE_PROFILE_STRICT=true` would find
-  // every required field missing and throw on every request, so the env switch
-  // is gone and must not come back. `options.strict` still validates settings a
-  // caller hands over.
+  // #100 took the `site-setting` row out of the read path. An ambient
+  // `SITE_PROFILE_STRICT=true` would have thrown on every request, so the env
+  // switch is gone and must not come back. `options.strict` still validates
+  // the resolved profile.
   // Asserted on `process.env` rather than on the variable name, so that naming
   // the retired switch in a comment does not trip the guard that removed it.
   assert.doesNotMatch(source, /process\.env/);
@@ -26,7 +25,8 @@ test("Site Profile keeps strict validation opt-in per call, never ambient", () =
   assert.match(source, /SiteProfileValidationError/);
 });
 
-test("Site Profile keeps non-strict fallback behavior", () => {
-  assert.match(source, /return mergeProfile\(undefined/);
-  assert.match(source, /return mergeProfile\(settings\)/);
+test("Site Profile no longer merges a CMS site-setting row (#116)", () => {
+  assert.doesNotMatch(source, /settings\?\.siteName/);
+  assert.doesNotMatch(source, /SiteSettings/);
+  assert.match(source, /return mergeProfile\(options\.author\)/);
 });

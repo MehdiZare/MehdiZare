@@ -16,8 +16,6 @@ import type {
   Author,
   Credential,
   NavItem,
-  SEO,
-  SiteSettings,
   SocialLink,
   StrapiImage,
 } from "../types/strapi";
@@ -42,8 +40,6 @@ const REQUIRED_SITE_PROFILE_FIELDS = [
   "footerText",
   "bookCallHref",
 ] as const;
-
-type RequiredSiteProfileField = (typeof REQUIRED_SITE_PROFILE_FIELDS)[number];
 
 interface AuthorProfile {
   id?: number;
@@ -92,7 +88,6 @@ export interface SiteProfile {
   navItems: NavItem[];
   socialLinks: SocialLink[];
   author: AuthorProfile;
-  defaultSeo?: SEO;
 }
 
 interface SiteProfileOptions {
@@ -120,69 +115,12 @@ function normalizeStringArray(value: unknown): string[] {
     .filter((item): item is string => Boolean(item));
 }
 
-function normalizeNavItems(items: SiteSettings["navItems"]): NavItem[] {
-  if (!Array.isArray(items)) {
-    return filterHiddenNavItems(DEFAULT_NAV_ITEMS);
-  }
-
-  const normalized: NavItem[] = [];
-  items.forEach((item, index) => {
-    const label = blankToUndefined(item?.label);
-    const href = blankToUndefined(item?.href);
-    if (!label || !href) {
-      return;
-    }
-
-    normalized.push({
-      id: item.id ?? index + 1,
-      label,
-      href,
-      order: item.order,
-      external: Boolean(item.external),
-    });
-  });
-
-  normalized.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
-
-  const visibleItems = filterHiddenNavItems(normalized);
-  if (visibleItems.length > 0) {
-    return visibleItems;
-  }
-
-  return filterHiddenNavItems(DEFAULT_NAV_ITEMS);
-}
-
 function filterHiddenNavItems(items: NavItem[]): NavItem[] {
   if (isBinaPrintEnabled()) {
     return items;
   }
 
   return items.filter((item) => !item.href.startsWith("/bina-print"));
-}
-
-function normalizeSocialLinks(items: SiteSettings["socialLinks"]): SocialLink[] {
-  if (!Array.isArray(items)) {
-    return DEFAULT_SOCIAL_LINKS;
-  }
-
-  const normalized = items
-    .map((item, index) => {
-      const platform = blankToUndefined(item?.platform);
-      const url = blankToUndefined(item?.url);
-      const normalizedUrl = normalizeIdentityUrl(url, CANONICAL_IDENTITY_ORIGIN);
-      if (!platform || !normalizedUrl) {
-        return null;
-      }
-
-      return {
-        id: item.id ?? index + 1,
-        platform,
-        url: normalizedUrl,
-      };
-    })
-    .filter((item): item is SocialLink => Boolean(item));
-
-  return normalized.length > 0 ? normalized : DEFAULT_SOCIAL_LINKS;
 }
 
 function dedupeSocialLinks(items: SocialLink[]): SocialLink[] {
@@ -210,10 +148,7 @@ function dedupeSocialLinks(items: SocialLink[]): SocialLink[] {
   return deduped;
 }
 
-function buildCanonicalSocialLinks(
-  author: Author | null | undefined,
-  fallbackLinks: SiteSettings["socialLinks"]
-): SocialLink[] {
+function buildCanonicalSocialLinks(author: Author | null | undefined): SocialLink[] {
   const normalizedAuthorLinks = Array.isArray(author?.sameAs)
     ? author.sameAs
         .map((item, index) => {
@@ -247,7 +182,7 @@ function buildCanonicalSocialLinks(
     { id: 1, platform: "Website", url: websiteUrl },
     { id: 2, platform: "LinkedIn", url: linkedinUrl },
     ...normalizedAuthorLinks,
-    ...normalizeSocialLinks(fallbackLinks),
+    ...DEFAULT_SOCIAL_LINKS,
   ]);
 
   return canonical.length > 0 ? canonical : DEFAULT_SOCIAL_LINKS;
@@ -276,22 +211,18 @@ function normalizeCredentials(credentials: Author["credentials"]): Credential[] 
     .filter((credential): credential is Credential => credential !== null);
 }
 
-function deriveRole(author: Author | null | undefined, settings: SiteSettings | null | undefined): string {
+function deriveRole(author: Author | null | undefined): string {
   return (
     blankToUndefined(author?.jobTitle) ??
     blankToUndefined(author?.headline) ??
-    blankToUndefined(settings?.authorRole) ??
     DEFAULT_SITE_PROFILE.authorRole
   );
 }
 
-function buildAuthorProfile(
-  author: Author | null | undefined,
-  settings: SiteSettings | null | undefined
-): AuthorProfile {
+function buildAuthorProfile(author: Author | null | undefined): AuthorProfile {
   const fallbackSlug = DEFAULT_SITE_PROFILE.authorSlug;
   const slug = blankToUndefined(author?.slug) ?? fallbackSlug;
-  const canonicalSocialLinks = buildCanonicalSocialLinks(author, settings?.socialLinks);
+  const canonicalSocialLinks = buildCanonicalSocialLinks(author);
   const websiteUrl =
     normalizeIdentityUrl(blankToUndefined(author?.websiteUrl), CANONICAL_IDENTITY_ORIGIN) ??
     canonicalSocialLinks.find((link) => link.platform.toLowerCase() === "website")?.url ??
@@ -306,20 +237,18 @@ function buildAuthorProfile(
   return {
     id: author?.id,
     documentId: author?.documentId,
-    name: blankToUndefined(author?.name) ?? blankToUndefined(settings?.authorName) ?? DEFAULT_SITE_PROFILE.authorName,
+    name: blankToUndefined(author?.name) ?? DEFAULT_SITE_PROFILE.authorName,
     slug,
     profilePath: `/author/${slug}`,
     headline: blankToUndefined(author?.headline),
     bioShort:
-      blankToUndefined(author?.bioShort) ??
-      blankToUndefined(settings?.authorBioShort) ??
-      DEFAULT_SITE_PROFILE.authorBioShort,
+      blankToUndefined(author?.bioShort) ?? DEFAULT_SITE_PROFILE.authorBioShort,
     bioLong: author?.bioLong,
     websiteUrl,
     linkedinUrl,
     sameAs: canonicalSocialLinks,
     profileImage: author?.profileImage,
-    jobTitle: deriveRole(author, settings),
+    jobTitle: deriveRole(author),
     ...resolveAuthorWorksFor(
       { ...author, slug },
       {
@@ -355,100 +284,22 @@ function buildAuthorProfile(
   };
 }
 
-function hasValidNavItems(items: SiteSettings["navItems"]): boolean {
-  if (!Array.isArray(items) || items.length === 0) {
-    return false;
+function collectMissingRequiredFields(author?: Author | null): string[] {
+  const profile = mergeProfile(author);
+  const missing: string[] = [];
+
+  for (const field of REQUIRED_SITE_PROFILE_FIELDS) {
+    const value = profile[field];
+    if (typeof value !== "string" || !value.trim()) {
+      missing.push(field);
+    }
   }
 
-  return items.some(
-    (item) => Boolean(blankToUndefined(item?.label)) && Boolean(blankToUndefined(item?.href))
-  );
-}
-
-function hasValidSocialLinks(items: SiteSettings["socialLinks"]): boolean {
-  if (!Array.isArray(items) || items.length === 0) {
-    return false;
-  }
-
-  return items.some(
-    (item) =>
-      Boolean(blankToUndefined(item?.platform)) &&
-      Boolean(normalizeIdentityUrl(blankToUndefined(item?.url), CANONICAL_IDENTITY_ORIGIN))
-  );
-}
-
-function hasCanonicalAuthorData(author: Author | null | undefined): boolean {
-  return Boolean(
-    blankToUndefined(author?.name) &&
-      deriveRole(author, undefined) &&
-      blankToUndefined(author?.bioShort)
-  );
-}
-
-function hasCanonicalSocialData(author: Author | null | undefined): boolean {
-  const hasWebsite = Boolean(
-    normalizeIdentityUrl(blankToUndefined(author?.websiteUrl), CANONICAL_IDENTITY_ORIGIN)
-  );
-  const hasLinkedIn = Boolean(
-    normalizeIdentityUrl(blankToUndefined(author?.linkedinUrl), CANONICAL_IDENTITY_ORIGIN)
-  );
-
-  if (hasWebsite && hasLinkedIn) {
-    return true;
-  }
-
-  if (!Array.isArray(author?.sameAs) || author.sameAs.length === 0) {
-    return false;
-  }
-
-  return author.sameAs.some(
-    (item) =>
-      Boolean(blankToUndefined(item?.platform)) &&
-      Boolean(normalizeIdentityUrl(blankToUndefined(item?.url), CANONICAL_IDENTITY_ORIGIN))
-  );
-}
-
-function collectMissingRequiredFields(
-  settings: SiteSettings | null | undefined,
-  author?: Author | null
-): string[] {
-  if (!settings) {
-    let missing = [...REQUIRED_SITE_PROFILE_FIELDS, "navItems", "socialLinks"];
-
-    if (hasCanonicalAuthorData(author)) {
-      missing = missing.filter(
-        (field) => field !== "authorName" && field !== "authorRole" && field !== "authorBioShort"
-      );
-    }
-
-    if (hasCanonicalSocialData(author)) {
-      missing = missing.filter((field) => field !== "socialLinks");
-    }
-
-    return missing;
-  }
-
-  const missing: string[] = REQUIRED_SITE_PROFILE_FIELDS.filter((field) => {
-    if (field === "authorName") {
-      return !blankToUndefined(settings.authorName) && !blankToUndefined(author?.name);
-    }
-
-    if (field === "authorRole") {
-      return !blankToUndefined(settings.authorRole) && !blankToUndefined(author?.jobTitle) && !blankToUndefined(author?.headline);
-    }
-
-    if (field === "authorBioShort") {
-      return !blankToUndefined(settings.authorBioShort) && !blankToUndefined(author?.bioShort);
-    }
-
-    return !blankToUndefined(settings[field as RequiredSiteProfileField]);
-  });
-
-  if (!hasValidNavItems(settings.navItems)) {
+  if (profile.navItems.length === 0) {
     missing.push("navItems");
   }
 
-  if (!hasValidSocialLinks(settings.socialLinks) && !hasCanonicalSocialData(author)) {
+  if (profile.socialLinks.length === 0) {
     missing.push("socialLinks");
   }
 
@@ -456,77 +307,48 @@ function collectMissingRequiredFields(
 }
 
 /**
- * Merges CMS site settings over the repo defaults.
- *
- * As of #100 the production path always passes `settings` as `undefined`:
- * `getSiteProfile` no longer reads the `site-setting` row, so every
- * `blankToUndefined(settings?.x) ?? DEFAULT_SITE_PROFILE.x` chain below now
- * resolves to the default. The parameter is kept because `normalizeSiteProfile`
- * is still called directly with settings in tests, and because deleting the
- * merge is a larger change than removing the read.
- *
- * If nothing comes to need CMS-supplied site settings, this collapses to a
- * spread of DEFAULT_SITE_PROFILE plus the author-derived fields.
+ * Repo defaults plus the CMS author record. Site settings are not a source:
+ * `getSiteProfile` stopped reading `site-setting` in #100, and #116 stopped
+ * seeding that row. Collapsing the merge makes that unrepresentable -- a
+ * `settings?.x ?? DEFAULT` chain cannot quietly start winning again.
  */
-function mergeProfile(settings: SiteSettings | null | undefined, author?: Author | null): SiteProfile {
-  const canonicalAuthor = buildAuthorProfile(author, settings);
+function mergeProfile(author?: Author | null): SiteProfile {
+  const canonicalAuthor = buildAuthorProfile(author);
 
   return {
-    siteName: blankToUndefined(settings?.siteName) ?? DEFAULT_SITE_PROFILE.siteName,
-    siteDescription:
-      blankToUndefined(settings?.siteDescription) ?? DEFAULT_SITE_PROFILE.siteDescription,
-    positioningHeadline:
-      blankToUndefined(settings?.positioningHeadline) ??
-      DEFAULT_SITE_PROFILE.positioningHeadline,
-    positioningSubheadline:
-      blankToUndefined(settings?.positioningSubheadline) ??
-      DEFAULT_SITE_PROFILE.positioningSubheadline,
-    positioningHighlight:
-      blankToUndefined(settings?.positioningHighlight) ??
-      DEFAULT_SITE_PROFILE.positioningHighlight,
-    credentialLine:
-      blankToUndefined(settings?.credentialLine) ?? DEFAULT_SITE_PROFILE.credentialLine,
-    industriesLine:
-      blankToUndefined(settings?.industriesLine) ?? DEFAULT_SITE_PROFILE.industriesLine,
-    locationLine:
-      blankToUndefined(settings?.locationLine) ?? DEFAULT_SITE_PROFILE.locationLine,
-    primaryCtaLabel:
-      blankToUndefined(settings?.primaryCtaLabel) ?? DEFAULT_SITE_PROFILE.primaryCtaLabel,
-    primaryCtaHref:
-      blankToUndefined(settings?.primaryCtaHref) ?? DEFAULT_SITE_PROFILE.primaryCtaHref,
-    secondaryCtaLabel:
-      blankToUndefined(settings?.secondaryCtaLabel) ?? DEFAULT_SITE_PROFILE.secondaryCtaLabel,
-    secondaryCtaHref:
-      blankToUndefined(settings?.secondaryCtaHref) ?? DEFAULT_SITE_PROFILE.secondaryCtaHref,
-    contactPrompt:
-      blankToUndefined(settings?.contactPrompt) ?? DEFAULT_SITE_PROFILE.contactPrompt,
+    siteName: DEFAULT_SITE_PROFILE.siteName,
+    siteDescription: DEFAULT_SITE_PROFILE.siteDescription,
+    positioningHeadline: DEFAULT_SITE_PROFILE.positioningHeadline,
+    positioningSubheadline: DEFAULT_SITE_PROFILE.positioningSubheadline,
+    positioningHighlight: DEFAULT_SITE_PROFILE.positioningHighlight,
+    credentialLine: DEFAULT_SITE_PROFILE.credentialLine,
+    industriesLine: DEFAULT_SITE_PROFILE.industriesLine,
+    locationLine: DEFAULT_SITE_PROFILE.locationLine,
+    primaryCtaLabel: DEFAULT_SITE_PROFILE.primaryCtaLabel,
+    primaryCtaHref: DEFAULT_SITE_PROFILE.primaryCtaHref,
+    secondaryCtaLabel: DEFAULT_SITE_PROFILE.secondaryCtaLabel,
+    secondaryCtaHref: DEFAULT_SITE_PROFILE.secondaryCtaHref,
+    contactPrompt: DEFAULT_SITE_PROFILE.contactPrompt,
     authorName: canonicalAuthor.name,
     authorRole: canonicalAuthor.jobTitle,
     authorBioShort: canonicalAuthor.bioShort,
-    footerText: blankToUndefined(settings?.footerText) ?? DEFAULT_SITE_PROFILE.footerText,
-    bookCallHref:
-      blankToUndefined(settings?.bookCallHref) ?? DEFAULT_SITE_PROFILE.bookCallHref,
+    footerText: DEFAULT_SITE_PROFILE.footerText,
+    bookCallHref: DEFAULT_SITE_PROFILE.bookCallHref,
     knowsAbout: [...canonicalAuthor.knowsAbout],
-    navItems: normalizeNavItems(settings?.navItems),
+    navItems: filterHiddenNavItems([...DEFAULT_NAV_ITEMS]),
     socialLinks: [...canonicalAuthor.sameAs],
     author: canonicalAuthor,
-    defaultSeo: settings?.defaultSeo,
   };
 }
 
-export function normalizeSiteProfile(
-  settings: SiteSettings | null | undefined,
-  options: SiteProfileOptions = {}
-): SiteProfile {
+export function normalizeSiteProfile(options: SiteProfileOptions = {}): SiteProfile {
   // Strict validation is opt-in per call, never ambient. It used to also turn
-  // on from `SITE_PROFILE_STRICT=true`, which existed to fail a build whose
-  // `site-setting` row was missing required fields. #100 took that row out of
-  // the read path, so production now passes `settings` as `undefined` -- and
-  // an ambient switch would have found every required field "missing" and
-  // thrown on every request. The check still means something for a caller that
-  // hands over settings to validate; it just cannot be turned on from outside.
+  // on from `SITE_PROFILE_STRICT=true` against a CMS `site-setting` row.
+  // Defaults fill every required field by construction, so `strict` now
+  // checks the resolved profile -- a way to notice a default going blank --
+  // and cannot be turned on from outside.
   if (options.strict === true) {
-    const missingFields = collectMissingRequiredFields(settings, options.author);
+    const missingFields = collectMissingRequiredFields(options.author);
     if (missingFields.length > 0) {
       throw new SiteProfileValidationError(
         `Site Profile is missing required fields: ${missingFields.join(", ")}`,
@@ -535,34 +357,19 @@ export function normalizeSiteProfile(
     }
   }
 
-  if (options.author) {
-    return mergeProfile(settings, options.author);
-  }
-
-  return mergeProfile(settings);
+  return mergeProfile(options.author);
 }
 
 export async function getSiteProfile(options: SiteProfileOptions = {}): Promise<SiteProfile> {
   try {
     const { getPrimaryAuthor } = await import("./strapi");
 
-    // `site-setting` is no longer read (#100). Its row was seeded once in
-    // February and never edited again, yet it *won* over the repo at runtime --
-    // so moving the site's location took a production CMS write (#87, #91), and
-    // so did renaming the employer. Every value it held was a copy of
-    // DEFAULT_SITE_PROFILE; the repo is now simply the source.
-    //
-    // The author record still comes from Strapi: articles relate to it, and
-    // `/author/[slug]` renders it.
+    // Page copy and site identity are repo-owned. The author record still
+    // comes from Strapi: articles relate to it, and `/author/[slug]` renders
+    // it raw.
     const author = await getPrimaryAuthor().catch(() => undefined);
 
-    // No strict validation here any more. It existed to fail the build when the
-    // CMS `site-setting` row was missing required fields; with the row out of
-    // the read path there is nothing to validate -- DEFAULT_SITE_PROFILE has
-    // every required field by construction, and passing `strict` now would
-    // throw on every request. `normalizeSiteProfile` keeps the option for
-    // callers that pass settings directly.
-    return normalizeSiteProfile(undefined, {
+    return normalizeSiteProfile({
       author: author ?? options.author,
     });
   } catch (error) {
@@ -570,7 +377,7 @@ export async function getSiteProfile(options: SiteProfileOptions = {}): Promise<
       "⚠ CMS author unavailable — site profile falling back to default content.",
       error instanceof Error ? error.message : error
     );
-    return mergeProfile(undefined, options.author);
+    return mergeProfile(options.author);
   }
 }
 

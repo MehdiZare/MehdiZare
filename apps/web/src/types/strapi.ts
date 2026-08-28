@@ -200,68 +200,7 @@ export interface NavItem {
   external?: boolean;
 }
 
-// Home page
-
-export interface HomeCredibilityItem {
-  id: number;
-  organization: string;
-  detail?: string;
-  url?: string;
-}
-
-export interface HomeFeaturedOnItem {
-  id: number;
-  platform: string;
-  url?: string;
-}
-
-export interface HomeValueCard {
-  id: number;
-  title: string;
-  description?: string;
-  ctaLabel?: string;
-  ctaHref?: string;
-}
-
-export interface HomePage {
-  id: number;
-  documentId: string;
-  heroHeadline?: string;
-  heroSubheadline?: string;
-  heroPrimaryCtaLabel?: string;
-  heroPrimaryCtaHref?: string;
-  heroSecondaryCtaLabel?: string;
-  heroSecondaryCtaHref?: string;
-  heroImage?: StrapiImage;
-  credibilityItems?: HomeCredibilityItem[];
-  featuredOnItems?: HomeFeaturedOnItem[];
-  whatIDoCards?: HomeValueCard[];
-  seo?: SEO;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt: string;
-}
-
-// About page
-
-export interface AboutPage {
-  id: number;
-  documentId: string;
-  title?: string;
-  positioningStatement?: string;
-  bio?: BlocksContent;
-  stats?: StatItem[];
-  credentials?: Credential[];
-  experiences?: Experience[];
-  education?: Education[];
-  socialLinks?: SocialLink[];
-  seo?: SEO;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt: string;
-}
-
-// Bina Print page
+// Bina Print (repo-owned page copy; these shapes are the fallback types)
 
 export interface BinaStep {
   id: number;
@@ -278,36 +217,6 @@ export interface BinaMover {
   analysisUrl?: string;
 }
 
-export interface BinaPrintPage {
-  id: number;
-  documentId: string;
-  heroHeadline?: string;
-  heroSubheadline?: string;
-  searchPlaceholder?: string;
-  howItWorks?: BinaStep[];
-  topMovers?: BinaMover[];
-  exampleTicker?: string;
-  exampleOverallScore?: number;
-  exampleSubScores?: Record<string, number>;
-  methodologySummary?: string;
-  seo?: SEO;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt: string;
-}
-
-// Consulting page
-
-export interface ConsultingTier {
-  id: number;
-  name: string;
-  priceRange: string;
-  hoursPerMonth?: string;
-  scope?: string;
-  features?: string[];
-  ctaText?: string;
-}
-
 export interface FAQ {
   id: number;
   question: string;
@@ -318,53 +227,6 @@ export interface ConsultingAudience {
   id: number;
   title: string;
   description: string;
-}
-
-export interface ConsultingPage {
-  id: number;
-  documentId: string;
-  title?: string;
-  subtitle?: string;
-  audiences?: ConsultingAudience[];
-  tiers?: ConsultingTier[];
-  faq?: FAQ[];
-  leadMagnetTitle?: string;
-  leadMagnetDescription?: string;
-  seo?: SEO;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt: string;
-}
-
-// Site settings
-
-export interface SiteSettings {
-  id: number;
-  documentId: string;
-  siteName?: string;
-  siteDescription?: string;
-  positioningHeadline?: string;
-  positioningSubheadline?: string;
-  positioningHighlight?: string;
-  credentialLine?: string;
-  industriesLine?: string;
-  locationLine?: string;
-  primaryCtaLabel?: string;
-  primaryCtaHref?: string;
-  secondaryCtaLabel?: string;
-  secondaryCtaHref?: string;
-  contactPrompt?: string;
-  authorName?: string;
-  authorRole?: string;
-  authorBioShort?: string;
-  footerText?: string;
-  bookCallHref?: string;
-  navItems?: NavItem[];
-  socialLinks?: SocialLink[];
-  defaultSeo?: SEO;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt: string;
 }
 
 // Contact submission

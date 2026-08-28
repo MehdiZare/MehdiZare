@@ -2,7 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import ts from "typescript";
 
 import {
   DEFAULT_SITE_PROFILE,
@@ -10,41 +9,25 @@ import {
 } from "../src/lib/site-profile-defaults.ts";
 import { fallbackExperiences } from "../src/content/fallbacks/about.ts";
 
-// Site identity copy lives in three hand-maintained places (#93):
+// Site identity copy that the live site actually reads lives in two places:
 //
 //   data/taxonomy.json                     the primary author record, written
 //                                          to Strapi verbatim by the seed
-//   apps/cms/scripts/seed.ts               the inline `siteSettings` block,
-//                                          seeded into the `site-setting` type
 //   apps/web/src/lib/site-profile-defaults  DEFAULT_SITE_PROFILE, the runtime
 //                                          fallback apps/web actually reads
 //
-// After #100 the CMS page/site-setting rows are seed-only: web no longer
-// prefers them at runtime. This tripwire still guards seed↔repo drift so a
-// defaults-only edit cannot silently diverge from what the next seed would
-// write (and so reintroducing the round trip would not revive #87). #87 is the
-// proof of that class: a careful one-value change updated two of the three and
-// missed the third, and nothing in the suite caught it.
+// A third copy used to live in apps/cms/scripts/seed.ts as `siteSettings`,
+// seeded into the `site-setting` type. #116 stopped writing that row: web
+// never read it after #112, and seeding it kept a silent-no-op admin surface
+// warm. The tripwire is now taxonomy author ↔ defaults. #87 is still the
+// proof of the class: a careful one-value change updated two of three and
+// missed the third.
 //
-// The previous version of this file enumerated the *location* fields by hand,
-// which left the other ~15 shared literals unguarded and made every new shared
-// field silently exempt. These assertions instead DERIVE the shared key set, so
-// a field added to two sources is covered the day it is added. A key that
-// genuinely lives in only one source has to be named in an exemption list
-// below, with a reason -- that is the only way to opt out.
-//
-// Three is the whole list because the seed's other page literals no longer
-// restate this copy (#101): `homePage`, `aboutPage.positioningStatement` and
-// `consultingPage.subtitle` now read from `siteSettings` instead of repeating
-// it. Do not re-inline them -- they were a fourth and fifth copy that nothing
-// here compared. Only `siteSettings` is read below, and it must stay a flat
-// block of literals for that reader to work.
+// These assertions DERIVE the shared key set, so a field added to both
+// sources is covered the day it is added. A key that genuinely lives in only
+// one source has to be named in an exemption list below, with a reason.
 
 const repoRoot = resolve(process.cwd(), "../..");
-
-// ---------------------------------------------------------------------------
-// Source 1: data/taxonomy.json
-// ---------------------------------------------------------------------------
 
 interface TaxonomyAuthor {
   isPrimary?: boolean;
@@ -55,119 +38,8 @@ const taxonomy = JSON.parse(
   readFileSync(resolve(repoRoot, "data/taxonomy.json"), "utf8")
 ) as { authors: TaxonomyAuthor[] };
 
-// Mirrors the primary-author rule in apps/cms/scripts/seed.ts so this test
-// tracks whichever record the seed actually writes.
 const primaryAuthor =
   taxonomy.authors.find((author) => author.isPrimary) ?? taxonomy.authors[0];
-
-// ---------------------------------------------------------------------------
-// Source 2: the `siteSettings` object literal in apps/cms/scripts/seed.ts
-// ---------------------------------------------------------------------------
-
-const SEED_PATH = resolve(repoRoot, "apps/cms/scripts/seed.ts");
-
-/**
- * Evaluates a literal AST node. Deliberately total-or-throw: anything that is
- * not a plain literal (a computed value, a spread, an identifier reference)
- * means the seed stopped being a flat block of copy, and this test should say
- * so loudly rather than quietly skipping the key.
- */
-function literalValue(node: ts.Node, source: ts.SourceFile): unknown {
-  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
-    return node.text;
-  }
-  if (ts.isNumericLiteral(node)) {
-    return Number(node.text);
-  }
-  if (node.kind === ts.SyntaxKind.TrueKeyword) return true;
-  if (node.kind === ts.SyntaxKind.FalseKeyword) return false;
-  if (node.kind === ts.SyntaxKind.NullKeyword) return null;
-  if (ts.isArrayLiteralExpression(node)) {
-    return node.elements.map((element) => literalValue(element, source));
-  }
-  if (ts.isObjectLiteralExpression(node)) {
-    return objectLiteralValue(node, source);
-  }
-
-  throw new Error(
-    `apps/cms/scripts/seed.ts: siteSettings contains a non-literal value (${
-      ts.SyntaxKind[node.kind]
-    }: ${node.getText(source)}). This tripwire compares literals; teach it the new shape rather than removing the key.`
-  );
-}
-
-function objectLiteralValue(
-  node: ts.ObjectLiteralExpression,
-  source: ts.SourceFile
-): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  for (const property of node.properties) {
-    assert.ok(
-      ts.isPropertyAssignment(property),
-      `apps/cms/scripts/seed.ts: expected a plain property assignment, got ${
-        ts.SyntaxKind[property.kind]
-      }`
-    );
-    const key = ts.isIdentifier(property.name)
-      ? property.name.text
-      : ts.isStringLiteral(property.name)
-        ? property.name.text
-        : null;
-    assert.ok(key, "apps/cms/scripts/seed.ts: computed keys are not supported here");
-    result[key] = literalValue(property.initializer, source);
-  }
-  return result;
-}
-
-function readSeedSiteSettings(): Record<string, unknown> {
-  const sourceText = readFileSync(SEED_PATH, "utf8");
-  const source = ts.createSourceFile(
-    "seed.ts",
-    sourceText,
-    ts.ScriptTarget.ES2022,
-    true
-  );
-
-  let literal: ts.ObjectLiteralExpression | null = null;
-  const visit = (node: ts.Node): void => {
-    if (
-      ts.isVariableDeclaration(node) &&
-      ts.isIdentifier(node.name) &&
-      node.name.text === "siteSettings" &&
-      node.initializer &&
-      ts.isObjectLiteralExpression(node.initializer)
-    ) {
-      literal = node.initializer;
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(source);
-
-  assert.ok(
-    literal,
-    "apps/cms/scripts/seed.ts: expected a `const siteSettings = { … }` object literal"
-  );
-  return objectLiteralValue(literal, source);
-}
-
-const seedSettings = readSeedSiteSettings();
-
-// ---------------------------------------------------------------------------
-// Exemptions -- the only way a shared-looking key opts out
-// ---------------------------------------------------------------------------
-
-/** Keys in the seed's siteSettings with no DEFAULT_SITE_PROFILE counterpart. */
-const SEED_ONLY_KEYS = new Set<string>([]);
-
-/**
- * Keys present in both sources whose *shapes* legitimately differ, so a deep
- * comparison would fail on structure rather than on copy: the web defaults
- * carry `id` / `order` / `external` that the CMS assigns and the seed does not
- * write. Each has a dedicated test below comparing the fields that do
- * round-trip. This is an exemption from the comparison *method*, not from
- * being compared at all.
- */
-const STRUCTURED_KEYS = new Set(["navItems", "socialLinks"]);
 
 /**
  * Keys on the taxonomy author with no DEFAULT_SITE_PROFILE counterpart, and
@@ -231,45 +103,6 @@ function defaultsKeyFor(authorKey: string): string | undefined {
 
 const defaults = DEFAULT_SITE_PROFILE as unknown as Record<string, unknown>;
 
-// ---------------------------------------------------------------------------
-// seed siteSettings <-> DEFAULT_SITE_PROFILE
-// ---------------------------------------------------------------------------
-
-test("every key the seed and the web defaults share carries the same value", () => {
-  const shared = Object.keys(seedSettings).filter(
-    (key) => key in defaults && !STRUCTURED_KEYS.has(key)
-  );
-
-  assert.ok(
-    shared.length >= 18,
-    `expected the seed and the defaults to share the site identity copy, found only ${shared.length} shared keys (${shared.join(", ")}) -- a rename that empties this set would otherwise make the tripwire vacuous`
-  );
-
-  for (const key of shared) {
-    assert.deepEqual(
-      seedSettings[key],
-      defaults[key],
-      `${key} disagrees between apps/cms/scripts/seed.ts and site-profile-defaults.ts. The CMS copy wins at runtime, so this ships as a page that contradicts its own structured data (#93).`
-    );
-  }
-});
-
-test("a seed siteSettings key with no defaults counterpart is declared, not silent", () => {
-  const unmatched = Object.keys(seedSettings).filter(
-    (key) => !(key in defaults) && !SEED_ONLY_KEYS.has(key)
-  );
-
-  assert.deepEqual(
-    unmatched,
-    [],
-    `these seed siteSettings keys have no DEFAULT_SITE_PROFILE counterpart: ${unmatched.join(", ")}. Either add the counterpart so the value is guarded, or name the key in SEED_ONLY_KEYS with a reason.`
-  );
-});
-
-// ---------------------------------------------------------------------------
-// taxonomy author <-> DEFAULT_SITE_PROFILE
-// ---------------------------------------------------------------------------
-
 test("every taxonomy author field with a defaults counterpart carries the same value", () => {
   assert.ok(primaryAuthor, "data/taxonomy.json: expected a primary author");
 
@@ -292,10 +125,6 @@ test("every taxonomy author field with a defaults counterpart carries the same v
     );
   }
 
-  // A floor with slack (">= 12" against 13) lets one field leave the compared
-  // set unnoticed, which is the same silent-exemption hole the exemption lists
-  // exist to close. Naming the set means a deletion on either side, or a
-  // rename that drops a key out of the mapping, has to be declared here.
   assert.deepEqual(
     [...compared].sort(),
     [...COMPARED_AUTHOR_KEYS].sort(),
@@ -321,27 +150,9 @@ test("declared exemptions still exist, so the lists cannot rot into noise", () =
       key in primaryAuthor,
       `AUTHOR_ONLY_KEYS names "${key}", which is no longer a taxonomy author field -- drop it`
     );
-    // The author loop consults AUTHOR_ONLY_KEYS *before* defaultsKeyFor, so an
-    // exemption that later gains a counterpart shadows it forever -- the field
-    // becomes duplicated copy that nothing compares. The seed half has no
-    // equivalent hole, because its shared-key set is derived without consulting
-    // SEED_ONLY_KEYS at all. Without this, "covered the day it is added" is
-    // only true for keys nobody ever exempted.
     assert.ok(
       !defaultsKeyFor(key),
       `AUTHOR_ONLY_KEYS exempts "${key}", but DEFAULT_SITE_PROFILE now has a counterpart (${defaultsKeyFor(key)}) -- drop the exemption so the value is compared`
-    );
-  }
-  for (const key of SEED_ONLY_KEYS) {
-    assert.ok(
-      key in seedSettings,
-      `SEED_ONLY_KEYS names "${key}", which is no longer a seed siteSettings key -- drop it`
-    );
-  }
-  for (const key of STRUCTURED_KEYS) {
-    assert.ok(
-      key in seedSettings && key in defaults,
-      `STRUCTURED_KEYS names "${key}", which is no longer shared by both sources -- drop it, or its dedicated test is guarding nothing`
     );
   }
   for (const [authorKey, defaultsKey] of AUTHOR_KEY_ALIASES) {
@@ -356,63 +167,27 @@ test("declared exemptions still exist, so the lists cannot rot into noise", () =
   }
 });
 
-// ---------------------------------------------------------------------------
-// The social links, which use a different key name in each source
-// ---------------------------------------------------------------------------
-
 function platformUrlPairs(
   links: ReadonlyArray<{ platform?: unknown; url?: unknown }>
 ): Array<{ platform: unknown; url: unknown }> {
   return links.map((link) => ({ platform: link.platform, url: link.url }));
 }
 
-test("the social links agree across all three sources", () => {
-  // `sameAs` on the author, `socialLinks` in the seed's siteSettings, and
-  // DEFAULT_SOCIAL_LINKS on the web side are the same five pairs written out
-  // three times. The key names differ, so the derived intersection above
-  // cannot see them.
+test("the social links agree between the taxonomy author and the web defaults", () => {
   const fromDefaults = platformUrlPairs(DEFAULT_SOCIAL_LINKS);
-  const fromSeed = platformUrlPairs(
-    seedSettings.socialLinks as Array<{ platform?: unknown; url?: unknown }>
-  );
   const fromTaxonomy = platformUrlPairs(
     primaryAuthor.sameAs as Array<{ platform?: unknown; url?: unknown }>
   );
 
-  assert.deepEqual(fromSeed, fromDefaults);
   assert.deepEqual(fromTaxonomy, fromDefaults);
 });
 
-test("the nav items agree between the seed and the web defaults", () => {
-  // DEFAULT_NAV_ITEMS carries id/order/external that the seed does not, so
-  // compare the label/href pairs the CMS actually round-trips.
-  const seedNav = (
-    seedSettings.navItems as Array<{ label?: unknown; href?: unknown }>
-  ).map((item) => ({ label: item.label, href: item.href }));
-  const defaultNav = DEFAULT_SITE_PROFILE.navItems.map((item) => ({
-    label: item.label,
-    href: item.href,
-  }));
-
-  assert.deepEqual(seedNav, defaultNav);
-});
-
-// ---------------------------------------------------------------------------
-// Derived relationships within the defaults
-// ---------------------------------------------------------------------------
-
 test("the footer location line matches the structured address defaults", () => {
-  // Not a duplication across sources -- a composition within one. The footer
-  // string and the PostalAddress fields have to describe the same place.
   assert.equal(
     DEFAULT_SITE_PROFILE.locationLine,
     `${DEFAULT_SITE_PROFILE.authorAddressLocality}, ${DEFAULT_SITE_PROFILE.authorAddressRegion}`
   );
 });
-
-// ---------------------------------------------------------------------------
-// Visible current-employer copies (#105)
-// ---------------------------------------------------------------------------
 
 test("the current employer name agrees across visible copies and structured data (#105)", () => {
   assert.ok(primaryAuthor, "data/taxonomy.json: expected a primary author");
@@ -432,13 +207,6 @@ test("the current employer name agrees across visible copies and structured data
     trackRecordSource,
     /DEFAULT_SITE_PROFILE\.authorWorksForName/,
     "TrackRecord must source the current employer from DEFAULT_SITE_PROFILE.authorWorksForName, not a hardcoded literal"
-  );
-
-  const seedSource = readFileSync(SEED_PATH, "utf8");
-  assert.match(
-    seedSource,
-    /company:\s*primaryAuthor\.worksForName/,
-    "the seed's current experience company must read from taxonomy via primaryAuthor.worksForName"
   );
 
   assert.equal(

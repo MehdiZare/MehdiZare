@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
+import { CMS_PRERENDER_HTML_FILES } from "../../src/content/fixtures/cms-prerender.ts";
 
 // Framer Motion inlines the resolved `initial` state as a `style` attribute
 // during SSR. An initial state that zeroes opacity, scale or size therefore
@@ -23,22 +24,23 @@ import { join, relative, resolve } from "node:path";
 // Runs after `next build` rather than with the main suite -- see the
 // `test:postbuild` script and the CI step that follows Build.
 //
-// CI builds with DISABLE_STRAPI_CMS=true, so article/author/category/tag
-// templates are never scanned here. Shared reveal components still surface on
-// the seven repo-owned pages; template-local markup is tracked in #114.
+// CI builds with DISABLE_STRAPI_CMS=true. Article/author templates have no
+// seed fallback, so a committed fixture catalog prerenders one of each
+// (#114). Category/tag pages render from data/taxonomy.json once
+// generateStaticParams emits those fixture slugs.
 
 const BUILD_DIR = resolve(import.meta.dirname, "../../.next/server/app");
 
 /**
- * Every route that prerenders from repo-owned data alone, so it is present in
- * *any* build of this app.
+ * Routes this contract requires to exist as 200s in a CMS-off build (CI).
  *
  * Naming them, rather than counting pages, is what makes this contract
- * CMS-independent: CI builds with `DISABLE_STRAPI_CMS=true`, so article,
- * category, tag and author pages emit no HTML there, while a local build with
- * Strapi reachable emits ~58 files. A page count calibrated on one is wrong on
- * the other; this list is right on both, and it says which page went missing
- * instead of only how many did.
+ * CMS-independent: CI builds with `DISABLE_STRAPI_CMS=true`, so the live CMS
+ * catalog is absent, while a local build with Strapi reachable emits ~58
+ * files. This list is the CMS-off contract CI actually runs: repo-owned
+ * pages plus the committed fixture routes. A CMS-on local `test:postbuild`
+ * will fail on `blog/ssr-visibility-fixture.html` unless that slug exists
+ * in Strapi; run postbuild against a CMS-off build, as CI does.
  *
  * Adding a static route without adding it here is deliberately not a failure
  * -- the scan below covers whatever the build emitted. The list exists to
@@ -51,6 +53,7 @@ const ALWAYS_PRERENDERED = [
   "blog.html",
   "consulting.html",
   "contact.html",
+  ...CMS_PRERENDER_HTML_FILES,
 ];
 
 /**

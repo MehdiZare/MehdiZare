@@ -25,7 +25,7 @@ const canonicalAuthor = {
 };
 
 test("site profile normalizes and dedupes canonical identity URLs", () => {
-  const profile = normalizeSiteProfile(undefined, {
+  const profile = normalizeSiteProfile({
     author: canonicalAuthor,
   });
 
@@ -46,7 +46,7 @@ test("site profile normalizes and dedupes canonical identity URLs", () => {
 });
 
 test("site profile provides stable geo fallback fields for author", () => {
-  const profile = normalizeSiteProfile(undefined, {
+  const profile = normalizeSiteProfile({
     author: canonicalAuthor,
   });
 
@@ -60,7 +60,7 @@ test("site profile provides stable geo fallback fields for author", () => {
 // pin that precedence, or a defaults-only edit looks like it changed the site
 // when it did not.
 test("site profile prefers a CMS author address over the geo fallback", () => {
-  const profile = normalizeSiteProfile(undefined, {
+  const profile = normalizeSiteProfile({
     author: {
       ...canonicalAuthor,
       addressLocality: "Austin",
@@ -80,7 +80,7 @@ test("site profile prefers a CMS author address over the geo fallback", () => {
 // side rather than only on the resolver: without it, `buildAuthorProfile` can
 // quietly stop delegating and nothing fails.
 test("a partial CMS address is not completed from the geo fallback (#102)", () => {
-  const profile = normalizeSiteProfile(undefined, {
+  const profile = normalizeSiteProfile({
     author: {
       ...canonicalAuthor,
       addressLocality: "Berlin",
@@ -109,7 +109,7 @@ test("the site profile and /author/[slug] resolve the same address (#102)", () =
     addressCountry: "DE",
   };
 
-  const profile = normalizeSiteProfile(undefined, { author });
+  const profile = normalizeSiteProfile({ author });
   const routeAddress = resolveAuthorAddress(author, {
     slug: DEFAULT_SITE_PROFILE.authorSlug,
     addressLocality: DEFAULT_SITE_PROFILE.authorAddressLocality,
@@ -129,7 +129,7 @@ test("the site profile and /author/[slug] resolve the same address (#102)", () =
 });
 
 test("a partial CMS worksFor is not completed from the employer fallback (#106)", () => {
-  const profile = normalizeSiteProfile(undefined, {
+  const profile = normalizeSiteProfile({
     author: {
       ...canonicalAuthor,
       worksForName: "Entarian",
@@ -152,7 +152,7 @@ test("the site profile and /author/[slug] resolve the same worksFor (#106)", () 
     worksForUrl: "",
   };
 
-  const profile = normalizeSiteProfile(undefined, { author });
+  const profile = normalizeSiteProfile({ author });
   const routeWorksFor = resolveAuthorWorksFor(author, {
     slug: DEFAULT_SITE_PROFILE.authorSlug,
     worksForName: DEFAULT_SITE_PROFILE.authorWorksForName,
