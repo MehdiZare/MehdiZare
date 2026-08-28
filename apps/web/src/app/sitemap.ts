@@ -15,14 +15,23 @@ import taxonomy from "../../../../data/taxonomy.json";
 const SITE_URL = getSiteUrl();
 
 /**
- * sitemap.ts is a special Route Handler, cached unless it is marked dynamic.
- * `revalidate = 3600` left production frozen at the last deploy: /blog already
- * listed new CMS posts while sitemap.xml kept the build-time article set and
- * /blog lastmod. Request-time generation is what lets a publish (or the next
- * hit) pick up new slugs.
+ * Bounded ISR, not `force-dynamic`.
+ *
+ * `revalidate = 3600` was what let a published post sit out of the sitemap for
+ * up to an hour (#110). Five minutes closes that without making the route
+ * uncacheable: a metadata route hardcodes `cache-control: public, max-age=0,
+ * must-revalidate`, so a dynamic sitemap means one uncached, four-way paginated
+ * Strapi walk per crawler hit, with no CDN shielding and no stale copy to serve
+ * if Strapi is slow. Under ISR a degraded regeneration never reaches a crawler,
+ * because the previous good copy is served while the new one builds (#118).
+ *
+ * Invalidation still works on publish, and both paths are real -- read off a
+ * build, `.next/server/app/sitemap.xml.meta` carries
+ * `x-next-cache-tags: ...,_N_T_/sitemap.xml/route,_N_T_/sitemap.xml,strapi`.
+ * The webhook's `revalidatePath("/sitemap.xml")` matches the second tag and its
+ * `revalidateTag("strapi")` matches the third.
  */
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
 /** Isolate budget: must exceed SITEMAP_DEADLINE_MS so a slow CMS walk can still return the fallback. */
 export const maxDuration = 20;
 
@@ -82,12 +91,9 @@ const SITEMAP_ARTICLE_FIELDS = {
   populate: { featuredImage: { fields: ["url"] } },
 } as const;
 
-/** Bypass the shared 600s Strapi fetch cache so a sitemap rebuild sees current published posts. */
-const SITEMAP_FETCH_INIT = { cache: "no-store" as const };
-
 function getAllArticlesForSitemap(deadlineMs?: number): Promise<Article[]> {
   return fetchAllPages(
-    (params) => getArticles(params, SITEMAP_FETCH_INIT),
+    getArticles,
     "articles",
     {
       ...SITEMAP_ARTICLE_FIELDS,
@@ -98,30 +104,15 @@ function getAllArticlesForSitemap(deadlineMs?: number): Promise<Article[]> {
 }
 
 function getAllAuthorsForSitemap(deadlineMs?: number): Promise<Author[]> {
-  return fetchAllPages(
-    (params) => getAuthors(params, SITEMAP_FETCH_INIT),
-    "authors",
-    { sort: "updatedAt:desc" },
-    { deadlineMs }
-  );
+  return fetchAllPages(getAuthors, "authors", { sort: "updatedAt:desc" }, { deadlineMs });
 }
 
 function getAllCategoriesForSitemap(deadlineMs?: number): Promise<Category[]> {
-  return fetchAllPages(
-    (params) => getCategories(params, SITEMAP_FETCH_INIT),
-    "categories",
-    { sort: "order:asc" },
-    { deadlineMs }
-  );
+  return fetchAllPages(getCategories, "categories", { sort: "order:asc" }, { deadlineMs });
 }
 
 function getAllTagsForSitemap(deadlineMs?: number): Promise<Tag[]> {
-  return fetchAllPages(
-    (params) => getTags(params, SITEMAP_FETCH_INIT),
-    "tags",
-    { sort: "name:asc" },
-    { deadlineMs }
-  );
+  return fetchAllPages(getTags, "tags", { sort: "name:asc" }, { deadlineMs });
 }
 
 interface TaxonomyCategoryNode {

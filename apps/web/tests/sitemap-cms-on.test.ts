@@ -357,22 +357,22 @@ test("a newly published CMS article is included and /blog lastModified tracks it
   );
 });
 
-test("sitemap collection reads bypass the shared Strapi fetch cache", async () => {
+test("sitemap collection reads stay on the shared, tagged Strapi cache", async () => {
   await runSitemap({
     articles: [{ slug: "valid-post", updatedAt: "2026-02-02T00:00:00.000Z" }],
   });
 
-  const articleCaches = requestedUrls
+  const collectionCaches = requestedUrls
     .map((url, index) => ({ path: url.pathname, cache: requestedCaches[index] }))
     .filter(({ path }) =>
       ["/api/articles", "/api/authors", "/api/categories", "/api/tags"].includes(path)
     )
     .map(({ cache }) => cache);
 
-  assert.ok(articleCaches.length > 0, "the sitemap must read CMS collections");
+  assert.ok(collectionCaches.length > 0, "the sitemap must read CMS collections");
   assert.ok(
-    articleCaches.every((cache) => cache === "no-store"),
-    "sitemap CMS reads must not reuse the 600s Strapi fetch cache that listing pages use"
+    collectionCaches.every((cache) => cache !== "no-store"),
+    'A `no-store` read carries no cache entry, so it carries no `strapi` tag either -- and the tag is what lets the publish webhook invalidate this route. Verified on a build: sitemap.xml.meta lists `strapi` among its x-next-cache-tags.'
   );
 });
 
