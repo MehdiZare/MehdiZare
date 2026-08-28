@@ -17,12 +17,14 @@ import { fallbackExperiences } from "../src/content/fallbacks/about.ts";
 //   apps/cms/scripts/seed.ts               the inline `siteSettings` block,
 //                                          seeded into the `site-setting` type
 //   apps/web/src/lib/site-profile-defaults  DEFAULT_SITE_PROFILE, the runtime
-//                                          fallback
+//                                          fallback apps/web actually reads
 //
-// The CMS copies win at runtime, so a defaults-only edit silently leaves the
-// rendered page disagreeing with the structured data after the next seed. #87
-// is the proof: a careful one-value change updated two of the three and missed
-// the third, and nothing in the suite caught it.
+// After #100 the CMS page/site-setting rows are seed-only: web no longer
+// prefers them at runtime. This tripwire still guards seed↔repo drift so a
+// defaults-only edit cannot silently diverge from what the next seed would
+// write (and so reintroducing the round trip would not revive #87). #87 is the
+// proof of that class: a careful one-value change updated two of the three and
+// missed the third, and nothing in the suite caught it.
 //
 // The previous version of this file enumerated the *location* fields by hand,
 // which left the other ~15 shared literals unguarded and made every new shared
@@ -35,9 +37,7 @@ import { fallbackExperiences } from "../src/content/fallbacks/about.ts";
 // restate this copy (#101): `homePage`, `aboutPage.positioningStatement` and
 // `consultingPage.subtitle` now read from `siteSettings` instead of repeating
 // it. Do not re-inline them -- they were a fourth and fifth copy that nothing
-// here compared, and `consultingPage.subtitle` in particular is preferred over
-// the fallback at runtime, so a stale literal shipped wrong page copy and wrong
-// JSON-LD together. Only `siteSettings` is read below, and it must stay a flat
+// here compared. Only `siteSettings` is read below, and it must stay a flat
 // block of literals for that reader to work.
 
 const repoRoot = resolve(process.cwd(), "../..");

@@ -3,11 +3,6 @@ import type {
   Author,
   Category,
   Tag,
-  AboutPage,
-  BinaPrintPage,
-  ConsultingPage,
-  HomePage,
-  SiteSettings,
   ContactSubmission,
   StrapiResponse,
   StrapiCollectionResponse,
@@ -448,62 +443,15 @@ export async function getTagBySlug(
   });
 }
 
-export async function getHomePage(): Promise<StrapiResponse<HomePage>> {
-  return fetchAPI<StrapiResponse<HomePage>>("/home-page", {
-    populate: {
-      heroImage: { populate: "*" },
-      credibilityItems: { populate: "*" },
-      featuredOnItems: { populate: "*" },
-      whatIDoCards: { populate: "*" },
-      seo: { populate: { metaImage: { populate: "*" } } },
-    },
-  });
-}
-
-export async function getAboutPage(): Promise<StrapiResponse<AboutPage>> {
-  return fetchAPI<StrapiResponse<AboutPage>>("/about-page", {
-    populate: {
-      stats: { populate: "*" },
-      credentials: { populate: "*" },
-      experiences: { populate: "*" },
-      education: { populate: "*" },
-      socialLinks: { populate: "*" },
-      seo: { populate: { metaImage: { populate: "*" } } },
-    },
-  });
-}
-
-export async function getBinaPrintPage(): Promise<StrapiResponse<BinaPrintPage>> {
-  return fetchAPI<StrapiResponse<BinaPrintPage>>("/bina-print-page", {
-    populate: {
-      howItWorks: { populate: "*" },
-      topMovers: { populate: "*" },
-      seo: { populate: { metaImage: { populate: "*" } } },
-    },
-  });
-}
-
-export async function getConsultingPage(): Promise<StrapiResponse<ConsultingPage>> {
-  return fetchAPI<StrapiResponse<ConsultingPage>>("/consulting-page", {
-    populate: {
-      audiences: { populate: "*" },
-      tiers: { populate: "*" },
-      faq: { populate: "*" },
-      seo: { populate: { metaImage: { populate: "*" } } },
-    },
-  });
-}
-
-export async function getSiteSettings(): Promise<StrapiResponse<SiteSettings>> {
-  return fetchAPI<StrapiResponse<SiteSettings>>("/site-setting", {
-    populate: {
-      navItems: { populate: "*" },
-      socialLinks: { populate: "*" },
-      defaultSeo: { populate: { metaImage: { populate: "*" } } },
-    },
-  });
-}
-
+/**
+ * Single-type page fetchers (`getHomePage`, `getAboutPage`, `getConsultingPage`,
+ * `getBinaPrintPage`) and `getSiteSettings` used to live here. #100 moved that
+ * copy into the repo, which left them with no callers; they are deleted rather
+ * than kept warm so the CMS round trip cannot quietly grow back. `git log` has
+ * them if a page ever genuinely needs to be editor-owned again.
+ *
+ * Articles, categories, tags and the author record are still CMS-backed.
+ */
 export async function submitContactForm(
   data: Omit<
     ContactSubmission,

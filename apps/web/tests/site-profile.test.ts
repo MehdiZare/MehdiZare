@@ -13,8 +13,16 @@ test("Site Profile enforces a required field contract", () => {
   assert.match(source, /"authorBioShort"/);
 });
 
-test("Site Profile supports strict validation mode", () => {
-  assert.match(source, /process\.env\.SITE_PROFILE_STRICT === "true"/);
+test("Site Profile keeps strict validation opt-in per call, never ambient", () => {
+  // #100 took the `site-setting` row out of the read path, so production passes
+  // `settings` as `undefined`. An ambient `SITE_PROFILE_STRICT=true` would find
+  // every required field missing and throw on every request, so the env switch
+  // is gone and must not come back. `options.strict` still validates settings a
+  // caller hands over.
+  // Asserted on `process.env` rather than on the variable name, so that naming
+  // the retired switch in a comment does not trip the guard that removed it.
+  assert.doesNotMatch(source, /process\.env/);
+  assert.match(source, /options\.strict === true/);
   assert.match(source, /SiteProfileValidationError/);
 });
 

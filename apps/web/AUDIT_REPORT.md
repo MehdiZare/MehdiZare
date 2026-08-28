@@ -14,6 +14,10 @@ Scope: `apps/web` implementation quality, accessibility, and SEO consistency.
 1. **Content drift risk** across page-level fallbacks and global layout components.
    - Fix: canonicalized repeated copy via `apps/web/src/lib/site-profile.ts`.
    - Fix: added strict validation mode for CI (`CI=true` or `SITE_PROFILE_STRICT=true`).
+   - **Superseded by #100.** The `Site Profile` is no longer CMS-backed: `getSiteProfile`
+     stopped reading the `site-setting` row, so there is nothing ambient for a strict mode
+     to validate and neither env var is read any more. Strict validation survives only as
+     `normalizeSiteProfile(settings, { strict: true })`, for a caller that supplies settings.
 2. **Global text hardcoded in nav/footer/layout metadata**.
    - Fix: `Navbar`, `Footer`, root metadata, and JSON-LD now consume Site Profile values.
 3. **No pre-push gate** for the full web quality stack.

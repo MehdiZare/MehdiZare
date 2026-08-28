@@ -4,7 +4,8 @@
   "info": {
     "singularName": "newsletter-page",
     "pluralName": "newsletter-pages",
-    "displayName": "Newsletter Page"
+    "displayName": "Newsletter Page",
+    "description": "Not read by the website. Page copy and site identity live in the repo (apps/web/src/content/fallbacks/ and src/lib/site-profile-defaults.ts). Editing this has no effect on the live site. Articles, categories, tags and the Author record ARE read from here."
   },
   "options": {
     "draftAndPublish": true

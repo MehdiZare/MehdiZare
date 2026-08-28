@@ -1,13 +1,19 @@
 /**
- * Pushes the repo's canonical site identity into the two Strapi records that
- * override it at runtime.
+ * Pushes the repo's canonical site identity into the one Strapi record that
+ * still overrides it at runtime.
  *
- * Why this exists (#91, #100): these values are CMS-backed and the CMS wins.
+ * Why this exists (#91, #100): the author record is CMS-backed and the CMS wins.
  *
- *   site-setting.locationLine        -> the footer
  *   author(mehdi-zare).address*      -> Person JSON-LD on /, /contact,
  *                                       /consulting and /author/[slug]
  *   author(mehdi-zare).worksFor*     -> Person `worksFor` in the same markup
+ *
+ * It used to write `site-setting.locationLine` for the footer as well. The site
+ * stopped reading `site-setting` when page copy became repo-owned, so that half
+ * wrote a row nothing consumes -- and, worse, told the next person that fixing
+ * footer copy needs a production CMS write. Editing the repo constant is now
+ * the whole job. The author record is genuinely different: `/author/[slug]`
+ * reads it raw, with no repo-side fallback at all.
  *
  * Started life as `sync-site-location.ts` for the address alone. The employer
  * fields turned out to need exactly the same treatment for exactly the same
@@ -26,13 +32,10 @@
  * unrelated, deliberately-unpublished admin edit would go live with the identity
  * change. The script therefore reads the draft first and refuses to write when
  * it diverges from the published record outside the fields below (override with
- * `--allow-draft-publish`). `site-setting` has Draft & Publish disabled, so its
- * update has no such effect.
+ * `--allow-draft-publish`).
  *
  * The desired values come from `data/taxonomy.json` -- the same record the seed
- * writes -- so this script cannot disagree with the repo. `locationLine` is
- * derived as `${locality}, ${region}`, the composition
- * `apps/web/tests/site-identity-consistency.test.ts` pins.
+ * writes -- so this script cannot disagree with the repo.
  *
  * Usage (dry run -- prints the diff, writes nothing):
  *
@@ -338,22 +341,8 @@ async function main(): Promise<void> {
     addressCountry,
     ...(worksForName && worksForUrl ? { worksForName, worksForUrl } : {}),
   };
-  const desiredSettings = { locationLine: `${addressLocality}, ${addressRegion}` };
-
   console.log(`Strapi: ${STRAPI_URL}`);
   console.log(`Mode:   ${APPLY ? "APPLY (will write)" : "dry run (no writes)"}`);
-
-  // --- site-setting (single type) -----------------------------------------
-  const settingsResponse = await strapiFetch<{ data: StrapiEntity | null }>(
-    "site-setting"
-  );
-  const settings = settingsResponse.data;
-  if (!settings) {
-    console.error("Strapi: site-setting single type has no entry to update.");
-    process.exit(1);
-  }
-  const settingsChanges = diffFields(settings, desiredSettings);
-  report(`site-setting (${settings.documentId})`, settings, desiredSettings, settingsChanges);
 
   // --- author -------------------------------------------------------------
   const authorResponse = await strapiFetch<{ data: StrapiEntity[] }>(
@@ -372,18 +361,15 @@ async function main(): Promise<void> {
   const authorChanges = diffFields(author, desiredAuthor);
   report(`author ${primaryAuthor.slug} (${author.documentId})`, author, desiredAuthor, authorChanges);
 
-  const pending =
-    Object.keys(settingsChanges).length + Object.keys(authorChanges).length;
+  const pending = Object.keys(authorChanges).length;
 
   if (pending === 0) {
     console.log("\nNothing to do -- Strapi already matches the repo.");
     return;
   }
 
-  // Before *any* write, not between the two: the footer reads site-setting and
-  // the Person JSON-LD reads the author, so aborting between them would leave
-  // the two disagreeing -- a worse state than the one being fixed. Runs on a
-  // dry run too, so the divergence is known before committing to --apply.
+  // Runs on a dry run too, so an unsafe draft is known before committing to
+  // --apply rather than discovered mid-write.
   if (Object.keys(authorChanges).length > 0) {
     await assertAuthorDraftIsSafeToPublish(
       author,
@@ -397,14 +383,6 @@ async function main(): Promise<void> {
       `\n${pending} field(s) would change. Re-run with --apply to write them.`
     );
     return;
-  }
-
-  if (Object.keys(settingsChanges).length > 0) {
-    await strapiFetch(`site-setting`, {
-      method: "PUT",
-      body: JSON.stringify({ data: settingsChanges }),
-    });
-    console.log(`\n  ✓ site-setting updated: ${Object.keys(settingsChanges).join(", ")}`);
   }
 
   if (Object.keys(authorChanges).length > 0) {

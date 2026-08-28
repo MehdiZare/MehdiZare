@@ -38,13 +38,6 @@ let requestedPaths: string[] = [];
 let requestedUrls: URL[] = [];
 let stallCms = false;
 const stalledRejects: Array<(reason?: unknown) => void> = [];
-let holdSingleTypes: Promise<void> | null = null;
-const SINGLE_TYPE_PATHS = new Set([
-  "/api/home-page",
-  "/api/about-page",
-  "/api/consulting-page",
-  "/api/bina-print-page",
-]);
 
 function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -87,10 +80,8 @@ globalThis.fetch = (async (input: RequestInfo | URL) => {
     case "/api/tags":
       return collection(scenario.tags, 1);
     default:
-      // Single types (home/about/consulting/bina-print) only contribute a lastModified.
-      if (holdSingleTypes && SINGLE_TYPE_PATHS.has(url.pathname)) {
-        await holdSingleTypes;
-      }
+      // The sitemap no longer reads page single types (#100); anything reaching
+      // here is unexpected, so keep the shape valid but contribute nothing.
       return jsonResponse({ data: { updatedAt: "2026-01-01T00:00:00.000Z" } });
   }
 }) as typeof fetch;
@@ -284,35 +275,39 @@ test("the article query asks only for what the sitemap renders", async () => {
   );
 });
 
-test("bina-print is fetched in the same round as the other single types", async (t) => {
-  process.env.ENABLE_BINA_PRINT = "true";
-  t.after(() => {
-    delete process.env.ENABLE_BINA_PRINT;
-    holdSingleTypes = null;
+// Removed with the single-type fetches themselves (#100). This asserted that
+// bina-print shared a Promise.all round with home/about/consulting so it could
+// not add a serial STRAPI_TIMEOUT_MS hop. The sitemap no longer reads any page
+// single type -- their copy is in the repo -- so there is no round to share.
+
+test("the sitemap never reads page single types or site-setting", async () => {
+  const { entries } = await runSitemap({
+    articles: [{ slug: "valid-post", updatedAt: "2026-02-02T00:00:00.000Z" }],
   });
 
-  let releaseSingleTypes: (() => void) | undefined;
-  holdSingleTypes = new Promise<void>((resolve) => {
-    releaseSingleTypes = resolve;
-  });
+  const forbidden = requestedPaths.filter((path) =>
+    [
+      "/api/home-page",
+      "/api/about-page",
+      "/api/consulting-page",
+      "/api/bina-print-page",
+      "/api/site-setting",
+      "/api/newsletter-page",
+    ].includes(path)
+  );
+  assert.deepEqual(
+    forbidden,
+    [],
+    "page copy is repo-owned (#100); reintroducing these fetches would resurrect stale lastmods"
+  );
 
-  requestedPaths = [];
-  const pending = sitemap();
-
-  const started = Date.now();
-  while (![...SINGLE_TYPE_PATHS].every((path) => requestedPaths.includes(path))) {
-    if (Date.now() - started > 1000) {
-      assert.fail(
-        `bina-print must be requested before other single types resolve; saw ${requestedPaths.join(", ")}`
-      );
-    }
-    await Promise.resolve();
-  }
-
-  releaseSingleTypes?.();
-  const entries = await pending;
-  const urls = entries.map((entry) => entry.url);
-  assert.ok(urls.includes(`${SITE_URL}/bina-print`));
+  const home = entries.find((entry) => entry.url === SITE_URL);
+  assert.ok(home, "home must remain in the sitemap");
+  assert.notEqual(
+    home.lastModified instanceof Date ? home.lastModified.toISOString() : home.lastModified,
+    "2026-01-01T00:00:00.000Z",
+    "static lastmod must not come from the stub single-type updatedAt fixture"
+  );
 });
 
 test("the CMS deadline leaves room to serve the fallback", () => {

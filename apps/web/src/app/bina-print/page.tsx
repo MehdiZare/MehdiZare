@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TickerLookup } from "@/components/bina/TickerLookup";
-import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { DevCmsBanner } from "@/components/shared/DevCmsBanner";
 import { fallbackBinaPrintData } from "@/content/fallbacks";
 import { isBinaPrintEnabled } from "@/lib/feature-flags";
 import {
@@ -13,7 +11,6 @@ import {
   buildWebPageJsonLd,
 } from "@/lib/seo";
 import { getSiteProfile } from "@/lib/site-profile";
-import { getBinaPrintPage } from "@/lib/strapi";
 
 const binaPrintMetadataTitle = "Bina Print";
 
@@ -22,37 +19,18 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildNoIndexMetadata("Bina Print Not Found");
   }
 
-  try {
-    const response = await getBinaPrintPage();
-    const cmsData = response.data;
-
-    return buildPageMetadata({
-      pathname: "/bina-print",
-      title: binaPrintMetadataTitle,
-      description: cmsData?.heroSubheadline || fallbackBinaPrintData.heroSubheadline,
-      seo: cmsData?.seo,
-      type: "website",
-      keywords: [
-        "AI scoring system",
-        "production AI product",
-        "financial AI",
-        "LLM workflows",
-      ],
-    });
-  } catch {
-    return buildPageMetadata({
-      pathname: "/bina-print",
-      title: binaPrintMetadataTitle,
-      description: fallbackBinaPrintData.heroSubheadline,
-      type: "website",
-      keywords: [
-        "AI scoring system",
-        "production AI product",
-        "financial AI",
-        "LLM workflows",
-      ],
-    });
-  }
+  return buildPageMetadata({
+    pathname: "/bina-print",
+    title: binaPrintMetadataTitle,
+    description: fallbackBinaPrintData.heroSubheadline,
+    type: "website",
+    keywords: [
+      "AI scoring system",
+      "production AI product",
+      "financial AI",
+      "LLM workflows",
+    ],
+  });
 }
 
 export default async function BinaPrintPage() {
@@ -61,49 +39,10 @@ export default async function BinaPrintPage() {
   }
 
   const siteProfile = await getSiteProfile();
-  const fallbackData = fallbackBinaPrintData;
-
-  let data: typeof fallbackData = fallbackData;
-  let cmsStructuredData: unknown;
-  let cmsFailed = false;
-
-  try {
-    const response = await getBinaPrintPage();
-    const cmsData = response.data;
-    cmsStructuredData = cmsData?.seo?.structuredData;
-
-    if (cmsData) {
-      data = {
-        heroHeadline: cmsData.heroHeadline || fallbackData.heroHeadline,
-        heroSubheadline: cmsData.heroSubheadline || fallbackData.heroSubheadline,
-        searchPlaceholder: cmsData.searchPlaceholder || fallbackData.searchPlaceholder,
-        howItWorks:
-          cmsData.howItWorks && cmsData.howItWorks.length > 0
-            ? cmsData.howItWorks
-            : fallbackData.howItWorks,
-        topMovers:
-          cmsData.topMovers && cmsData.topMovers.length > 0
-            ? cmsData.topMovers
-            : fallbackData.topMovers,
-        exampleTicker: cmsData.exampleTicker || fallbackData.exampleTicker,
-        exampleOverallScore:
-          cmsData.exampleOverallScore || fallbackData.exampleOverallScore,
-        exampleSubScores: cmsData.exampleSubScores || fallbackData.exampleSubScores,
-        methodologySummary:
-          cmsData.methodologySummary || fallbackData.methodologySummary,
-      };
-    }
-  } catch {
-    cmsFailed = true;
-  }
+  const data = fallbackBinaPrintData;
 
   return (
     <div className="bg-paper pb-20">
-      {cmsFailed && <DevCmsBanner page="bina-print-page" />}
-      <CmsStructuredData
-        idPrefix="bina-print-cms-jsonld"
-        data={cmsStructuredData}
-      />
       <JsonLd
         id="bina-print-webpage-jsonld"
         data={buildWebPageJsonLd({
