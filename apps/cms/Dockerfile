@@ -21,17 +21,11 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 # Copy cms package.json for dependency resolution
 COPY apps/cms/package.json ./apps/cms/
 
-# Copy shared package
-COPY packages/shared/package.json ./packages/shared/
-
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy cms source code
 COPY apps/cms/ ./apps/cms/
-
-# Copy shared source
-COPY packages/shared/ ./packages/shared/
 
 # Build Strapi admin panel
 RUN pnpm --filter cms build
@@ -46,9 +40,6 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Copy cms package.json
 COPY apps/cms/package.json ./apps/cms/
-
-# Copy shared package
-COPY packages/shared/ ./packages/shared/
 
 # Install production dependencies only
 RUN pnpm install --frozen-lockfile --prod

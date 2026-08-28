@@ -68,12 +68,41 @@ test("root typecheck runs turbo typecheck, not pnpm exec tsc", () => {
   assert.equal(pkg.scripts.typecheck, "turbo typecheck");
 });
 
+function workspacePackageJsons() {
+  const found = [];
+  for (const globDir of ["apps", "packages"]) {
+    const dir = resolve(root, globDir);
+    if (!existsSync(dir)) {
+      continue;
+    }
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) {
+        continue;
+      }
+      const relativePath = `${globDir}/${entry.name}/package.json`;
+      if (existsSync(resolve(root, relativePath))) {
+        found.push(relativePath);
+      }
+    }
+  }
+  return found;
+}
+
 test("workspace packages expose a typecheck script that is tsc --noEmit", () => {
-  for (const relativePath of [
-    "apps/web/package.json",
-    "apps/cms/package.json",
-    "packages/shared/package.json",
-  ]) {
+  const packages = workspacePackageJsons();
+  assert.ok(
+    packages.includes("apps/web/package.json"),
+    "expected apps/web in the typecheck graph",
+  );
+  assert.ok(
+    packages.includes("apps/cms/package.json"),
+    "expected apps/cms in the typecheck graph",
+  );
+  assert.ok(
+    !packages.includes("packages/shared/package.json"),
+    "@repo/shared was unused and is retired (#124)",
+  );
+  for (const relativePath of packages) {
     const pkg = JSON.parse(read(relativePath));
     assert.equal(
       pkg.scripts.typecheck,
@@ -81,6 +110,39 @@ test("workspace packages expose a typecheck script that is tsc --noEmit", () => 
       `${relativePath} must define typecheck as tsc --noEmit`,
     );
   }
+});
+
+test("@repo/shared is not in the workspace or lockfile", () => {
+  assert.equal(
+    existsSync(resolve(root, "packages/shared")),
+    false,
+    "packages/shared must not exist (#124)",
+  );
+  const lockfile = read("pnpm-lock.yaml");
+  assert.doesNotMatch(
+    lockfile,
+    /^ {2}packages\/shared:/m,
+    "pnpm-lock.yaml must not list packages/shared (#124)",
+  );
+  assert.doesNotMatch(
+    lockfile,
+    /@repo\/shared/,
+    "pnpm-lock.yaml must not name @repo/shared (#124)",
+  );
+});
+
+test("typecheck discovery matches the workspace package globs", () => {
+  const workspace = read("pnpm-workspace.yaml");
+  const packagesBlock = workspace.match(/^packages:\n((?:  - .*\n)+)/m);
+  assert.ok(packagesBlock, "pnpm-workspace.yaml must declare packages:");
+  const globs = [...packagesBlock[1].matchAll(/- "([^"]+)"/g)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(
+    globs,
+    ["apps/*", "packages/*"],
+    "workspacePackageJsons() only walks apps/* and packages/*; keep the helper in lockstep with pnpm-workspace.yaml (#124)",
+  );
 });
 
 test("turbo.json defines a workspace typecheck task", () => {

@@ -137,3 +137,12 @@ test("base and production inherit the shared pnpm stage", () => {
     );
   }
 });
+
+test("CMS Docker does not copy the retired @repo/shared package", () => {
+  const dockerfile = readFileSync(resolve(root, "apps/cms/Dockerfile"), "utf8");
+  assert.doesNotMatch(
+    dockerfile,
+    /packages\/shared/,
+    "apps/cms/Dockerfile must not COPY packages/shared (#124)",
+  );
+});
