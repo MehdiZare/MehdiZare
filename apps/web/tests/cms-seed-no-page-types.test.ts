@@ -29,6 +29,11 @@ test("the CMS seed no longer upserts retired page single-types or site-setting",
       new RegExp(`putSingleType\\(\\s*["']${type}["']`),
       `seed.ts still writes ${type}; that row is not read by apps/web (#116)`
     );
+    assert.doesNotMatch(
+      seed,
+      new RegExp(`strapiFetch(?:<[^>]+>)?\\(\\s*["']${type}["']`),
+      `seed.ts still fetches ${type} as a write path; that row is not read by apps/web (#116)`
+    );
   }
 });
 

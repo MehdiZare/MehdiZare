@@ -91,6 +91,13 @@ export const CMS_PRERENDER_ARTICLE: Article = {
   category: CMS_PRERENDER_CATEGORY,
   tags: [CMS_PRERENDER_TAG],
   author: CMS_PRERENDER_AUTHOR,
+  // Fake slug, not a real post. If DISABLE_STRAPI_CMS is ever set on a
+  // public deploy, this URL must not be indexed. The author/category/tag
+  // fixtures reuse live identity slugs, so they stay indexable.
+  seo: {
+    id: 9005,
+    metaRobots: "noindex, nofollow",
+  },
   publishedDate: STAMP,
   readingTime: 1,
   createdAt: STAMP,

@@ -144,6 +144,30 @@ test("collectPaths maps a Strapi article publish payload to the expected path se
   }
 });
 
+test("collectPaths maps category, tag, and author publish payloads to their canonical URLs", async () => {
+  const category = await post({
+    secretIn: "header",
+    body: { model: "category", entry: { slug: "ai-engineering" } },
+  });
+  assert.ok(
+    (category.json.revalidated as string[]).includes("/blog/category/ai-engineering")
+  );
+
+  resetRevalidateCalls();
+  const tag = await post({
+    secretIn: "header",
+    body: { model: "tag", entry: { slug: "llms" } },
+  });
+  assert.ok((tag.json.revalidated as string[]).includes("/blog/tag/llms"));
+
+  resetRevalidateCalls();
+  const author = await post({
+    secretIn: "header",
+    body: { model: "author", entry: { slug: "mehdi-zare" } },
+  });
+  assert.ok((author.json.revalidated as string[]).includes("/author/mehdi-zare"));
+});
+
 test("bracketed dynamic paths take the page type; everything else is typeless", async () => {
   await post({ secretIn: "header" });
 

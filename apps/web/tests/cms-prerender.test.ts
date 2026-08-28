@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { getCategorySeedBySlug, getTagSeedBySlug } from "../src/lib/taxonomy-seed.ts";
 import { DEFAULT_SITE_PROFILE } from "../src/lib/site-profile-defaults.ts";
 import {
   CMS_PRERENDER_ARTICLE,
@@ -38,16 +37,26 @@ test("the author fixture is the site owner, so Person JSON-LD stays on the ident
 });
 
 test("category and tag fixture slugs exist in the taxonomy seed, so those pages render without a CMS row", () => {
-  // The test runner stubs data/taxonomy.json (ai-engineering + llms). The
-  // production file has those slugs too. generateStaticParams emits these in
-  // a CMS-off build; missing them 404s the template.
+  // Read the production file, not the test runner's taxonomy stub. A rename
+  // in data/taxonomy.json must fail here, not only at postbuild.
+  const taxonomy = JSON.parse(
+    readFileSync(resolve(process.cwd(), "../../data/taxonomy.json"), "utf8")
+  ) as {
+    categories: Array<{ slug: string; children?: Array<{ slug: string }> }>;
+    tags: Array<{ slug: string }>;
+  };
+  const categorySlugs = taxonomy.categories.flatMap((category) => [
+    category.slug,
+    ...(category.children?.map((child) => child.slug) ?? []),
+  ]);
+
   assert.ok(
-    getCategorySeedBySlug(CMS_PRERENDER_CATEGORY_SLUG),
-    `${CMS_PRERENDER_CATEGORY_SLUG} must exist in the taxonomy seed or the category template 404s in a CMS-off build`
+    categorySlugs.includes(CMS_PRERENDER_CATEGORY_SLUG),
+    `${CMS_PRERENDER_CATEGORY_SLUG} must exist in data/taxonomy.json or the category template 404s in a CMS-off build`
   );
   assert.ok(
-    getTagSeedBySlug(CMS_PRERENDER_TAG_SLUG),
-    `${CMS_PRERENDER_TAG_SLUG} must exist in the taxonomy seed or the tag template 404s in a CMS-off build`
+    taxonomy.tags.some((tag) => tag.slug === CMS_PRERENDER_TAG_SLUG),
+    `${CMS_PRERENDER_TAG_SLUG} must exist in data/taxonomy.json or the tag template 404s in a CMS-off build`
   );
 });
 
@@ -56,6 +65,14 @@ test("finders return the fixture for its slug and nothing else", () => {
   assert.equal(findCmsPrerenderArticle("some-other-post"), undefined);
   assert.equal(findCmsPrerenderAuthor(CMS_PRERENDER_AUTHOR_SLUG)?.id, CMS_PRERENDER_AUTHOR.id);
   assert.equal(findCmsPrerenderAuthor("guest-author"), undefined);
+});
+
+test("the fake article slug is noindex so a CMS-off public deploy cannot rank it", () => {
+  assert.match(
+    CMS_PRERENDER_ARTICLE.seo?.metaRobots ?? "",
+    /noindex/i,
+    "ssr-visibility-fixture is not a real post; metaRobots must include noindex"
+  );
 });
 
 test("CMS-off generateStaticParams emits the fixture slugs", () => {

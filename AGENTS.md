@@ -27,6 +27,8 @@ them. The Strapi types stay because dropping a single type drops its table.
 **The CMS owns** articles, categories, tags, and the Author record.
 `/author/[slug]` reads the author raw, with no repo-side fallback, so an
 identity change there does need a CMS write — that is what
-`apps/cms/scripts/sync-site-identity.ts` is for. Nothing else does.
+`apps/cms/scripts/sync-site-identity.ts` is for. Nothing else does. CI's
+CMS-off fixture catalog is gated on `DISABLE_STRAPI_CMS` and is not a
+production fallback.
 
 Before reaching for a production CMS write, check which side owns the value.

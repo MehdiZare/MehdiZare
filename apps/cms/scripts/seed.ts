@@ -5,9 +5,8 @@
  * author relation on articles. Page copy and site identity live in the repo
  * (`apps/web/src/content/fallbacks/` and `site-profile-defaults.ts`); seeding
  * `home-page` / `about-page` / `consulting-page` / `bina-print-page` /
- * `site-setting` / `newsletter-page` was writing rows whose admin edits now
- * silently do nothing (#116). The Strapi types stay so their tables are not
- * dropped.
+ * `site-setting` was writing rows whose admin edits now silently do
+ * nothing (#116). The Strapi types stay so their tables are not dropped.
  *
  * Usage:
  *   STRAPI_URL=https://cms-production-a749.up.railway.app \

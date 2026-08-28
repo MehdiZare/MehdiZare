@@ -32,16 +32,15 @@ import { CMS_PRERENDER_HTML_FILES } from "../../src/content/fixtures/cms-prerend
 const BUILD_DIR = resolve(import.meta.dirname, "../../.next/server/app");
 
 /**
- * Every route that prerenders from repo-owned data alone, so it is present in
- * *any* build of this app.
+ * Routes this contract requires to exist as 200s in a CMS-off build (CI).
  *
  * Naming them, rather than counting pages, is what makes this contract
  * CMS-independent: CI builds with `DISABLE_STRAPI_CMS=true`, so the live CMS
  * catalog is absent, while a local build with Strapi reachable emits ~58
- * files. The fixture routes in `CMS_PRERENDER_HTML_FILES` are present in
- * *both* configurations (CMS-off via the committed catalog, CMS-on if those
- * slugs exist in Strapi, otherwise still via the DISABLE path in CI). A page
- * count calibrated on one is wrong on the other; this list is right on both.
+ * files. This list is the CMS-off contract CI actually runs: repo-owned
+ * pages plus the committed fixture routes. A CMS-on local `test:postbuild`
+ * will fail on `blog/ssr-visibility-fixture.html` unless that slug exists
+ * in Strapi; run postbuild against a CMS-off build, as CI does.
  *
  * Adding a static route without adding it here is deliberately not a failure
  * -- the scan below covers whatever the build emitted. The list exists to
