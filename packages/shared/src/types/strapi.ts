@@ -110,37 +110,10 @@ export interface Credential {
   icon: string | null;
 }
 
-export interface Experience {
-  id: number;
-  title: string;
-  company: string;
-  period: string;
-  description: string | null;
-}
-
-export interface Education {
-  id: number;
-  degree: string;
-  institution: string;
-  year: string;
-}
-
 export interface SocialLink {
   id: number;
   platform: string;
   url: string;
-}
-
-export interface FAQ {
-  id: number;
-  question: string;
-  answer: string;
-}
-
-export interface NavItem {
-  id: number;
-  label: string;
-  href: string;
 }
 
 // Contact Submission
