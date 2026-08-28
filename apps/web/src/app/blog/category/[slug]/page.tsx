@@ -11,6 +11,8 @@ import {
 } from "@/lib/blog-listing";
 import { getCategorySeedBySlug } from "@/lib/taxonomy-seed";
 import { getCategories, getCategoryBySlug, getArticles } from "@/lib/strapi";
+import { serverEnv } from "@/lib/server-env";
+import { CMS_PRERENDER_CATEGORY_SLUG } from "@/content/fixtures/cms-prerender";
 import {
   buildBreadcrumbJsonLd,
   buildNoIndexMetadata,
@@ -47,6 +49,10 @@ function buildWhatYouWillFindPoints(
 }
 
 export async function generateStaticParams() {
+  if (serverEnv.strapiDisabled) {
+    return [{ slug: CMS_PRERENDER_CATEGORY_SLUG }];
+  }
+
   try {
     const res = await getCategories();
     const categories = res.data;

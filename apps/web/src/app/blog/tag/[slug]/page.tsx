@@ -5,6 +5,8 @@ import { PostCard } from "@/components/blog/PostCard";
 import { resolveTagListingCopy } from "@/lib/blog-listing";
 import { getTagSeedBySlug } from "@/lib/taxonomy-seed";
 import { getTags, getTagBySlug, getArticles } from "@/lib/strapi";
+import { serverEnv } from "@/lib/server-env";
+import { CMS_PRERENDER_TAG_SLUG } from "@/content/fixtures/cms-prerender";
 import { buildBreadcrumbJsonLd, buildNoIndexMetadata, buildPageMetadata, buildWebPageJsonLd } from "@/lib/seo";
 
 interface TagPageProps {
@@ -20,6 +22,10 @@ function buildTagHighlights(tagTitle: string): string[] {
 }
 
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
+  if (serverEnv.strapiDisabled) {
+    return [{ slug: CMS_PRERENDER_TAG_SLUG }];
+  }
+
   try {
     const tagsRes = await getTags();
     return tagsRes.data.map((tag) => ({ slug: tag.slug }));

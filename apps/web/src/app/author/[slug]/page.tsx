@@ -7,6 +7,11 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { StrapiImage } from "@/components/shared/StrapiImage";
 import { getSiteProfile } from "@/lib/site-profile";
 import { fetchAllPages, getArticles, getAuthorBySlug, getAuthors } from "@/lib/strapi";
+import { serverEnv } from "@/lib/server-env";
+import {
+  CMS_PRERENDER_AUTHOR_SLUG,
+  findCmsPrerenderAuthor,
+} from "@/content/fixtures/cms-prerender";
 import {
   buildBreadcrumbJsonLd,
   buildNoIndexMetadata,
@@ -39,6 +44,10 @@ function getAllAuthors(): Promise<AuthorList> {
 }
 
 export async function generateStaticParams() {
+  if (serverEnv.strapiDisabled) {
+    return [{ slug: CMS_PRERENDER_AUTHOR_SLUG }];
+  }
+
   try {
     const authors = await getAllAuthors();
     return authors.map((author) => ({ slug: author.slug }));
@@ -53,8 +62,9 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
 
   try {
     const { slug } = await params;
-    const response = await getAuthorBySlug(slug);
-    const author = response.data[0];
+    const author = serverEnv.strapiDisabled
+      ? findCmsPrerenderAuthor(slug)
+      : (await getAuthorBySlug(slug)).data[0];
 
     if (!author) {
       return buildNoIndexMetadata("Author Not Found");
@@ -120,11 +130,15 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
   const { slug } = await params;
 
   let author;
-  try {
-    const response = await getAuthorBySlug(slug);
-    author = response.data[0];
-  } catch {
-    notFound();
+  if (serverEnv.strapiDisabled) {
+    author = findCmsPrerenderAuthor(slug);
+  } else {
+    try {
+      const response = await getAuthorBySlug(slug);
+      author = response.data[0];
+    } catch {
+      notFound();
+    }
   }
 
   if (!author) {

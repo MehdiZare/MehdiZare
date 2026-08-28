@@ -19,9 +19,10 @@ import { resolve } from "node:path";
 // registers. A dynamic *page* route is the opposite case: `/blog/[slug]`
 // registers `_N_T_/blog/[slug]/page`, so it does need the type.
 //
-// This is a source contract rather than a behavioural test because the route
-// cannot be loaded by this runner: it imports `next/cache`, which plain Node
-// cannot resolve through Next's exports map. Making it renderable is #115.
+// Source contract for the silent-type bug. Behavioural coverage of POST
+// (auth, collectPaths, the two revalidatePath types) is in
+// revalidate-route-behavior.test.ts, which loads the route through a
+// next/cache stub (#115).
 
 const source = readFileSync(resolve(process.cwd(), "src/app/api/revalidate/route.ts"), "utf8");
 

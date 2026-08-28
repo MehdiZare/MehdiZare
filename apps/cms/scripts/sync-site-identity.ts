@@ -21,10 +21,9 @@
  * until the CMS author record was written, because `/author/[slug]` reads that
  * record raw with no repo-side fallback at all. Renamed rather than duplicated.
  *
- * `seed.ts` would also fix them, but it is a full upsert: it rewrites
- * site-settings, the home/about/consulting pages, and every tag and category,
- * so any hand-edit made in the Strapi admin since the last seed is lost. This
- * sends exactly the fields above and nothing else.
+ * `seed.ts` would also fix them, but it is a full upsert of author, categories
+ * and tags, so any hand-edit made in the Strapi admin since the last seed is
+ * lost. This sends exactly the fields above and nothing else.
  *
  * *Sends* -- not "changes". `author` has Draft & Publish enabled, and Strapi 5's
  * REST update writes the payload onto the DRAFT; `?status=published` then

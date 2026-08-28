@@ -4,6 +4,7 @@ import ts from "typescript";
 const SRC_BASE = new URL("../src/", import.meta.url);
 const SERVER_ONLY_STUB = new URL("./server-only-stub.mjs", import.meta.url);
 const TAXONOMY_STUB = new URL("./taxonomy-stub.mjs", import.meta.url);
+const NEXT_CACHE_STUB = new URL("./next-cache-stub.mjs", import.meta.url);
 
 async function tryResolveAlias(specifier, context, nextResolve) {
   const target = new URL(specifier.slice(2), SRC_BASE);
@@ -39,6 +40,13 @@ export async function resolve(specifier, context, nextResolve) {
   if (specifier === "server-only") {
     return {
       url: SERVER_ONLY_STUB.href,
+      shortCircuit: true,
+    };
+  }
+
+  if (specifier === "next/cache") {
+    return {
+      url: NEXT_CACHE_STUB.href,
       shortCircuit: true,
     };
   }
