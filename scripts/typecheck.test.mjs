@@ -118,10 +118,30 @@ test("@repo/shared is not in the workspace or lockfile", () => {
     false,
     "packages/shared must not exist (#124)",
   );
+  const lockfile = read("pnpm-lock.yaml");
   assert.doesNotMatch(
-    read("pnpm-lock.yaml"),
+    lockfile,
     /^ {2}packages\/shared:/m,
     "pnpm-lock.yaml must not list packages/shared (#124)",
+  );
+  assert.doesNotMatch(
+    lockfile,
+    /@repo\/shared/,
+    "pnpm-lock.yaml must not name @repo/shared (#124)",
+  );
+});
+
+test("typecheck discovery matches the workspace package globs", () => {
+  const workspace = read("pnpm-workspace.yaml");
+  const packagesBlock = workspace.match(/^packages:\n((?:  - .*\n)+)/m);
+  assert.ok(packagesBlock, "pnpm-workspace.yaml must declare packages:");
+  const globs = [...packagesBlock[1].matchAll(/- "([^"]+)"/g)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(
+    globs,
+    ["apps/*", "packages/*"],
+    "workspacePackageJsons() only walks apps/* and packages/*; keep the helper in lockstep with pnpm-workspace.yaml (#124)",
   );
 });
 
