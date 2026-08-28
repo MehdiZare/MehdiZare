@@ -49,6 +49,11 @@ jobs:
         env:
           DISABLE_STRAPI_CMS: "true"
 
+      # Reads the prerendered HTML, so it has to follow Build. Asserts no page
+      # ships content hidden until hydration (#28).
+      - name: Verify SSR visibility
+        run: pnpm --filter=web test:postbuild
+
   security:
     name: Dependency Audit
     runs-on: ubicloud-standard-2

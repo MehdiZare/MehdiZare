@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --import ./tests/register-ts-resolver.mjs --test tests/*.test.ts",
+    "test:postbuild": "node --experimental-strip-types --import ./tests/register-ts-resolver.mjs --test tests/post-build/*.test.ts",
     "posthog:push-dashboard": "node ./scripts/posthog/push-dashboard.mjs"
   },
   "dependencies": {

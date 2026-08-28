@@ -79,7 +79,7 @@ export async function resolve(specifier, context, nextResolve) {
 // JSX, so a `.tsx` import fails with ERR_UNKNOWN_FILE_EXTENSION. That is why
 // every component contract in this suite used to read source text instead of
 // rendering. This hook hands `.tsx` to the TypeScript compiler (already a
-// devDependency, already used by motion-visibility.test.ts) so components can
+// devDependency) so components can
 // be rendered with `renderToStaticMarkup` and asserted on their actual output.
 //
 // Transpile-only: no type checking happens here. `pnpm typecheck` is what
