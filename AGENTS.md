@@ -12,6 +12,10 @@
 
 Run `pnpm typecheck` (Turbo) or `pnpm --filter=<pkg> typecheck`. Never `pnpm --filter=* exec tsc` — in this repo that can re-run install and rewrite `pnpm-lock.yaml`. Do not add `typescript` as a root devDependency; each package that typechecks already has it.
 
+## CMS generated types
+
+Regenerate with `pnpm --filter=cms generate-types`. That script wipes `apps/cms/dist` first. Running `strapi ts:generate-types` against a leftover dist reintroduces the retired page single-types (#121 / #125 / #128).
+
 ## Content ownership
 
 The repo and the CMS each own part of the site, and the split is not obvious
