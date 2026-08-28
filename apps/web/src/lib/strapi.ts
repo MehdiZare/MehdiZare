@@ -4,6 +4,7 @@ import type {
   Category,
   Tag,
   ContactSubmission,
+  ContactSubmissionInput,
   StrapiResponse,
   StrapiCollectionResponse,
 } from "@/types/strapi";
@@ -453,10 +454,7 @@ export async function getTagBySlug(
  * Articles, categories, tags and the author record are still CMS-backed.
  */
 export async function submitContactForm(
-  data: Omit<
-    ContactSubmission,
-    "id" | "documentId" | "createdAt" | "updatedAt" | "publishedAt"
-  >
+  data: ContactSubmissionInput,
 ): Promise<StrapiResponse<ContactSubmission>> {
   const path = "/contact-submissions";
   const url = buildApiUrl(path);

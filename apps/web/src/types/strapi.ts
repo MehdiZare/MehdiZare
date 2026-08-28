@@ -238,9 +238,12 @@ export interface ContactSubmission {
   email: string;
   subject?: string;
   message: string;
-  phone?: string;
-  company?: string;
   createdAt?: string;
   updatedAt?: string;
   publishedAt?: string;
 }
+
+export type ContactSubmissionInput = Pick<
+  ContactSubmission,
+  "name" | "email" | "subject" | "message"
+>;
