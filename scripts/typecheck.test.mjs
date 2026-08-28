@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import {
   existsSync,
   mkdirSync,
@@ -156,6 +157,18 @@ test("the scanner does not descend into a nested checkout outside .worktrees", (
   } finally {
     rmSync(fixtureDir, { recursive: true, force: true });
   }
+});
+
+test("Next.js output is not tracked", () => {
+  const tracked = execFileSync("git", ["ls-files", "-z", "--", "**/.next", "**/.next/**"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  assert.equal(
+    tracked,
+    "",
+    "a tracked apps/web/.next symlink to a local machine path makes `next build` fail on Linux with ENOENT mkdir"
+  );
 });
 
 test("the scanner does not descend into nested worktree checkouts", () => {

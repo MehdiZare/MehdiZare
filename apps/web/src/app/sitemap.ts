@@ -14,7 +14,24 @@ import taxonomy from "../../../../data/taxonomy.json";
 
 const SITE_URL = getSiteUrl();
 
-export const revalidate = 3600;
+/**
+ * Bounded ISR, not `force-dynamic`.
+ *
+ * `revalidate = 3600` was what let a published post sit out of the sitemap for
+ * up to an hour (#110). Five minutes closes that without making the route
+ * uncacheable: a metadata route hardcodes `cache-control: public, max-age=0,
+ * must-revalidate`, so a dynamic sitemap means one uncached, four-way paginated
+ * Strapi walk per crawler hit, with no CDN shielding and no stale copy to serve
+ * if Strapi is slow. Under ISR a degraded regeneration never reaches a crawler,
+ * because the previous good copy is served while the new one builds (#118).
+ *
+ * Invalidation still works on publish, and both paths are real -- read off a
+ * build, `.next/server/app/sitemap.xml.meta` carries
+ * `x-next-cache-tags: ...,_N_T_/sitemap.xml/route,_N_T_/sitemap.xml,strapi`.
+ * The webhook's `revalidatePath("/sitemap.xml")` matches the second tag and its
+ * `revalidateTag("strapi")` matches the third.
+ */
+export const revalidate = 300;
 /** Isolate budget: must exceed SITEMAP_DEADLINE_MS so a slow CMS walk can still return the fallback. */
 export const maxDuration = 20;
 
@@ -65,12 +82,12 @@ export function maxValidDate(values: Array<string | undefined>, fallback: Date):
 }
 
 /**
- * Sitemap rows only need slug, updatedAt, and featuredImage.url.
- * Passing this populate overrides getArticles' default articlePopulate
- * (category, tags, author credentials, seo.metaImage).
+ * Sitemap rows need slug plus the timestamps lastmod is derived from, and
+ * featuredImage.url. Passing this populate overrides getArticles' default
+ * articlePopulate (category, tags, author credentials, seo.metaImage).
  */
 const SITEMAP_ARTICLE_FIELDS = {
-  fields: ["slug", "updatedAt"],
+  fields: ["slug", "updatedAt", "publishedAt"],
   populate: { featuredImage: { fields: ["url"] } },
 } as const;
 
@@ -284,7 +301,7 @@ function mapArticlePages(articles: Article[], now: Date): MetadataRoute.Sitemap 
     }
     pages.push({
       url: `${SITE_URL}/blog/${slug}`,
-      lastModified: safeDate(article.updatedAt, now),
+      lastModified: maxValidDate([article.updatedAt, article.publishedAt], now),
       changeFrequency: "weekly",
       priority: 0.7,
       images: imageUrl ? [imageUrl] : undefined,
@@ -328,11 +345,10 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     blog: now,
   };
 
-  // The static pages' copy lives in the repo, so their lastmod is the build,
-  // not a CMS row (#100). Reading it from Strapi reported 2026-02-25 for pages
-  // that had in fact changed that morning: the records were seeded once and
-  // never touched again, so their updatedAt tracked the seed rather than the
-  // deploy that changed what the page says.
+  // The static pages' copy lives in the repo, so their lastmod is not a CMS
+  // row (#100). Reading it from Strapi reported 2026-02-25 for pages that had
+  // in fact changed that morning. With force-dynamic this falls through to
+  // request-time `now` — tracked as #113 (deploy-stable lastmod).
   const [articlesResult, authorsResult, categoriesResult, tagsResult] =
     await Promise.allSettled([
       getAllArticlesForSitemap(deadlineMs),
@@ -345,7 +361,7 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
   if (articlesResult.status === "fulfilled") {
     const articles = articlesResult.value;
     pageTimestamps.blog = maxValidDate(
-      articles.map((article) => article.updatedAt),
+      articles.flatMap((article) => [article.updatedAt, article.publishedAt]),
       pageTimestamps.blog
     );
     articlePages = mapArticlePages(articles, now);
