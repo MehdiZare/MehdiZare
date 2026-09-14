@@ -17,6 +17,7 @@ overrides:
   "@hono/node-server": "1.19.17"
   "@uiw/react-codemirror>codemirror": "^6.0.2"
   brace-expansion: "5.0.9"
+  browserslist: "4.28.9"
   esbuild: "0.28.2"
   fast-uri: "3.1.6"
   fast-xml-parser: "5.11.1"
@@ -30,6 +31,7 @@ overrides:
   lodash-es: "4.18.1"
   minimatch: "10.2.6"
   "nanoid@^3": "3.3.18"
+  nodemailer: "9.1.1"
   "picomatch@<3": "2.3.2"
   "picomatch@>=4 <4.0.4": "4.0.4"
   postcss: "8.5.26"
@@ -68,6 +70,8 @@ minimumReleaseAgeExclude:
   - '@posthog/types@1.407.1'
   - posthog-js@1.422.4
   - tar@7.5.22
+  - browserslist@4.28.9
+  - nodemailer@9.1.1
   - '@posthog/browser-common@0.6.2'
   - '@strapi/plugin-cloud@5.52.2'
   - '@strapi/plugin-users-permissions@5.52.2'
