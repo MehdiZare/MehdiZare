@@ -18,6 +18,13 @@ export const PERSON_SAME_AS = [
   "https://seekingalpha.com/author/mehdi-zare",
 ];
 
+// Q141251494 is the Wikidata item for the *site* ("personal website of Mehdi
+// Zare…"), not a person biography, so it belongs on the WebSite node and never
+// in PERSON_SAME_AS (#137).
+export const WEBSITE_SAME_AS = [
+  "https://www.wikidata.org/wiki/Q141251494",
+];
+
 export const DEFAULT_KNOWS_ABOUT = [
   "Artificial Intelligence",
   "Machine Learning",
@@ -90,6 +97,7 @@ interface WebsiteJsonLdOptions {
   name?: string;
   description?: string;
   publisherId?: string;
+  sameAs?: string[];
 }
 
 interface PersonCredential {
@@ -413,6 +421,7 @@ export function buildWebsiteJsonLd(options: WebsiteJsonLdOptions = {}): Record<s
   const name = options.name ?? SITE_NAME;
   const description = options.description ?? DEFAULT_SITE_DESCRIPTION;
   const publisherId = options.publisherId ?? toPersonId();
+  const sameAs = options.sameAs ?? WEBSITE_SAME_AS;
 
   return {
     "@context": "https://schema.org",
@@ -425,6 +434,7 @@ export function buildWebsiteJsonLd(options: WebsiteJsonLdOptions = {}): Record<s
     publisher: {
       "@id": publisherId,
     },
+    sameAs,
   };
 }
 
