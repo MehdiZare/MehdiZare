@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 interface CmsImageProps {
   src: string;
@@ -19,11 +19,11 @@ interface CmsImageProps {
   fallback: ReactNode;
 }
 
-function isBrokenImage(img: HTMLImageElement | null): boolean {
-  return Boolean(img?.complete && img.naturalWidth === 0);
+function isBrokenImage(img: HTMLImageElement): boolean {
+  return img.complete && img.naturalWidth === 0;
 }
 
-export function CmsImage({
+function CmsImageInner({
   src,
   alt,
   fill = false,
@@ -35,20 +35,14 @@ export function CmsImage({
   fallback,
 }: CmsImageProps) {
   const [failed, setFailed] = useState(false);
-  const imgRef = useRef<HTMLImageElement | null>(null);
 
-  // New src → try again (e.g. client navigation to another article).
-  useEffect(() => {
-    setFailed(false);
-  }, [src]);
-
-  // onError can miss failures that finish before hydration; catch those here.
-  useEffect(() => {
-    if (failed) return;
-    if (isBrokenImage(imgRef.current)) {
+  // Ref callback runs when the <img> mounts. If the request already finished
+  // (and failed) before hydration, onError never fires — catch that here.
+  const attachImage = (node: HTMLImageElement | null) => {
+    if (node && isBrokenImage(node)) {
       setFailed(true);
     }
-  }, [src, failed]);
+  };
 
   if (failed) {
     const accessibleName = alt.trim();
@@ -66,7 +60,7 @@ export function CmsImage({
 
   return (
     <Image
-      ref={imgRef}
+      ref={attachImage}
       src={src}
       alt={alt}
       {...(fill ? { fill: true } : { width: width ?? 1, height: height ?? 1 })}
@@ -76,4 +70,9 @@ export function CmsImage({
       className={className}
     />
   );
+}
+
+export function CmsImage(props: CmsImageProps) {
+  // Remount on src change so a prior failure does not stick across navigations.
+  return <CmsImageInner key={props.src} {...props} />;
 }
