@@ -16,26 +16,26 @@ packages:
 overrides:
   "@hono/node-server": "1.19.17"
   "@uiw/react-codemirror>codemirror": "^6.0.2"
-  brace-expansion: "5.0.9"
-  browserslist: "4.28.9"
+  brace-expansion: "5.0.12"
+  browserslist: "4.29.0"
   esbuild: "0.28.2"
-  fast-uri: "3.1.6"
+  fast-uri: "3.1.8"
   fast-xml-parser: "5.11.1"
   flatted: "3.4.4"
   handlebars: "4.7.9"
-  hono: "4.13.5"
-  ip-address: "10.5.0"
+  hono: "4.13.8"
+  ip-address: "10.7.2"
   js-yaml: "4.3.2"
   linkify-it: "5.0.2"
   lodash: "4.18.1"
   lodash-es: "4.18.1"
   minimatch: "10.2.6"
-  "nanoid@^3": "3.3.18"
+  "nanoid@^3": "3.3.19"
   nodemailer: "9.1.1"
   "picomatch@<3": "2.3.2"
   "picomatch@>=4 <4.0.4": "4.0.4"
-  postcss: "8.5.26"
-  rollup: "4.63.1"
+  postcss: "8.5.28"
+  rollup: "4.63.4"
   sharp: "0.35.4"
   shell-quote: "1.10.0"
   tar: "7.5.22"
@@ -66,87 +66,87 @@ allowBuilds:
   unrs-resolver: true
 
 minimumReleaseAgeExclude:
-  - '@posthog/core@1.49.2'
-  - '@posthog/types@1.407.1'
-  - posthog-js@1.422.4
+  - '@posthog/core@1.55.0'
+  - '@posthog/types@1.412.2'
+  - posthog-js@1.434.2
   - tar@7.5.22
-  - browserslist@4.28.9
+  - browserslist@4.29.0
   - nodemailer@9.1.1
-  - '@posthog/browser-common@0.6.2'
-  - '@strapi/plugin-cloud@5.52.2'
-  - '@strapi/plugin-users-permissions@5.52.2'
-  - '@strapi/strapi@5.52.2'
-  - hono@4.13.5
-  - fast-uri@3.1.6
+  - '@posthog/browser-common@0.9.0'
+  - '@strapi/plugin-cloud@5.54.0'
+  - '@strapi/plugin-users-permissions@5.54.0'
+  - '@strapi/strapi@5.54.0'
+  - hono@4.13.8
+  - fast-uri@3.1.8
   - fast-xml-parser@5.11.1
   - js-yaml@4.3.2
-  - rollup@4.63.1
+  - rollup@4.63.4
   - sharp@0.35.4
   - '@hono/node-server@1.19.17'
   - yaml@1.10.3
-  - '@types/react-dom@19.2.5'
-  - '@next/env@16.3.3'
-  - '@next/eslint-plugin-next@16.3.3'
-  - '@next/swc-darwin-arm64@16.3.3'
-  - '@next/swc-darwin-x64@16.3.3'
-  - '@next/swc-linux-arm64-gnu@16.3.3'
-  - '@next/swc-linux-arm64-musl@16.3.3'
-  - '@next/swc-linux-x64-gnu@16.3.3'
-  - '@next/swc-linux-x64-musl@16.3.3'
-  - '@next/swc-win32-arm64-msvc@16.3.3'
-  - '@next/swc-win32-x64-msvc@16.3.3'
-  - '@strapi/admin@5.52.2'
-  - '@strapi/cloud-cli@5.52.2'
-  - '@strapi/content-manager@5.52.2'
-  - '@strapi/content-releases@5.52.2'
-  - '@strapi/content-type-builder@5.52.2'
-  - '@strapi/core@5.52.2'
-  - '@strapi/data-transfer@5.52.2'
-  - '@strapi/database@5.52.2'
-  - '@strapi/email@5.52.2'
-  - '@strapi/generators@5.52.2'
-  - '@strapi/i18n@5.52.2'
-  - '@strapi/logger@5.52.2'
-  - '@strapi/openapi@5.52.2'
-  - '@strapi/permissions@5.52.2'
-  - '@strapi/provider-email-sendmail@5.52.2'
-  - '@strapi/provider-upload-local@5.52.2'
-  - '@strapi/review-workflows@5.52.2'
-  - '@strapi/types@5.52.2'
-  - '@strapi/typescript-utils@5.52.2'
-  - '@strapi/upload@5.52.2'
-  - '@strapi/utils@5.52.2'
-  - '@turbo/darwin-64@2.10.12'
-  - '@turbo/darwin-arm64@2.10.12'
-  - '@turbo/linux-64@2.10.12'
-  - '@turbo/linux-arm64@2.10.12'
-  - '@turbo/windows-64@2.10.12'
-  - '@turbo/windows-arm64@2.10.12'
-  - eslint-config-next@16.3.3
-  - next@16.3.3
-  - turbo@2.10.12
-  - '@rollup/rollup-android-arm-eabi@4.63.1'
-  - '@rollup/rollup-android-arm64@4.63.1'
-  - '@rollup/rollup-darwin-arm64@4.63.1'
-  - '@rollup/rollup-darwin-x64@4.63.1'
-  - '@rollup/rollup-freebsd-arm64@4.63.1'
-  - '@rollup/rollup-freebsd-x64@4.63.1'
-  - '@rollup/rollup-linux-arm-gnueabihf@4.63.1'
-  - '@rollup/rollup-linux-arm-musleabihf@4.63.1'
-  - '@rollup/rollup-linux-arm64-gnu@4.63.1'
-  - '@rollup/rollup-linux-arm64-musl@4.63.1'
-  - '@rollup/rollup-linux-loong64-gnu@4.63.1'
-  - '@rollup/rollup-linux-loong64-musl@4.63.1'
-  - '@rollup/rollup-linux-ppc64-gnu@4.63.1'
-  - '@rollup/rollup-linux-ppc64-musl@4.63.1'
-  - '@rollup/rollup-linux-riscv64-gnu@4.63.1'
-  - '@rollup/rollup-linux-riscv64-musl@4.63.1'
-  - '@rollup/rollup-linux-s390x-gnu@4.63.1'
-  - '@rollup/rollup-linux-x64-gnu@4.63.1'
-  - '@rollup/rollup-linux-x64-musl@4.63.1'
-  - '@rollup/rollup-openbsd-x64@4.63.1'
-  - '@rollup/rollup-openharmony-arm64@4.63.1'
-  - '@rollup/rollup-win32-arm64-msvc@4.63.1'
-  - '@rollup/rollup-win32-ia32-msvc@4.63.1'
-  - '@rollup/rollup-win32-x64-gnu@4.63.1'
-  - '@rollup/rollup-win32-x64-msvc@4.63.1'
+  - '@types/react-dom@19.3.0'
+  - '@next/env@16.3.5'
+  - '@next/eslint-plugin-next@16.3.5'
+  - '@next/swc-darwin-arm64@16.3.5'
+  - '@next/swc-darwin-x64@16.3.5'
+  - '@next/swc-linux-arm64-gnu@16.3.5'
+  - '@next/swc-linux-arm64-musl@16.3.5'
+  - '@next/swc-linux-x64-gnu@16.3.5'
+  - '@next/swc-linux-x64-musl@16.3.5'
+  - '@next/swc-win32-arm64-msvc@16.3.5'
+  - '@next/swc-win32-x64-msvc@16.3.5'
+  - '@strapi/admin@5.54.0'
+  - '@strapi/cloud-cli@5.54.0'
+  - '@strapi/content-manager@5.54.0'
+  - '@strapi/content-releases@5.54.0'
+  - '@strapi/content-type-builder@5.54.0'
+  - '@strapi/core@5.54.0'
+  - '@strapi/data-transfer@5.54.0'
+  - '@strapi/database@5.54.0'
+  - '@strapi/email@5.54.0'
+  - '@strapi/generators@5.54.0'
+  - '@strapi/i18n@5.54.0'
+  - '@strapi/logger@5.54.0'
+  - '@strapi/openapi@5.54.0'
+  - '@strapi/permissions@5.54.0'
+  - '@strapi/provider-email-sendmail@5.54.0'
+  - '@strapi/provider-upload-local@5.54.0'
+  - '@strapi/review-workflows@5.54.0'
+  - '@strapi/types@5.54.0'
+  - '@strapi/typescript-utils@5.54.0'
+  - '@strapi/upload@5.54.0'
+  - '@strapi/utils@5.54.0'
+  - '@turbo/darwin-64@2.11.2'
+  - '@turbo/darwin-arm64@2.11.2'
+  - '@turbo/linux-64@2.11.2'
+  - '@turbo/linux-arm64@2.11.2'
+  - '@turbo/windows-64@2.11.2'
+  - '@turbo/windows-arm64@2.11.2'
+  - eslint-config-next@16.3.5
+  - next@16.3.5
+  - turbo@2.11.2
+  - '@rollup/rollup-android-arm-eabi@4.63.4'
+  - '@rollup/rollup-android-arm64@4.63.4'
+  - '@rollup/rollup-darwin-arm64@4.63.4'
+  - '@rollup/rollup-darwin-x64@4.63.4'
+  - '@rollup/rollup-freebsd-arm64@4.63.4'
+  - '@rollup/rollup-freebsd-x64@4.63.4'
+  - '@rollup/rollup-linux-arm-gnueabihf@4.63.4'
+  - '@rollup/rollup-linux-arm-musleabihf@4.63.4'
+  - '@rollup/rollup-linux-arm64-gnu@4.63.4'
+  - '@rollup/rollup-linux-arm64-musl@4.63.4'
+  - '@rollup/rollup-linux-loong64-gnu@4.63.4'
+  - '@rollup/rollup-linux-loong64-musl@4.63.4'
+  - '@rollup/rollup-linux-ppc64-gnu@4.63.4'
+  - '@rollup/rollup-linux-ppc64-musl@4.63.4'
+  - '@rollup/rollup-linux-riscv64-gnu@4.63.4'
+  - '@rollup/rollup-linux-riscv64-musl@4.63.4'
+  - '@rollup/rollup-linux-s390x-gnu@4.63.4'
+  - '@rollup/rollup-linux-x64-gnu@4.63.4'
+  - '@rollup/rollup-linux-x64-musl@4.63.4'
+  - '@rollup/rollup-openbsd-x64@4.63.4'
+  - '@rollup/rollup-openharmony-arm64@4.63.4'
+  - '@rollup/rollup-win32-arm64-msvc@4.63.4'
+  - '@rollup/rollup-win32-ia32-msvc@4.63.4'
+  - '@rollup/rollup-win32-x64-gnu@4.63.4'
+  - '@rollup/rollup-win32-x64-msvc@4.63.4'
