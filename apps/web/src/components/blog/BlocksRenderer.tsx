@@ -4,8 +4,8 @@ import {
   BlocksRenderer as StrapiBlocksRenderer,
   type BlocksContent,
 } from "@strapi/blocks-react-renderer";
-import Image from "next/image";
 import { CodeBlock } from "./CodeBlock";
+import { CmsImage } from "@/components/shared/CmsImage";
 import { toAbsoluteStrapiMediaUrl } from "@/lib/public-env";
 
 function slugify(text: string): string {
@@ -114,12 +114,20 @@ export function BlocksRenderer({ content }: BlocksRendererProps) {
             const src = toAbsoluteStrapiMediaUrl(image.url);
             return (
               <figure className="my-6">
-                <Image
+                <CmsImage
                   src={src}
                   alt={image.alternativeText || ""}
                   width={image.width}
                   height={image.height}
                   className="w-full h-auto"
+                  fallback={
+                    <div
+                      className="flex w-full items-center justify-center bg-muted"
+                      style={{ aspectRatio: `${image.width} / ${image.height}` }}
+                    >
+                      <span className="font-serif text-4xl text-ink/10">MZ</span>
+                    </div>
+                  }
                 />
                 {image.caption && (
                   <figcaption className="text-center text-sm text-mid-gray mt-2">
