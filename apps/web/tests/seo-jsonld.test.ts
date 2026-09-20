@@ -42,6 +42,16 @@ test("buildWebsiteJsonLd accepts name and description overrides", () => {
   assert.equal(result.description, "Custom desc");
 });
 
+test("buildWebsiteJsonLd links the site's Wikidata item via sameAs", () => {
+  const result = buildWebsiteJsonLd();
+  assert.deepEqual(result.sameAs, ["https://www.wikidata.org/wiki/Q141251494"]);
+});
+
+test("buildWebsiteJsonLd accepts sameAs overrides", () => {
+  const result = buildWebsiteJsonLd({ sameAs: ["https://example.com"] });
+  assert.deepEqual(result.sameAs, ["https://example.com"]);
+});
+
 test("resolveCanonicalUrl keeps configured canonical host for relative paths", () => {
   const result = resolveCanonicalUrl("/blog/category/ai-engineering");
   assert.equal(result, "https://www.mehdi-zare.com/blog/category/ai-engineering");
@@ -152,6 +162,13 @@ test("buildPersonJsonLd includes sameAs as an array", () => {
   const result = buildPersonJsonLd();
   assert.ok(Array.isArray(result.sameAs));
   assert.ok((result.sameAs as string[]).length > 0);
+});
+
+test("Wikidata site item stays off Person sameAs (site identity, not a person profile)", () => {
+  const result = buildPersonJsonLd();
+  assert.ok(
+    !(result.sameAs as string[]).includes("https://www.wikidata.org/wiki/Q141251494")
+  );
 });
 
 test("buildPersonJsonLd includes knowsAbout", () => {
