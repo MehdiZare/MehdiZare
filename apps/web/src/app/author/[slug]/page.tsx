@@ -237,24 +237,23 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
         <div className="border border-warm-gray bg-paper p-8 sm:p-10">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-[180px_1fr] md:items-start">
             <div className="relative aspect-square overflow-hidden border border-warm-gray bg-muted">
-              {author.profileImage ? (
-                <StrapiImage
-                  image={author.profileImage}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center font-serif text-4xl text-ink">
-                  {authorName
-                    .split(" ")
-                    .map((part) => part[0])
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .join("")
-                    .toUpperCase()}
-                </div>
-              )}
+              <StrapiImage
+                image={author.profileImage}
+                fill
+                className="object-cover"
+                priority
+                fallback={
+                  <div className="flex h-full items-center justify-center font-serif text-4xl text-ink">
+                    {authorName
+                      .split(" ")
+                      .map((part) => part[0])
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()}
+                  </div>
+                }
+              />
             </div>
 
             <div>
