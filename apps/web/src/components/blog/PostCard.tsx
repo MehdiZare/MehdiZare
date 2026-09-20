@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Article } from "@/types/strapi";
+import { CmsImage } from "@/components/shared/CmsImage";
 import { toAbsoluteStrapiMediaUrl } from "@/lib/public-env";
 
 function getStrapiImageUrl(url: string): string {
@@ -19,6 +19,14 @@ interface PostCardProps {
   article: Article;
 }
 
+function CoverFallback() {
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-muted">
+      <span className="font-serif text-4xl text-ink/10">MZ</span>
+    </div>
+  );
+}
+
 export function PostCard({ article }: PostCardProps) {
   const imageUrl = article.featuredImage?.url
     ? getStrapiImageUrl(article.featuredImage.url)
@@ -35,17 +43,16 @@ export function PostCard({ article }: PostCardProps) {
       {/* Image */}
       <div className="relative aspect-video overflow-hidden">
         {imageUrl ? (
-          <Image
+          <CmsImage
             src={imageUrl}
             alt={article.featuredImage?.alternativeText || article.title}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, 33vw"
+            fallback={<CoverFallback />}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-muted">
-            <span className="font-serif text-4xl text-ink/10">MZ</span>
-          </div>
+          <CoverFallback />
         )}
       </div>
 
