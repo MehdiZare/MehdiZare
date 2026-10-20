@@ -3,7 +3,7 @@ packages:
   - "packages/*"
 
 # Latest-compatible floors. Keep majors that Strapi/admin still require
-# (vite 6, zod 3, js-yaml 4, hono 4 / @hono/node-server 1, yaml 1).
+# (vite 6, zod 3, js-yaml 4, markdown-it 14, hono 4 / @hono/node-server 1, yaml 1).
 #
 # Dependency override policy (issue #13):
 # - Temporary (drop after the next Strapi/MCP release that ships the floor):
@@ -29,9 +29,10 @@ overrides:
   linkify-it: "5.0.2"
   lodash: "4.18.1"
   lodash-es: "4.18.1"
+  markdown-it: "14.3.3"
   minimatch: "10.2.6"
   "nanoid@^3": "3.3.20"
-  nodemailer: "9.1.1"
+  nodemailer: "10.1.7"
   "picomatch@<3": "2.3.2"
   "picomatch@>=4 <4.0.7": "4.0.7"
   postcss: "8.5.31"
@@ -42,6 +43,7 @@ overrides:
   tmp: "0.2.7"
   vite: "6.4.4"
   webpack: "5.112.0"
+  webpack-dev-middleware: "8.5.0"
   "yaml@1": "1.10.3"
   zod: "3.25.76"
 
@@ -68,7 +70,6 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - tar@7.5.22
-  - nodemailer@9.1.1
   - js-yaml@4.3.2
   - '@hono/node-server@1.19.17'
   - yaml@1.10.3
@@ -100,3 +101,7 @@ minimumReleaseAgeExclude:
   - '@rollup/rollup-win32-x64-gnu@4.64.12'
   - '@rollup/rollup-win32-x64-msvc@4.64.12'
   - 'rollup@4.64.12'
+
+patchedDependencies:
+  '@strapi/strapi@5.58.0': patches/@strapi__strapi@5.58.0.patch
+  braces@3.0.3: patches/braces@3.0.3.patch

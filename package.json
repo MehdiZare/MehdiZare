@@ -13,7 +13,8 @@
     "dev:cms": "turbo dev --filter=cms",
     "typecheck": "turbo typecheck",
     "test": "pnpm --filter=web test && node --test 'scripts/*.test.mjs'",
-    "prepare": "[ -d .git ] && husky || true"
+    "prepare": "[ -d .git ] && husky || true",
+    "audit:security": "node scripts/audit-dependencies.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",
