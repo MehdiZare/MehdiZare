@@ -458,6 +458,19 @@ test("sitemap omits noindex and noncanonical CMS URLs without restoring filtered
   assert.equal(query.get("populate[seo][fields][1]"), "canonicalURL");
 });
 
+test("sitemap keeps URLs whose canonical differs only by a trailing slash", async () => {
+  const { urls } = await runSitemap({
+    articles: [
+      { slug: "absolute-slash", seo: { canonicalURL: `${SITE_URL}/blog/absolute-slash/` } },
+      { slug: "relative-slash", seo: { canonicalURL: "/blog/relative-slash/" } },
+    ],
+  });
+  assert.deepEqual(
+    articleUrls(urls),
+    [`${SITE_URL}/blog/absolute-slash`, `${SITE_URL}/blog/relative-slash`]
+  );
+});
+
 test("missing CMS dates never turn a sitemap refresh into a content update", async () => {
   process.env.BUILD_TIME = "2026-08-20T12:00:00.000Z";
   try {

@@ -299,11 +299,21 @@ function buildDegradedSitemap(now: Date, showBinaPrint: boolean): MetadataRoute.
   ];
 }
 
+/** Compare canonical and sitemap URLs modulo a trailing slash on the path. */
+function normalizeSitemapUrl(value: string): string {
+  const url = new URL(value);
+  if (url.pathname.length > 1 && url.pathname.endsWith("/")) {
+    url.pathname = url.pathname.slice(0, -1);
+  }
+  return url.toString();
+}
+
 /** Match the robots and canonical metadata rendered by CMS-backed pages. */
 function isSitemapCandidate(pathname: string, seo?: SEO): boolean {
   const directives = normalizeRobotsValue(seo?.metaRobots)?.split(", ") ?? [];
   return !directives.some(directive => directive === "noindex" || directive === "none")
-    && resolveCanonicalUrl(pathname, seo?.canonicalURL) === `${SITE_URL}${pathname}`;
+    && normalizeSitemapUrl(resolveCanonicalUrl(pathname, seo?.canonicalURL))
+      === normalizeSitemapUrl(`${SITE_URL}${pathname}`);
 }
 
 function mapArticlePages(articles: Article[]): MetadataRoute.Sitemap {
