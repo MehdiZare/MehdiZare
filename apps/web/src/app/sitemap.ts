@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import type { Article, Author, Category, Tag } from "@/types/strapi";
+import type { Article, Author, Category, Tag, SEO } from "@/types/strapi";
 import {
   fetchAllPages,
   getArticles,
@@ -9,7 +9,12 @@ import {
 } from "@/lib/strapi";
 import { isBinaPrintEnabled } from "@/lib/feature-flags";
 import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
-import { getSiteUrl, toAbsoluteMediaUrl } from "@/lib/seo";
+import {
+  getSiteUrl,
+  normalizeRobotsValue,
+  resolveCanonicalUrl,
+  toAbsoluteMediaUrl,
+} from "@/lib/seo";
 import taxonomy from "../../../../data/taxonomy.json";
 
 const SITE_URL = getSiteUrl();
@@ -60,17 +65,20 @@ export function repoContentLastModified(): Date {
   return Number.isNaN(parsed.getTime()) ? MODULE_LOADED_AT : parsed;
 }
 
-function safeDate(input: string | undefined, fallback: Date): Date {
+function safeDate(input: string | undefined): Date | undefined {
   if (!input) {
-    return fallback;
+    return undefined;
   }
 
   const parsed = new Date(input);
-  return Number.isNaN(parsed.getTime()) ? fallback : parsed;
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
 /** Newest parseable timestamp in `values`, or `fallback` when none are valid. */
-export function maxValidDate(values: Array<string | undefined>, fallback: Date): Date {
+export function maxValidDate<T extends Date | undefined>(
+  values: Array<string | undefined>,
+  fallback: T
+): Date | T {
   let latest: Date | null = null;
   for (const value of values) {
     if (!value) continue;
@@ -82,13 +90,16 @@ export function maxValidDate(values: Array<string | undefined>, fallback: Date):
 }
 
 /**
- * Sitemap rows need slug plus the timestamps lastmod is derived from, and
- * featuredImage.url. Passing this populate overrides getArticles' default
- * articlePopulate (category, tags, author credentials, seo.metaImage).
+ * Fetch only the slug, modification dates, image URL and indexability metadata.
+ * This overrides the full articlePopulate, including author credentials and
+ * seo.metaImage.
  */
 const SITEMAP_ARTICLE_FIELDS = {
   fields: ["slug", "updatedAt", "publishedAt"],
-  populate: { featuredImage: { fields: ["url"] } },
+  populate: {
+    featuredImage: { fields: ["url"] },
+    seo: { fields: ["metaRobots", "canonicalURL"] },
+  },
 } as const;
 
 function getAllArticlesForSitemap(deadlineMs?: number): Promise<Article[]> {
@@ -288,11 +299,18 @@ function buildDegradedSitemap(now: Date, showBinaPrint: boolean): MetadataRoute.
   ];
 }
 
-function mapArticlePages(articles: Article[], now: Date): MetadataRoute.Sitemap {
+/** Match the robots and canonical metadata rendered by CMS-backed pages. */
+function isSitemapCandidate(pathname: string, seo?: SEO): boolean {
+  const directives = normalizeRobotsValue(seo?.metaRobots)?.split(", ") ?? [];
+  return !directives.some(directive => directive === "noindex" || directive === "none")
+    && resolveCanonicalUrl(pathname, seo?.canonicalURL) === `${SITE_URL}${pathname}`;
+}
+
+function mapArticlePages(articles: Article[]): MetadataRoute.Sitemap {
   const pages: MetadataRoute.Sitemap = [];
   for (const article of articles) {
     const slug = normalizeSlug(article.slug);
-    if (!slug) continue;
+    if (!slug || !isSitemapCandidate(`/blog/${slug}`, article.seo)) continue;
     let imageUrl: string | undefined;
     try {
       imageUrl = toAbsoluteMediaUrl(article.featuredImage?.url);
@@ -301,7 +319,7 @@ function mapArticlePages(articles: Article[], now: Date): MetadataRoute.Sitemap 
     }
     pages.push({
       url: `${SITE_URL}/blog/${slug}`,
-      lastModified: maxValidDate([article.updatedAt, article.publishedAt], now),
+      lastModified: maxValidDate([article.updatedAt, article.publishedAt], undefined),
       changeFrequency: "weekly",
       priority: 0.7,
       images: imageUrl ? [imageUrl] : undefined,
@@ -310,7 +328,7 @@ function mapArticlePages(articles: Article[], now: Date): MetadataRoute.Sitemap 
   return pages;
 }
 
-function mapAuthorPages(authors: Author[], now: Date): MetadataRoute.Sitemap {
+function mapAuthorPages(authors: Author[]): MetadataRoute.Sitemap {
   const pages: MetadataRoute.Sitemap = [];
   for (const author of authors) {
     const slug = normalizeSlug(author.slug);
@@ -323,7 +341,7 @@ function mapAuthorPages(authors: Author[], now: Date): MetadataRoute.Sitemap {
     }
     pages.push({
       url: `${SITE_URL}/author/${slug}`,
-      lastModified: safeDate(author.updatedAt, now),
+      lastModified: safeDate(author.updatedAt),
       changeFrequency: "monthly",
       priority: 0.6,
       images: imageUrl ? [imageUrl] : undefined,
@@ -342,7 +360,7 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     binaPrint: builtAt,
     consulting: builtAt,
     aiEngineer: builtAt,
-    blog: now,
+    blog: builtAt,
   };
 
   // The static pages' copy lives in the repo, so their lastmod is not a CMS
@@ -364,8 +382,8 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
       articles.flatMap((article) => [article.updatedAt, article.publishedAt]),
       pageTimestamps.blog
     );
-    articlePages = mapArticlePages(articles, now);
-    if (articles.length > 0 && articlePages.length === 0) {
+    articlePages = mapArticlePages(articles);
+    if (articles.length > 0 && !articles.some(article => normalizeSlug(article.slug))) {
       // Rows came back but mapArticlePages emitted nothing — a fields/populate
       // mismatch (missing slug) looks exactly like this and would otherwise
       // ship a sitemap with zero article URLs.
@@ -379,52 +397,54 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
 
   let authorPages: MetadataRoute.Sitemap = [];
   if (authorsResult.status === "fulfilled") {
-    authorPages = mapAuthorPages(authorsResult.value, now);
+    authorPages = mapAuthorPages(authorsResult.value);
   } else {
     degradedSources.push("authors");
   }
   if (authorPages.length === 0) {
-    authorPages = fallbackAuthorPages(now);
+    authorPages = fallbackAuthorPages(builtAt);
   }
 
   let categoryPages: MetadataRoute.Sitemap = [];
   if (categoriesResult.status === "fulfilled") {
     categoryPages = categoriesResult.value.flatMap((category) => {
       const slug = normalizeSlug(category.slug);
-      if (!slug) return [];
+      if (!slug || !isSitemapCandidate(`/blog/category/${slug}`, category.seo)) return [];
       return [
         {
           url: `${SITE_URL}/blog/category/${slug}`,
-          lastModified: safeDate(category.updatedAt, now),
+          lastModified: safeDate(category.updatedAt),
           changeFrequency: "weekly" as const,
           priority: 0.7,
         },
       ];
     });
   }
-  if (categoryPages.length === 0) {
+  if (categoryPages.length === 0 && !(categoriesResult.status === "fulfilled"
+    && categoriesResult.value.some(category => normalizeSlug(category.slug)))) {
     degradedSources.push("categories");
-    categoryPages = fallbackCategoryPages(now);
+    categoryPages = fallbackCategoryPages(builtAt);
   }
 
   let tagPages: MetadataRoute.Sitemap = [];
   if (tagsResult.status === "fulfilled") {
     tagPages = tagsResult.value.flatMap((tag) => {
       const slug = normalizeSlug(tag.slug);
-      if (!slug) return [];
+      if (!slug || !isSitemapCandidate(`/blog/tag/${slug}`, tag.seo)) return [];
       return [
         {
           url: `${SITE_URL}/blog/tag/${slug}`,
-          lastModified: safeDate(tag.updatedAt, now),
+          lastModified: safeDate(tag.updatedAt),
           changeFrequency: "weekly" as const,
           priority: 0.6,
         },
       ];
     });
   }
-  if (tagPages.length === 0) {
+  if (tagPages.length === 0 && !(tagsResult.status === "fulfilled"
+    && tagsResult.value.some(tag => normalizeSlug(tag.slug)))) {
     degradedSources.push("tags");
-    tagPages = fallbackTagPages(now);
+    tagPages = fallbackTagPages(builtAt);
   }
 
   if (degradedSources.length > 0) {

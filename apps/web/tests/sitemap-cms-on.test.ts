@@ -437,3 +437,45 @@ test("in-flight CMS fetches can fail after the deadline without becoming unhandl
     "in-flight CMS work that fails after fallback is served must not surface as unhandledRejection"
   );
 });
+
+test("sitemap omits noindex and noncanonical CMS URLs without restoring filtered taxonomy", async () => {
+  const { urls } = await runSitemap({
+    articles: [
+      { slug: "visible", seo: null },
+      { slug: "hidden", seo: { metaRobots: " FOLLOW, NOINDEX " } },
+      { slug: "none", seo: { metaRobots: "none" } },
+      { slug: "duplicate", seo: { canonicalURL: "/blog/visible" } },
+      { slug: "self", seo: { canonicalURL: `${SITE_URL}/blog/self` } },
+    ],
+    categories: [{ slug: "ai-engineering", seo: { metaRobots: "noindex" } }],
+    tags: [{ slug: "llms", seo: { canonicalURL: "/blog/tag/primary" } }],
+  });
+  assert.deepEqual(articleUrls(urls), [`${SITE_URL}/blog/visible`, `${SITE_URL}/blog/self`]);
+  assert.ok(!urls.some(url => url.includes("/blog/category/")));
+  assert.ok(!urls.some(url => url.includes("/blog/tag/")));
+  const query = requestedUrls.find(url => url.pathname === "/api/articles")!.searchParams;
+  assert.equal(query.get("populate[seo][fields][0]"), "metaRobots");
+  assert.equal(query.get("populate[seo][fields][1]"), "canonicalURL");
+});
+
+test("missing CMS dates never turn a sitemap refresh into a content update", async () => {
+  process.env.BUILD_TIME = "2026-08-20T12:00:00.000Z";
+  try {
+    const fixture = {
+      articles: [{ slug: "undated", updatedAt: "invalid", publishedAt: null }],
+      authors: [{ slug: "undated", updatedAt: null }],
+      categories: [{ slug: "undated" }],
+      tags: [{ slug: "undated", updatedAt: "" }],
+    };
+    const { entries } = await runSitemap(fixture);
+    for (const entry of entries.filter(entry => entry.url.endsWith("/undated"))) {
+      assert.equal(entry.lastModified, undefined, `${entry.url} has no known modification date`);
+    }
+    const first = (await runSitemap()).entries;
+    await new Promise(resolve => setTimeout(resolve, 5));
+    const second = (await runSitemap()).entries;
+    assert.deepEqual(first, second, "empty-CMS and taxonomy fallback dates must be stable");
+  } finally {
+    delete process.env.BUILD_TIME;
+  }
+});
