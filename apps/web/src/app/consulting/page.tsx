@@ -18,6 +18,8 @@ import { getSiteProfile } from "@/lib/site-profile";
 
 const schedulerSectionId = "book";
 const schedulerAnchorHref = `#${schedulerSectionId}`;
+const consultingDescription =
+  "AI strategy, architecture reviews, hands-on implementation, and fractional AI leadership for finance, healthcare, government, and enterprise teams.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteProfile = await getSiteProfile();
@@ -37,7 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildPageMetadata({
     pathname: "/consulting",
     title: consultingTitle,
-    description: siteProfile.positioningSubheadline,
+    description: consultingDescription,
     type: "website",
     keywords: consultingKeywords,
   });
@@ -83,7 +85,7 @@ export default async function ConsultingPage() {
     "@id": `${siteUrl}/consulting#service`,
     name: `${siteProfile.siteName} AI Consulting`,
     url: `${siteUrl}/consulting`,
-    description: data.subtitle,
+    description: consultingDescription,
     provider: {
       "@type": "Person",
       "@id": `${siteUrl}/#person`,

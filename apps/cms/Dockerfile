@@ -8,6 +8,8 @@ WORKDIR /app
 
 # pnpm from package.json#packageManager (Corepack-safe hex integrity).
 COPY package.json ./
+# Both install stages need the source patches referenced by the workspace.
+COPY patches/ ./patches/
 COPY scripts/package-manager.mjs scripts/corepack-prepare-pnpm.mjs ./scripts/
 RUN node scripts/corepack-prepare-pnpm.mjs
 

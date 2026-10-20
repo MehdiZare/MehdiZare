@@ -65,7 +65,7 @@ tasks:
 
   security:audit:
     desc: Run dependency vulnerability audit (requires network access)
-    cmd: pnpm audit --audit-level high
+    cmd: pnpm audit:security
 
   deps:check-updates:
     desc: Check for outdated dependencies

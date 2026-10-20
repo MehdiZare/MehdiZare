@@ -1,0 +1,110 @@
+diff --git a/dist/src/node/webpack/watch.js b/dist/src/node/webpack/watch.js
+index 715e900b04e72a02cc74b9ce5788abc6909b34fa..a70bffb2d52551691ee525e1ca6f255d7c9e90a1 100644
+--- a/dist/src/node/webpack/watch.js
++++ b/dist/src/node/webpack/watch.js
+@@ -21,7 +21,8 @@ const watch = async (ctx)=>{
+     ctx.logger.debug('Final webpack config:', os__default.default.EOL, finalConfig);
+     return new Promise((res)=>{
+         const compiler = webpack.webpack(finalConfig);
+-        const devMiddleware = webpackDevMiddleware__default.default(compiler);
++        const koaMiddleware = webpackDevMiddleware__default.default.koaWrapper(compiler);
++        const devMiddleware = koaMiddleware.devMiddleware;
+         const hotMiddleware = webpackHotMiddleware__default.default(compiler, {
+             log: false,
+             path: '/__webpack_hmr'
+@@ -34,33 +35,7 @@ const watch = async (ctx)=>{
+                 });
+             });
+         });
+-        ctx.strapi.server.app.use((context, next)=>{
+-            // wait for webpack-dev-middleware to signal that the build is ready
+-            const ready = new Promise((resolve)=>{
+-                devMiddleware.waitUntilValid(()=>{
+-                    resolve(true);
+-                });
+-            });
+-            // tell webpack-dev-middleware to handle the request
+-            const init = new Promise((resolve)=>{
+-                devMiddleware(context.req, {
+-                    // @ts-expect-error ignored
+-                    end (content) {
+-                        // eslint-disable-next-line no-param-reassign
+-                        context.body = content;
+-                        resolve(true);
+-                    },
+-                    getHeader: context.get.bind(context),
+-                    // @ts-expect-error ignored
+-                    setHeader: context.set.bind(context),
+-                    locals: context.state
+-                }, ()=>resolve(next()));
+-            });
+-            return Promise.all([
+-                ready,
+-                init
+-            ]);
+-        });
++        ctx.strapi.server.app.use(koaMiddleware);
+         const serveAdmin = async (ctx, next)=>{
+             await next();
+             if (devMiddleware.context.outputFileSystem.createReadStream) {
+@@ -101,4 +76,4 @@ const watch = async (ctx)=>{
+ };
+ 
+ exports.watch = watch;
+-//# sourceMappingURL=watch.js.map
++
+diff --git a/dist/src/node/webpack/watch.mjs b/dist/src/node/webpack/watch.mjs
+index 4c63f66a3fdee645695334f95663ae08fad6586f..d7332ffcafec000f9016fdf0054907d3dcad638c 100644
+--- a/dist/src/node/webpack/watch.mjs
++++ b/dist/src/node/webpack/watch.mjs
+@@ -12,7 +12,8 @@ const watch = async (ctx)=>{
+     ctx.logger.debug('Final webpack config:', os.EOL, finalConfig);
+     return new Promise((res)=>{
+         const compiler = webpack(finalConfig);
+-        const devMiddleware = webpackDevMiddleware(compiler);
++        const koaMiddleware = webpackDevMiddleware.koaWrapper(compiler);
++        const devMiddleware = koaMiddleware.devMiddleware;
+         const hotMiddleware = webpackHotMiddleware(compiler, {
+             log: false,
+             path: '/__webpack_hmr'
+@@ -25,33 +26,7 @@ const watch = async (ctx)=>{
+                 });
+             });
+         });
+-        ctx.strapi.server.app.use((context, next)=>{
+-            // wait for webpack-dev-middleware to signal that the build is ready
+-            const ready = new Promise((resolve)=>{
+-                devMiddleware.waitUntilValid(()=>{
+-                    resolve(true);
+-                });
+-            });
+-            // tell webpack-dev-middleware to handle the request
+-            const init = new Promise((resolve)=>{
+-                devMiddleware(context.req, {
+-                    // @ts-expect-error ignored
+-                    end (content) {
+-                        // eslint-disable-next-line no-param-reassign
+-                        context.body = content;
+-                        resolve(true);
+-                    },
+-                    getHeader: context.get.bind(context),
+-                    // @ts-expect-error ignored
+-                    setHeader: context.set.bind(context),
+-                    locals: context.state
+-                }, ()=>resolve(next()));
+-            });
+-            return Promise.all([
+-                ready,
+-                init
+-            ]);
+-        });
++        ctx.strapi.server.app.use(koaMiddleware);
+         const serveAdmin = async (ctx, next)=>{
+             await next();
+             if (devMiddleware.context.outputFileSystem.createReadStream) {
+@@ -92,4 +67,4 @@ const watch = async (ctx)=>{
+ };
+ 
+ export { watch };
+-//# sourceMappingURL=watch.mjs.map
++

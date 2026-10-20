@@ -109,6 +109,7 @@ test("CMS Docker prepares pnpm in a shared stage from package.json#packageManage
     "shared stage must install Corepack explicitly (unbundled after Node 24)",
   );
   assert.match(pnpm, /COPY package\.json \.\//);
+  assert.match(pnpm, /^COPY patches\/ \.\/patches\//m, "both install stages need the pnpm patch files");
   assert.match(pnpm, /package-manager\.mjs/);
   assert.match(pnpm, /corepack-prepare-pnpm\.mjs/);
   assert.match(pnpm, /RUN node scripts\/corepack-prepare-pnpm\.mjs/);
