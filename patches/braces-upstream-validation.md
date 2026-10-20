@@ -11,6 +11,19 @@ Independently validated commit `d44b9b1ee12e7804d4232d5a47a4a0c61d2fbefe` on mac
 - **507 comparisons** of `compile`, `expand`, and `stringify` matched the unpatched baseline, comparing return values or exception names/messages. Cases covered sets, numeric and zero-padded ranges, nesting, escapes, bracket expressions, parentheses, quotes, dollar braces, malformed input, and empty components.
 - Additional bounded-process checks passed with `--stack-size=512`: 3,000-level input, 12,000-level caller-supplied ASTs, cyclic child nodes and parent chains, mixed brace/parenthesis nesting, attempted `maxDepth` increases (10,000, Infinity, NaN), the 100-level boundary, lower caller limits, and quoted braces.
 
+## Known issue in PR #87 (not fixed here)
+
+Review of the backported source found an escape-handling mismatch introduced by
+PR #87 itself. In `lib/parse.js`, the `hasRightQuote` regex
+(`new RegExp(` [`[^\\\\]${leftQuote}|^${leftQuote}`] `)`) disagrees with the
+consume loop for input such as `"a\\"`: the regex rejects a quote that follows
+an escaped backslash (`\\` is one escaped backslash, so the next quote is a real
+closing quote for the loop), and the unpaired-quote path then treats both quotes
+as literal characters. It affects only quoted patterns containing escaped
+backslashes; the depth/cycle mitigation is unaffected. This repository keeps the
+exact upstream commit rather than diverging locally, so the fix belongs in a
+maintainer update of PR #87.
+
 Sharing the extra regression probe below so these checks are reproducible and can be incorporated if useful. Save it outside the checkout as `check-braces-depth.cjs`, then run `node --stack-size=512 /path/to/check-braces-depth.cjs /absolute/path/to/braces`. I ran it with a five-second child-process timeout.
 
 <details>

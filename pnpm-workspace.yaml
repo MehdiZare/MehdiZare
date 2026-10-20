@@ -12,7 +12,7 @@ packages:
 #   rollback cannot reintroduce a high finding: fast-uri, nanoid, ip-address
 # - Broader supply-chain floors (keep until unused in `pnpm why`):
 #   brace-expansion, esbuild, lodash, postcss, js-yaml, etc.
-# Do not weaken CI `pnpm audit --audit-level high` without a written exception.
+# Do not weaken CI `pnpm audit:security` without a written exception (patches/README.md).
 overrides:
   "@hono/node-server": "1.19.17"
   "@uiw/react-codemirror>codemirror": "^6.0.2"

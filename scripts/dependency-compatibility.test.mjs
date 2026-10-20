@@ -103,6 +103,7 @@ test('webpack middleware serves assets, HEAD and ranges and rejects traversal', 
         res.on('end', () => resolve({ status: res.statusCode, type: res.headers['content-type'],
           range: res.headers['content-range'], body: Buffer.concat(chunks).toString() }));
       });
+      req.setTimeout(5000, () => req.destroy(new Error('Middleware request timed out')));
       req.on('error', reject); req.end();
     });
     const get = await request('/assets/bundle.js');

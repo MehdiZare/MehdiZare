@@ -27,11 +27,14 @@ export function verifyInstalledBraces() {
   if (result.error || result.status !== 0) throw new Error('Cannot enumerate braces copies; audit exception refused');
   const packages = JSON.parse(result.stdout);
   if (!Array.isArray(packages) || packages.length === 0) throw new Error('No verifiable braces copies; audit exception refused');
+  const seen = new Set();
   for (const pkg of packages) {
     if (pkg.name !== 'braces' || typeof pkg.path !== 'string') throw new Error('Unexpected dependency inventory; audit exception refused');
+    if (seen.has(pkg.path)) continue;
+    seen.add(pkg.path);
     verifyBracesPackage(pkg.path);
   }
-  return packages.length;
+  return seen.size;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

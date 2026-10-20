@@ -31,6 +31,11 @@ Independent validation of the exact upstream commit: 908 upstream tests passed;
 node/parent cycles, option-limit bypass attempts, mixed parentheses/braces,
 quoted braces and the 100-level boundary.
 
+One escape-handling mismatch in PR #87's own code (quote detection after an
+escaped backslash) is recorded in `braces-upstream-validation.md` for the
+maintainer handoff. The patch is kept on the exact upstream commit instead of
+diverging locally; update this note when upstream ships a corrected release.
+
 This exception ends when a published upstream fix replaces the patch. At that
 point remove the patch, verification manifest and advisory-specific gate logic,
 and restore the unmodified high-severity audit command after validation.
