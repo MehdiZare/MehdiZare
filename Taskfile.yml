@@ -54,6 +54,10 @@ tasks:
   pre-push:
     desc: Run required checks before pushing changes
     cmds:
+      - cmd: |
+          if [ ! -d node_modules ]; then
+            pnpm install --frozen-lockfile
+          fi
       - pnpm --filter=web lint
       - pnpm typecheck
       - pnpm test

@@ -1,1 +1,4 @@
+if [ ! -d node_modules ]; then
+  pnpm install --frozen-lockfile
+fi
 pnpm typecheck && pnpm test
