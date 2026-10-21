@@ -160,8 +160,18 @@ test("Taskfile typecheck cmd is pnpm typecheck", () => {
 
 test("CI and husky invoke pnpm typecheck, not tsc via exec", () => {
   assert.match(read(".github/workflows/ci.yml"), /^\s+run: pnpm typecheck$/m);
-  assert.match(read(".husky/pre-push"), /pnpm install --frozen-lockfile/);
-  assert.match(read(".husky/pre-push"), /pnpm typecheck && /);
+  const prePush = read(".husky/pre-push");
+  assert.match(
+    prePush,
+    /if \[ ! -d node_modules \]; then\s+pnpm install --frozen-lockfile\s+fi/,
+    "pre-push must install only when node_modules is missing (#143)",
+  );
+  assert.ok(
+    prePush.indexOf("pnpm install --frozen-lockfile") <
+      prePush.indexOf("pnpm typecheck"),
+    "pre-push must install dependencies before typechecking (#143)",
+  );
+  assert.match(prePush, /pnpm typecheck && /);
 });
 
 test("docs do not tell agents to pnpm exec tsc", () => {
