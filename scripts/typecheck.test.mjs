@@ -171,7 +171,7 @@ test("CI and husky invoke pnpm typecheck, not tsc via exec", () => {
       prePush.indexOf("pnpm typecheck"),
     "pre-push must install dependencies before typechecking (#143)",
   );
-  assert.match(prePush, /pnpm typecheck && /);
+  assert.match(prePush, /pnpm typecheck && pnpm test/);
 });
 
 test("docs do not tell agents to pnpm exec tsc", () => {
