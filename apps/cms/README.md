@@ -51,7 +51,7 @@ query).
   - `DATABASE_SSL` (`true` for TLS), `DATABASE_SSL_CA` (PEM), `DATABASE_SSL_REJECT_UNAUTHORIZED` (default `true`)
   - `DATABASE_POOL_MAX` (default `10`; the platform sets `3`), `DATABASE_POOL_MIN` (default `2`, capped at the max)
   - `DATABASE_SCHEMA` (default `public`)
-- `REQUIRE_EXISTING_ADMIN` (`true` in production): the boot fails when the database has no admin user, so a wrong or empty database never offers first-admin registration (`src/utils/require-existing-admin.ts`)
+- `REQUIRE_EXISTING_ADMIN` (`true` in production): the boot fails when the database has no admin user, so a wrong or empty database never offers first-admin registration (`src/utils/require-existing-admin.ts`). Only `strapi start` and `strapi develop` are guarded: `strapi import`, `strapi admin:create-user` and the other CLI commands run with the variable set, so the data step can restore and create the first admin before the first boot
 - `URL`: Strapi's public URL for absolute admin and upload links
 - `CORS_ORIGINS` (comma-separated origins, defaults to `https://www.mehdi-zare.com,https://mehdi-zare.com` in production and `http://localhost:3000` in development)
 - Admin session lifespan overrides (all optional; defaults are set in `config/admin.ts`):

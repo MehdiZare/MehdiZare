@@ -7,6 +7,8 @@ import {
   describeDatabaseTarget,
   ensureExistingAdmin,
   isEnabled,
+  isServingCommand,
+  strapiCommand,
 } from '../src/utils/require-existing-admin';
 
 type Vars = Record<string, string | undefined>;
@@ -209,6 +211,10 @@ function fakeStrapi(count: number, database: unknown) {
   };
 }
 
+// process.argv as the Docker CMD and `pnpm start` produce it.
+const START_ARGV = ['/usr/local/bin/node', '/app/apps/cms/node_modules/@strapi/strapi/bin/strapi.js', 'start'];
+const cliArgv = (...args: string[]) => ['/usr/local/bin/node', '/app/apps/cms/node_modules/.bin/strapi', ...args];
+
 const PG_DATABASE = {
   client: 'postgres',
   connection: { connectionString: PG_URL, schema: 'public', ssl: false },
@@ -224,18 +230,18 @@ test('REQUIRE_EXISTING_ADMIN is off unless explicitly true', () => {
 
 test('the admin guard does nothing when disabled', async () => {
   const { strapi } = fakeStrapi(0, PG_DATABASE);
-  await ensureExistingAdmin(strapi, undefined);
+  await ensureExistingAdmin(strapi, undefined, START_ARGV);
 });
 
 test('the admin guard passes with an admin user', async () => {
   const { strapi, logs } = fakeStrapi(1, PG_DATABASE);
-  await ensureExistingAdmin(strapi, 'true');
+  await ensureExistingAdmin(strapi, 'true', START_ARGV);
   assert.deepEqual(logs, ['[admin-check] Found 1 admin user(s).']);
 });
 
 test('the admin guard refuses an empty database and logs names only', async () => {
   const { strapi } = fakeStrapi(0, PG_DATABASE);
-  await assert.rejects(ensureExistingAdmin(strapi, 'true'), (error: Error) => {
+  await assert.rejects(ensureExistingAdmin(strapi, 'true', START_ARGV), (error: Error) => {
     assert.match(error.message, /refusing to boot/);
     assert.match(
       error.message,
@@ -244,6 +250,30 @@ test('the admin guard refuses an empty database and logs names only', async () =
     assert.doesNotMatch(error.message, /pw|db\.example\.test|postgresql:/);
     return true;
   });
+});
+
+test('the admin guard covers only the serving commands', () => {
+  assert.equal(strapiCommand(START_ARGV), 'start');
+  assert.equal(strapiCommand(cliArgv('--debug', 'develop')), 'develop');
+  assert.equal(isServingCommand(START_ARGV), true);
+  assert.equal(isServingCommand(cliArgv('develop')), true);
+  for (const command of ['admin:create-user', 'import', 'export', 'transfer', 'console', 'build']) {
+    assert.equal(isServingCommand(cliArgv(command, '--force')), false, command);
+  }
+  // An option value named like a serving command does not count.
+  assert.equal(isServingCommand(cliArgv('admin:create-user', '--firstname', 'start')), false);
+  assert.equal(isServingCommand(['/usr/local/bin/node', '/app/scripts/seed.ts']), false);
+});
+
+test('admin:create-user and import run on an empty database with the guard enabled', async () => {
+  for (const argv of [
+    cliArgv('admin:create-user', '--email', 'owner@example.test'),
+    cliArgv('import', '--file', 'export.tar.gz.enc', '--force'),
+  ]) {
+    const { strapi, logs } = fakeStrapi(0, PG_DATABASE);
+    await ensureExistingAdmin(strapi, 'true', argv);
+    assert.deepEqual(logs, []);
+  }
 });
 
 test('describeDatabaseTarget reads discrete config and never fails on a bad URL', () => {
