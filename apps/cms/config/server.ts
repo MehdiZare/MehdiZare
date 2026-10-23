@@ -4,6 +4,9 @@ import { validateCmsEnv } from './env-validation';
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Server => ({
   host: env('HOST', '0.0.0.0'),
   port: env.int('PORT', 1337),
+  // Public URL for absolute admin and upload links (cms-platform sets
+  // URL=https://cms.svc.mehdi-zare.com). Unset keeps Strapi's relative default.
+  ...(env('URL') ? { url: env('URL') } : {}),
   app: {
     keys: env.array('APP_KEYS'),
   },

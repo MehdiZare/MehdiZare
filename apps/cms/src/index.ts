@@ -1,4 +1,5 @@
-// import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi';
+import { ensureExistingAdmin } from './utils/require-existing-admin';
 
 export default {
   /**
@@ -13,8 +14,10 @@ export default {
    * An asynchronous bootstrap function that runs before
    * your application gets started.
    *
-   * This gives you an opportunity to set up your data model,
-   * run jobs, or perform some special logic.
+   * Refuses to boot against a database without an admin user when
+   * REQUIRE_EXISTING_ADMIN=true (src/utils/require-existing-admin.ts).
    */
-  bootstrap(/* { strapi }: { strapi: Core.Strapi } */) {},
+  async bootstrap({ strapi }: { strapi: Core.Strapi }) {
+    await ensureExistingAdmin(strapi);
+  },
 };

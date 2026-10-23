@@ -12,6 +12,7 @@
     "start": "strapi start",
     "strapi": "strapi",
     "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test 'tests/*.test.ts'",
     "generate-types": "rm -rf dist && strapi ts:generate-types",
     "seed": "npx tsx scripts/seed.ts",
     "upgrade": "npx @strapi/upgrade latest",
@@ -21,6 +22,7 @@
   "dependencies": {
     "@strapi/plugin-cloud": "5.58.0",
     "@strapi/plugin-users-permissions": "5.58.0",
+    "@strapi/provider-upload-aws-s3": "5.58.0",
     "@strapi/strapi": "5.58.0",
     "better-sqlite3": "13.0.3",
     "pg": "^8.23.1",

@@ -12,7 +12,7 @@
     "dev:web": "turbo dev --filter=web",
     "dev:cms": "turbo dev --filter=cms",
     "typecheck": "turbo typecheck",
-    "test": "pnpm --filter=web test && node --test 'scripts/*.test.mjs'",
+    "test": "pnpm --filter=web test && pnpm --filter=cms test && node --test 'scripts/*.test.mjs'",
     "prepare": "[ -d .git ] && husky || true",
     "audit:security": "node scripts/audit-dependencies.mjs"
   },

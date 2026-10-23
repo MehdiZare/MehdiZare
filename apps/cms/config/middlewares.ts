@@ -1,5 +1,5 @@
 import type { Core } from '@strapi/strapi';
-import { readAllowedCorsOrigins, validateCmsEnv } from './env-validation';
+import { readAllowedCorsOrigins, resolveR2Endpoint, validateCmsEnv } from './env-validation';
 
 function toOrigin(urlValue: string | undefined): string | null {
   if (!urlValue) return null;
@@ -14,10 +14,7 @@ function toOrigin(urlValue: string | undefined): string | null {
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewares => {
   validateCmsEnv(env);
-  const r2AccountId = env('R2_ACCOUNT_ID');
-  const resolvedEndpoint =
-    env('R2_ENDPOINT') ||
-    (r2AccountId ? `https://${r2AccountId}.r2.cloudflarestorage.com` : undefined);
+  const resolvedEndpoint = resolveR2Endpoint(env);
 
   const r2Origins = Array.from(
     new Set(

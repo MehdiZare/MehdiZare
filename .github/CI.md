@@ -21,3 +21,7 @@ Do not merge a `runs-on` change until a `workflow_dispatch` of **that Ubicloud-u
 
 - Residual Strapi-tree audit findings and pnpm overrides (#13)
 - Weakening `pnpm audit --audit-level high`
+
+## CMS image
+
+`.github/workflows/cms-image.yml` also runs on `ubicloud-standard-2`. It is not a required check. On a same-repo PR touching the image inputs it builds without pushing (no environment, no secrets); on `main` (and `workflow_dispatch` from `main`) it pushes `mehdizare-cms:latest` from the `cms-image` environment that MehdiZare/cms-platform provisions.

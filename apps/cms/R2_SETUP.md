@@ -1,27 +1,36 @@
 # Cloudflare R2 Media Setup (Strapi)
 
-This CMS is configured to use Cloudflare R2 via Strapi's official S3 upload provider (`@strapi/provider-upload-aws-s3`).
+`config/plugins.ts` switches Strapi's upload plugin to the official S3 provider
+(`@strapi/provider-upload-aws-s3`, pinned with Strapi) pointed at Cloudflare R2
+when any of `R2_BUCKET`, `R2_ACCESS_KEY_ID` or `R2_SECRET_ACCESS_KEY` is set.
+In production the cms-platform app (MehdiZare/cms-platform) provides them.
 
-## Required environment variables
+## Environment variables
 
-- `R2_ACCOUNT_ID`
-- `R2_ACCESS_KEY_ID`
-- `R2_SECRET_ACCESS_KEY`
+Required once R2 is on (a partial set fails the boot, so uploads never land on
+the container disk that a redeploy wipes):
+
 - `R2_BUCKET`
-- `R2_PUBLIC_URL` (public bucket/custom domain URL used for file URLs)
+- `R2_ACCESS_KEY_ID` (bucket-scoped R2 API token, Object Read & Write)
+- `R2_SECRET_ACCESS_KEY`
+- `R2_PUBLIC_URL` (public custom domain for file URLs, `https://media.mehdi-zare.com`)
+- `R2_ACCOUNT_ID`, or `R2_ENDPOINT`
 
 Optional:
 
-- `R2_ENDPOINT` (defaults to `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com`)
-- `R2_REGION` (default: `auto`)
-- `R2_ROOT_PATH` (folder prefix inside bucket)
-- `R2_SIGNED_URL_EXPIRES` (default: `900`)
-- `R2_ACL` (leave empty for R2)
+- `R2_ENDPOINT` (defaults to `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com`; also used for the CSP in `config/middlewares.ts`)
+- `R2_REGION` (default `auto`)
+- `R2_ROOT_PATH` (key prefix inside the bucket; production uses `media`)
 
-## Important R2 note
+## R2 specifics
 
-Cloudflare R2 does not support ACL operations. Keep `R2_ACL` unset/empty.
+- No ACLs: R2 has no object ACLs, so the config sends none (the provider would
+  otherwise default every upload to `public-read`). Public access comes from the
+  bucket's custom domain.
+- Path-style addressing (`forcePathStyle`) and checksums only where S3 requires
+  them (`WHEN_REQUIRED`), for AWS SDK versions that add CRC checksums by default.
 
 ## Fallback behavior
 
-If required `R2_*` variables are missing, Strapi falls back to the default local upload provider.
+With none of the trigger variables set (local dev, CI), Strapi uses the default
+local upload provider (`public/uploads`).

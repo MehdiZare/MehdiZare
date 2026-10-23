@@ -7,7 +7,7 @@
  * unused page single-types were dropped from the CMS schema (#121).
  *
  * Usage:
- *   STRAPI_URL=https://cms-production-a749.up.railway.app \
+ *   STRAPI_URL=https://cms.svc.mehdi-zare.com \
  *   STRAPI_API_TOKEN=<token> \
  *   npx tsx scripts/seed.ts
  */

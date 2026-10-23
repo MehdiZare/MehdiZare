@@ -1,4 +1,5 @@
-FROM node:24-alpine AS pnpm
+# Node >= 24.22.1 for CVE-2026-111497 (Strapi decompresses Brotli bodies before auth); re-pin on Node security releases.
+FROM node:24-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS pnpm
 
 # Corepack is unbundled from Node 25+. Install it here so this stage
 # still works when the CMS image leaves Node 24.
@@ -50,21 +51,25 @@ RUN pnpm install --frozen-lockfile --prod
 COPY --from=base /app/apps/cms/dist ./apps/cms/dist
 COPY --from=base /app/apps/cms/src ./apps/cms/src
 COPY --from=base /app/apps/cms/config ./apps/cms/config
+# Strapi reads (and would otherwise mkdir) database/migrations at boot.
+COPY --from=base /app/apps/cms/database ./apps/cms/database
 COPY --from=base /app/apps/cms/tsconfig.json ./apps/cms/tsconfig.json
-COPY --from=base /app/apps/cms/public ./apps/cms/public
+# The node user owns public/ only: the local upload provider (no R2 env)
+# writes public/uploads. Code and dependencies stay root-owned, read-only.
+COPY --from=base --chown=node:node /app/apps/cms/public ./apps/cms/public
 
-# Symlink uploads to the persistent volume so media survives redeploys
-RUN mkdir -p /data/uploads \
- && rm -rf /app/apps/cms/public/uploads \
- && ln -s /data/uploads /app/apps/cms/public/uploads
-
+# Media goes to Cloudflare R2 (config/plugins.ts) and the database to
+# Postgres (config/database.ts); the image needs no volume.
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=1337
-ENV DATABASE_FILENAME=/data/cms.db
 
 EXPOSE 1337
 
 WORKDIR /app/apps/cms
 
-CMD ["pnpm", "start"]
+USER node
+
+# Strapi's CLI directly: Corepack's pnpm lives in root's cache, so `pnpm start`
+# as the node user would download pnpm at boot.
+CMD ["node", "node_modules/@strapi/strapi/bin/strapi.js", "start"]
