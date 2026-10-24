@@ -191,6 +191,24 @@ test('a partial R2 config fails instead of falling back to local disk', () => {
   );
 });
 
+test('production R2 settings without credentials fail instead of using local disk', () => {
+  // No R2_TRIGGERS set: only the account id and public URL. Production must
+  // refuse this boot rather than write uploads into the container.
+  assert.throws(
+    () =>
+      pluginsConfig(
+        production({ R2_ACCOUNT_ID: 'acct123', R2_PUBLIC_URL: 'https://media.mehdi-zare.com' }),
+      ),
+    (error: Error) => {
+      assert.match(error.message, /Incomplete R2 upload config/);
+      assert.match(error.message, /R2_BUCKET/);
+      assert.match(error.message, /R2_SECRET_ACCESS_KEY/);
+      assert.doesNotMatch(error.message, /R2_PUBLIC_URL/);
+      return true;
+    },
+  );
+});
+
 test('server url comes from URL only when set', () => {
   assert.equal(
     (serverConfig(production({ URL: 'https://cms.svc.mehdi-zare.com' })) as any).url,
