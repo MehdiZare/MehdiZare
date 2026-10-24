@@ -53,6 +53,8 @@ query).
   - `DATABASE_SCHEMA` (default `public`)
 - `REQUIRE_EXISTING_ADMIN` (`true` in production): the boot fails when the database has no admin user, so a wrong or empty database never offers first-admin registration (`src/utils/require-existing-admin.ts`). Only `strapi start` and `strapi develop` are guarded: `strapi import`, `strapi admin:create-user` and the other CLI commands run with the variable set, so the data step can restore and create the first admin before the first boot
 - `URL`: Strapi's public URL for absolute admin and upload links
+- `MANAGED_API_TOKENS` (set by cms-platform, encrypted): JSON `name => { type, permissions?, description?, value }`. Each boot creates or updates exactly those API tokens with the given value as the key (`src/utils/managed-api-tokens.ts`); tokens not listed are never touched, a malformed value fails the boot, and no value is logged. Unset: no token changes
+- `REVALIDATION_SECRET` (set by cms-platform, encrypted) and `WEB_REVALIDATE_URL` (the web's revalidate route, e.g. `https://www.mehdi-zare.com/api/revalidate`): each boot creates or updates the webhook that calls the web with the `x-revalidate-secret` header on entry create, update, delete, publish and unpublish, and removes other webhooks on that path (`src/utils/revalidate-webhook.ts`). The web's `REVALIDATE_SECRET` must be the same value (cms-platform pushes it). With either unset, nothing changes
 - `CORS_ORIGINS` (comma-separated origins, defaults to `https://www.mehdi-zare.com,https://mehdi-zare.com` in production and `http://localhost:3000` in development)
 - Admin session lifespan overrides (all optional; defaults are set in `config/admin.ts`):
   - `ADMIN_AUTH_ACCESS_TOKEN_LIFESPAN` (default `1800` seconds)
@@ -65,8 +67,8 @@ query).
 ## Tests
 
 `pnpm --filter=cms test` (also part of root `pnpm test`) runs `tests/*.test.ts`
-with `node --test` through `tsx`: database, upload and server config, and the
-admin boot guard.
+with `node --test` through `tsx`: database, upload and server config, the
+admin boot guard, the managed API tokens and the revalidation webhook.
 
 ## Security Notes
 
