@@ -40,6 +40,22 @@ This exception ends when a published upstream fix replaces the patch. At that
 point remove the patch, verification manifest and advisory-specific gate logic,
 and restore the unmodified high-severity audit command after validation.
 
+## Written audit exception: zod 3
+
+Only **GHSA-mrhx-c7xc-m3w5** (zod can exhaust memory while validating oversized
+constrained collections), only for **zod 3.x**, is accepted by
+`pnpm audit:security` (owner decision 2026-10-24). zod fixes it only in 4.6.6,
+and Strapi 5.58 (`@strapi/admin`, `@strapi/core`, the AI SDK and MCP server it
+bundles) requires the zod 3 API, so neither an upgrade nor an override is
+possible: zod 4's root export is a different API. The workspace pin
+`zod: "3.25.76"` stays. The finding is a denial-of-service on oversized input
+to a zod schema; it is not a code-execution or data-disclosure issue. Any
+other zod advisory, any finding on a zod 4 copy and every other high/critical
+advisory still fail the gate.
+
+This exception ends when Strapi requires zod 4 (or zod ships a fixed 3.x):
+upgrade, then remove `isAcceptedZodAdvisory` and this section.
+
 ## Strapi webpack adapter
 
 `@strapi__strapi@5.58.0.patch` replaces the hand-written response shim in both
