@@ -20,6 +20,15 @@ export function readAllowedCorsOrigins(env: EnvAccessor): string[] {
   return splitCsv(configured);
 }
 
+// One derivation for the R2 S3 endpoint, shared by the CSP (middlewares.ts)
+// and the upload provider (plugins.ts).
+export function resolveR2Endpoint(env: EnvAccessor): string | undefined {
+  const explicit = env("R2_ENDPOINT");
+  if (explicit) return explicit;
+  const accountId = env("R2_ACCOUNT_ID");
+  return accountId ? `https://${accountId}.r2.cloudflarestorage.com` : undefined;
+}
+
 export function validateCmsEnv(env: EnvAccessor): void {
   if (hasValidated) {
     return;

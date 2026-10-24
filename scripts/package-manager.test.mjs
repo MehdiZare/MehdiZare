@@ -102,7 +102,11 @@ test("CMS Docker prepares pnpm in a shared stage from package.json#packageManage
   const stages = dockerStages(dockerfile);
   const pnpm = stages.pnpm;
   assert.ok(pnpm, "missing stage pnpm");
-  assert.match(pnpm, /^FROM node:24-alpine AS pnpm/m);
+  assert.match(
+    pnpm,
+    /^FROM node:24-alpine@sha256:[0-9a-f]{64} AS pnpm/m,
+    "runtime base must stay pinned by digest (Node >= 24.22.1, CVE-2026-111497)",
+  );
   assert.match(
     pnpm,
     /npm install -g corepack/,

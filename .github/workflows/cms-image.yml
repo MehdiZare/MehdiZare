@@ -1,0 +1,199 @@
+name: CMS image
+
+# Builds the Strapi CMS image (apps/cms/Dockerfile) and pushes it to the shared
+# DigitalOcean Container Registry of the CMS platform (MehdiZare/cms-platform,
+# Terraform Cloud workspace cms-platform; owner decision 2026-10-22, Railway
+# breach). That platform owns the registry, the mehdizare App Platform app,
+# its database and env; this repo owns the Strapi code and this build.
+#
+# Deploy: the platform's app tracks mehdizare-cms:latest with deploy_on_push,
+# so pushing `latest` is the deploy (once the platform enables the app).
+#
+# Tags: exactly two, `latest` and `previous`. The outgoing `latest` becomes
+# `previous`, the rollback target (retag `previous` as `latest` to roll back),
+# only after the new image is published and only when the last published
+# image was built from a different commit. The commit is the image label
+# org.opencontainers.image.revision, not a tag. Do not add per-commit tags:
+# the registry is shared across products and small (DOCR Basic), and its
+# garbage collection reclaims untagged manifests only.
+#
+# Credentials: the cms-platform apply creates this repository's `cms-image`
+# GitHub Actions environment (deployment branch policy: `main` only) and
+# writes into it the secret DOCR_DOCKER_CONFIG (a DOCR docker config JSON with
+# push access) and the variable CMS_IMAGE (registry.digitalocean.com/
+# <registry>/mehdizare-cms, no tag). It is an environment secret, not a
+# repository secret, so a workflow edited in a pull request cannot push
+# `latest`. Never set either value by hand. Until that workspace has applied
+# they are empty and the push job fails fast; after its first apply, run this
+# workflow once from main (workflow_dispatch) to seed the image.
+#
+# Runner: Ubicloud, per .github/CI.md (never ubuntu-latest). The PR job
+# builds without pushing and without the environment, so a same-repo PR
+# proves the Dockerfile and the Ubicloud pickup before merge.
+#
+# on.*.paths mirror every COPY in apps/cms/Dockerfile plus the root
+# .dockerignore and this file. Keep them in step: a missed path means a merged
+# change never reaches the image.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/cms/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "patches/**"
+      - "scripts/package-manager.mjs"
+      - "scripts/corepack-prepare-pnpm.mjs"
+      - ".dockerignore"
+      - ".github/workflows/cms-image.yml"
+  pull_request:
+    paths:
+      - "apps/cms/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "patches/**"
+      - "scripts/package-manager.mjs"
+      - "scripts/corepack-prepare-pnpm.mjs"
+      - ".dockerignore"
+      - ".github/workflows/cms-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-push:
+    name: Build and push mehdizare-cms
+    if: github.event_name != 'pull_request'
+    runs-on: ubicloud-standard-2
+    timeout-minutes: 45
+    environment: cms-image
+    # One publish at a time; a running build is never cancelled, so `latest`
+    # never regresses mid-push.
+    concurrency:
+      group: cms-image
+      cancel-in-progress: false
+    steps:
+      # Third-party actions are pinned to full commit SHAs: this job holds
+      # DOCR_DOCKER_CONFIG and pushing `latest` deploys production.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The secret is a docker config JSON; buildx reads registry auth from
+      # DOCKER_CONFIG. Kept in RUNNER_TEMP, never echoed.
+      - name: Configure registry credentials
+        env:
+          DOCR_DOCKER_CONFIG: ${{ secrets.DOCR_DOCKER_CONFIG }}
+          CMS_IMAGE: ${{ vars.CMS_IMAGE }}
+        run: |
+          if [ -z "$DOCR_DOCKER_CONFIG" ] || [ -z "$CMS_IMAGE" ]; then
+            echo "::error::DOCR_DOCKER_CONFIG or CMS_IMAGE is empty in the cms-image environment: the cms-platform apply that provisions mehdizare has not run yet, or this run is not from main."
+            exit 1
+          fi
+          case "$CMS_IMAGE" in
+            registry.digitalocean.com/*/mehdizare-cms) ;;
+            *)
+              echo "::error::CMS_IMAGE is not a DOCR mehdizare-cms repository."
+              exit 1
+              ;;
+          esac
+          mkdir -p "$RUNNER_TEMP/docker"
+          printf '%s' "$DOCR_DOCKER_CONFIG" > "$RUNNER_TEMP/docker/config.json"
+          chmod 600 "$RUNNER_TEMP/docker/config.json"
+          echo "DOCKER_CONFIG=$RUNNER_TEMP/docker" >> "$GITHUB_ENV"
+          echo "IMAGE=$CMS_IMAGE" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      # Record what `latest` points at before publishing, so the step after
+      # the push can keep the outgoing image as `previous`. Only a
+      # registry-confirmed missing tag skips retention; a transient inspect
+      # error fails the job instead of publishing without a rollback target.
+      - name: Record the outgoing latest
+        run: |
+          set -euo pipefail
+          if docker buildx imagetools inspect "$IMAGE:latest" >"$RUNNER_TEMP/latest.out" 2>"$RUNNER_TEMP/latest.err"; then
+            # The default output's header carries the manifest digest
+            # ("Digest:    sha256:..."). --format '{{.Manifest.Digest}}' prints
+            # the whole default block for a single-platform manifest
+            # (bina-capital #5070).
+            digest=$(awk '$1 == "Digest:" { print $2; exit }' "$RUNNER_TEMP/latest.out")
+            case "$digest" in
+              sha256:*) ;;
+              *)
+                echo "::error::Could not read the digest of $IMAGE:latest; not publishing without the rollback target."
+                exit 1
+                ;;
+            esac
+            echo "LATEST_DIGEST=$digest" >> "$GITHUB_ENV"
+            echo "LATEST_REVISION=$(docker buildx imagetools inspect "$IMAGE:latest" --format '{{json .Image.Config.Labels}}' 2>/dev/null | jq -r '."org.opencontainers.image.revision" // empty' 2>/dev/null || true)" >> "$GITHUB_ENV"
+          elif grep -qiE 'not found|no such|404|NAME_UNKNOWN' "$RUNNER_TEMP/latest.err"; then
+            echo "No $IMAGE:latest yet; the first publish sets no previous."
+            echo "LATEST_DIGEST=" >> "$GITHUB_ENV"
+            echo "LATEST_REVISION=" >> "$GITHUB_ENV"
+          else
+            echo "::error::Inspecting $IMAGE:latest failed and the registry did not confirm the tag is missing; not publishing without the rollback target:"
+            cat "$RUNNER_TEMP/latest.err"
+            exit 1
+          fi
+
+      # Repository-root context. App Platform runs linux/amd64.
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: apps/cms/Dockerfile
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          tags: ${{ env.IMAGE }}:latest
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha,scope=cms-image
+          # A cache export failure must not fail the push.
+          cache-to: type=gha,scope=cms-image,mode=max,ignore-error=true
+
+      # Keep one rollback image (a registry-side retag, no pull): after a
+      # successful publish, the outgoing image becomes `previous`. A failed
+      # build never reaches this step, and a re-run of the same commit is
+      # skipped, so the rollback target survives both. An unread revision
+      # label rotates (safe default).
+      - name: Keep the outgoing latest as previous
+        if: env.LATEST_DIGEST != '' && env.LATEST_REVISION != github.sha
+        run: |
+          docker buildx imagetools create --tag "$IMAGE:previous" "$IMAGE@${LATEST_DIGEST}"
+
+      - name: Remove registry credentials
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/docker"
+
+  # Build-only check for pull requests from this repository: no environment,
+  # no secrets, no push. Fork PRs are skipped (they get no Ubicloud runner
+  # and nothing to prove here).
+  build:
+    name: Build mehdizare-cms (no push)
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubicloud-standard-2
+    timeout-minutes: 45
+    concurrency:
+      group: cms-image-pr-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: apps/cms/Dockerfile
+          platforms: linux/amd64
+          push: false
+          provenance: false
+          cache-from: type=gha,scope=cms-image
