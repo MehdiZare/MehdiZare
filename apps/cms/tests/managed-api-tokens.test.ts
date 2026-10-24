@@ -9,6 +9,7 @@ import {
   type StoredToken,
   bootstrapManagedApiTokens,
   parseManagedApiTokens,
+  strapiManagedTokenDeps,
 } from '../src/utils/managed-api-tokens';
 
 // Offline: the boot reconcile of the cms-platform-managed API tokens
@@ -79,6 +80,15 @@ function assertNoSecrets(texts: string[]) {
 function errorOf(fn: () => unknown): string {
   try {
     fn();
+  } catch (error) {
+    return (error as Error).message;
+  }
+  assert.fail('expected a throw');
+}
+
+async function errorOfPromise(promise: Promise<unknown>): Promise<string> {
+  try {
+    await promise;
   } catch (error) {
     return (error as Error).message;
   }
@@ -187,4 +197,38 @@ test('a permission change on a custom token is a settings update', async () => {
   const summary = (await bootstrapManagedApiTokens(run.deps))!;
   assert.deepEqual(summary.updated, ['writer']);
   assert.deepEqual(run.rows()[0].permissions, ['api::article.article.find']);
+});
+
+test('a failed key write rethrows without the hash, the encrypted key or driver detail', async () => {
+  // A database error can embed the query bindings; simulate Knex leaking them.
+  const leaked = new Error(`update "admin::api-token" set "access_key" = '${hash(READER)}' where "id" = 7 - connection refused`);
+  let updates = 0;
+  const strapi = {
+    service: (name: string) => (name === 'admin::api-token-content-api' ? { create: async () => ({}), update: async () => undefined } : {}),
+    db: {
+      query: () => ({
+        findOne: async () => null,
+        findMany: async () => [],
+        update: async () => {
+          updates += 1;
+          throw leaked;
+        },
+      }),
+    },
+    config: { get: () => SALT },
+    log: { info: () => undefined, warn: () => undefined },
+  };
+  const message = await errorOfPromise(
+    strapiManagedTokenDeps(strapi as unknown as Parameters<typeof strapiManagedTokenDeps>[0]).setKey(7, {
+      accessKey: hash(READER),
+      encryptedKey: 'encrypted-key-sentinel',
+      lifespan: null,
+      expiresAt: null,
+    }),
+  );
+  assert.equal(updates, 1, 'the store write was attempted');
+  assert.ok(message.startsWith(MANAGED_API_TOKENS_ENV), 'the rethrown error names the env var');
+  assertNoSecrets([message]);
+  assert.ok(!message.includes('encrypted-key-sentinel'), 'the encrypted key never reaches the error');
+  assert.ok(!message.includes('connection refused'), 'no driver detail survives');
 });

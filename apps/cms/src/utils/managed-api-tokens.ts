@@ -236,7 +236,15 @@ export function strapiManagedTokenDeps(strapi: Core.Strapi): ManagedTokenDeps {
       await tokens.update(id, attributes);
     },
     setKey: async (id, data) => {
-      await query.update({ where: { id }, data });
+      try {
+        await query.update({ where: { id }, data });
+      } catch {
+        // Database errors can embed the query bindings (the hash and the
+        // encrypted key), so the original error must not reach the boot log.
+        throw new Error(
+          `${MANAGED_API_TOKENS_ENV}: could not store the key for token id ${String(id)} (error details withheld to protect credentials).`,
+        );
+      }
     },
     log: strapi.log,
   };
