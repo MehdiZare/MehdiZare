@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { verifyInstalledBraces, verifyBracesPackage } from './verify-braces-patch.mjs';
-import { isPatchedBracesAdvisory } from './audit-dependencies.mjs';
+import { isAcceptedZodAdvisory, isPatchedBracesAdvisory } from './audit-dependencies.mjs';
 
 test('every installed braces copy has verified code and rejects depth/cycle attacks', () => {
   assert.ok(verifyInstalledBraces() > 0);
@@ -28,4 +28,19 @@ test('the audit exception cannot hide other advisories, packages or versions', (
     { findings: [] }, { findings: [{ version: '3.0.2' }] },
     { findings: [{ version: '3.0.3' }, { version: '3.0.2' }] },
   ]) assert.equal(isPatchedBracesAdvisory({ ...advisory, ...changes }), false);
+});
+
+test('the zod exception accepts only GHSA-mrhx-c7xc-m3w5 on zod 3.x', () => {
+  const advisory = {
+    module_name: 'zod',
+    url: 'https://github.com/advisories/GHSA-mrhx-c7xc-m3w5',
+    findings: [{ version: '3.25.76' }],
+  };
+  assert.equal(isAcceptedZodAdvisory(advisory), true);
+  for (const changes of [
+    { module_name: 'undici' },
+    { url: 'https://github.com/advisories/GHSA-0000-0000-0000' },
+    { findings: [] },
+    { findings: [{ version: '3.25.76' }, { version: '4.1.0' }] },
+  ]) assert.equal(isAcceptedZodAdvisory({ ...advisory, ...changes }), false);
 });
