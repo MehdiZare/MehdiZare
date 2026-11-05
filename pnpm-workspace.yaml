@@ -9,7 +9,7 @@ packages:
 # - Temporary (drop after the next Strapi/MCP release that ships the floor):
 #   hono, @hono/node-server, tar, vite, sharp
 # - Floor pins kept even when current Strapi already matches, so a transitive
-#   rollback cannot reintroduce a high finding: fast-uri, nanoid, ip-address
+#   rollback cannot reintroduce a high finding: fast-uri, follow-redirects, nanoid, ip-address
 # - Broader supply-chain floors (keep until unused in `pnpm why`):
 #   brace-expansion, esbuild, lodash, postcss, js-yaml, etc.
 # Do not weaken CI `pnpm audit:security` without a written exception (patches/README.md).
@@ -23,6 +23,7 @@ overrides:
   fast-uri: "3.1.9"
   fast-xml-parser: "5.11.2"
   flatted: "3.4.4"
+  follow-redirects: "1.16.2"
   handlebars: "4.7.10"
   hono: "4.13.13"
   ip-address: "10.7.4"
