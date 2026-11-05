@@ -33,7 +33,7 @@ test("AI engineer landing is a dedicated non-blog route titled to the query", ()
   assert.doesNotMatch(fallback, /AI engineer Mehdi Zare/);
   assert.doesNotMatch(page, /\/blog\//);
   assert.match(readSource("src/components/layout/Footer.tsx"), /href: "\/ai-engineer"/);
-  assert.match(readSource("src/components/home/ServicesGrid.tsx"), /href: "\/ai-engineer"/);
+  assert.match(readSource("src/components/home/ServicesGrid.tsx"), /href="\/ai-engineer"/);
   assertRendersComponent(
     readSource("src/app/about/page.tsx"),
     "AiEngineerProfileLink",
@@ -60,7 +60,7 @@ test("AI engineer landing is a dedicated non-blog route titled to the query", ()
   assert.doesNotMatch(readSource("src/app/page.tsx"), /AiEngineerProfileLink/);
 });
 
-test("AI engineer landing copy stays AI/finance and omits government/CISA", () => {
+test("AI engineer landing copy keeps the CFA and finance work and omits government/CISA", () => {
   const sources = [
     readSource("src/app/ai-engineer/page.tsx"),
     readSource("src/content/fallbacks/ai-engineer.ts"),

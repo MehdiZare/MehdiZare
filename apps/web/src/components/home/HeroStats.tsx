@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 const stats = [
   { label: "AI systems in prod", value: "10+" },
   { label: "Years of experience", value: "12+" },
-  { label: "Industries shipped in", value: "4" },
   { label: "Products shipped", value: "6+" },
 ];
 

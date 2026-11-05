@@ -72,16 +72,7 @@ function SocialIcon({ platform }: { platform: string }) {
 export default async function ContactPage() {
   const siteProfile = await getSiteProfile();
   const siteUrl = getSiteUrl();
-  const serviceAreaName = [
-    siteProfile.author.addressLocality,
-    siteProfile.author.addressRegion,
-    siteProfile.author.addressCountry,
-  ]
-    .filter(Boolean)
-    .join(", ");
-  const areaServed = serviceAreaName
-    ? [{ "@type": "Place", name: serviceAreaName }, { "@type": "Country", name: "United States" }]
-    : [{ "@type": "Country", name: "United States" }];
+  const areaServed = "Remote, anywhere";
   const contactPointJsonLd = {
     "@context": "https://schema.org",
     "@type": "ContactPoint",
@@ -166,10 +157,11 @@ export default async function ContactPage() {
                   Schedule
                 </h3>
                 <p className="mt-2 text-sm text-mid-gray">
-                  Prefer to talk live? Book a 20-minute call.
+                  Book a free 20-minute call. Remote, anywhere.
                 </p>
                 <CalComTrigger
                   className="mt-4"
+                  label="Open Scheduling"
                   section="schedule_panel"
                 />
               </div>

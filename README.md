@@ -1,8 +1,8 @@
 # Hey, I'm Mehdi 👋
 
-Principal AI Engineer · CFA Charterholder · Building AI products that ship.
+Founder and AI consultant · CFA Charterholder
 
-I work at the intersection of AI engineering and domain expertise — finance, cybersecurity, healthcare, and developer tools. By day I'm a Principal Cloud Architect & AI SME on federal cybersecurity missions. Nights and weekends, I build products.
+I'm a CFA and a solo founder. I build and run small products with AI agents, and I help founders and small teams do the same, remotely.
 
 ## What I'm building
 

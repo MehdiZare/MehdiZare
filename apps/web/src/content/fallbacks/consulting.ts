@@ -1,68 +1,139 @@
 import type { ConsultingAudience, FAQ as FAQType } from "@/types/strapi";
 import type { SiteProfile } from "@/lib/site-profile";
 
+export const consultingMetadataTitle = "AI agent setup for founders and small teams";
+
+export const consultingDescription =
+  "A CFA and solo founder who runs his own products with AI agents. Audits, build sprints and fractional AI-ops help for startups and small businesses. Remote.";
+
+export const consultingHeadline =
+  "Put AI agents to work in your company, with review and controls.";
+
 export const fallbackAudiences: ConsultingAudience[] = [
   {
     id: 1,
-    title: "Financial Services Teams",
-    description:
-      "Production-ready AI systems for research, risk, operations, and decision support in regulated financial environments.",
+    title: "Founder-led startups",
+    description: "Teams that want agents doing real work, not demos.",
   },
   {
     id: 2,
-    title: "Healthcare and Life Sciences",
+    title: "Small and mid-size businesses",
     description:
-      "Deploy AI workflows where reliability, explainability, and operational safety are requirements, not nice-to-haves.",
+      "A few repeat workflows (content, support, reporting, internal tools) that eat hours every week.",
   },
   {
     id: 3,
-    title: "Enterprise AI Teams",
+    title: "Small product teams",
     description:
-      "Move AI initiatives from pilot experiments to robust production systems with clear ownership and observability.",
-  },
-  {
-    id: 4,
-    title: "Government / Defense",
-    description: "AI-powered threat and intelligence workflows under strict constraints.",
+      "Teams that already use Claude Code, Codex, Cursor or similar and want a setup that doesn't need babysitting.",
   },
 ];
 
-export const fallbackServices = [
+export interface ConsultingOffer {
+  id: number;
+  name: string;
+  scope: string;
+  details: string[];
+}
+
+export const fallbackServices: ConsultingOffer[] = [
   {
     id: 1,
-    name: "Advisory",
-    scope: "AI strategy, architecture review, and vendor evaluation.",
+    name: "Agent workflow audit",
+    scope: "About 1 to 2 weeks. You get a written plan.",
+    details: [
+      "I review how your team uses AI tools today, or one workflow you want to hand to agents.",
+      "You get a written plan covering what to automate, what to keep human, which tools to use, the review rules, the expected monthly model cost, and what can go wrong.",
+      "Good first step if you're not sure where to start.",
+    ],
   },
   {
     id: 2,
-    name: "Hands-On Implementation",
-    scope: "Hands-on development with strategic leadership and team mentoring.",
+    name: "Build sprint",
+    scope: "2 to 4 weeks. One workflow end to end, with a short runbook.",
+    details: [
+      "I set up one agent workflow end to end in your stack: the prompts and skills, the handoffs between tools, review and approval steps, logging, and a cost check.",
+      "Your team owns it at the end, with a short runbook.",
+    ],
   },
   {
     id: 3,
-    name: "Fractional AI Lead",
-    scope: "Embedded AI leadership for mission-critical programs with delivery ownership.",
+    name: "Fractional AI-ops lead or CTO",
+    scope: "Monthly. Includes a weekly check-in.",
+    details: [
+      "Part-time technical lead for a small team.",
+      "I run the agent setup, review what the agents ship, pick tools, and keep costs in check.",
+      "Includes a weekly check-in and async help.",
+    ],
   },
+];
+
+export interface ConsultingProof {
+  id: number;
+  name: string;
+  href: string;
+  description: string;
+}
+
+export const fallbackProof: ConsultingProof[] = [
+  {
+    id: 1,
+    name: "Bina Capital",
+    href: "https://bina.capital",
+    description:
+      "Free, comparison-first education for new US investors. A part-time side project I build and run with AI coding agents. Education only, not advice.",
+  },
+  {
+    id: 2,
+    name: "Rewardopedia",
+    href: "https://rewardopedia.com",
+    description:
+      "A credit card rewards guide led by Mary Massoumi, Founder and CEO.",
+  },
+  {
+    id: 3,
+    name: "RoboWrite",
+    href: "https://robowrite.ai",
+    description: "A content operations platform for agencies.",
+  },
+];
+
+export const fallbackNotAFit: string[] = [
+  "Large enterprise programs with long procurement.",
+  "Work that needs on-site presence or a security clearance.",
+  "Investment advice or financial planning. I don't give it.",
+  "\"Build us a chatbot by Friday\" with no owner on your side.",
+];
+
+export const fallbackHowItWorks: string[] = [
+  "Free 20-minute call. We talk about one workflow and whether I can help.",
+  "Short written proposal with scope and dates.",
+  "Work starts. Everything is remote, with async updates and a weekly call.",
 ];
 
 export const fallbackFaqs: FAQType[] = [
   {
     id: 1,
-    question: "What types of organizations do you work with?",
+    question: "Who do you work with?",
     answer:
-      "Most engagements are with regulated or high-stakes teams in finance, healthcare, government, and enterprise settings that need AI outcomes they can defend to stakeholders.",
+      "Founder-led startups and small and mid-size businesses, fully remote.",
   },
   {
     id: 2,
-    question: "How does an engagement begin?",
+    question: "Can you work with our existing team?",
     answer:
-      "We start with a 20-minute discovery call, align on target outcomes, and move into a scoped proposal.",
+      "Yes. Most of the work is setting up a system your team keeps running.",
   },
   {
     id: 3,
-    question: "Can you work with our existing team?",
+    question: "Do you only use one AI vendor?",
     answer:
-      "Yes. I typically embed into existing engineering and product teams while transferring delivery practices.",
+      "No. I use Claude Code, Codex, opencode and cursor-agent side by side, and I pick based on the task and the cost.",
+  },
+  {
+    id: 4,
+    question: "Are you full time?",
+    answer: "No. I take a small number of clients at a time.",
   },
 ];
 
@@ -70,16 +141,22 @@ export interface ConsultingFallbackData {
   title: string;
   subtitle: string;
   audiences: ConsultingAudience[];
-  services: typeof fallbackServices;
+  services: ConsultingOffer[];
+  proof: ConsultingProof[];
+  notAFit: string[];
+  howItWorks: string[];
   faq: FAQType[];
 }
 
 export function buildConsultingFallback(siteProfile: SiteProfile): ConsultingFallbackData {
   return {
-    title: "AI Consulting for High-Stakes Teams",
+    title: consultingHeadline,
     subtitle: siteProfile.positioningSubheadline,
     audiences: fallbackAudiences,
     services: fallbackServices,
+    proof: fallbackProof,
+    notAFit: fallbackNotAFit,
+    howItWorks: fallbackHowItWorks,
     faq: fallbackFaqs,
   };
 }

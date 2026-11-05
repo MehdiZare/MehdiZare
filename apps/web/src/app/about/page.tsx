@@ -21,7 +21,7 @@ const aboutMetadataTitle = "About";
 export async function generateMetadata(): Promise<Metadata> {
   const siteProfile = await getSiteProfile();
   const aboutKeywords = [
-    "principal AI engineer",
+    "founder and AI consultant",
     "production AI systems",
     "domain-driven AI",
     "CFA charterholder engineer",
@@ -167,7 +167,7 @@ export default async function AboutPage() {
                 href={consultingCallHref}
                 className="inline-flex bg-ink px-7 py-3 text-sm font-medium text-paper transition hover:bg-ink/85"
               >
-                Book a Discovery Call
+                {siteProfile.primaryCtaLabel}
               </Link>
             </div>
           </AnimatedSection>

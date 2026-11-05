@@ -9,8 +9,6 @@ interface CredentialItem {
 }
 
 interface CredentialsStripProps {
-  role: string;
-  industriesLine: string;
   credentialLine: string;
 }
 
@@ -32,17 +30,11 @@ const itemVariants = {
   },
 };
 
-export function CredentialsStrip({
-  role,
-  industriesLine,
-  credentialLine,
-}: CredentialsStripProps) {
+export function CredentialsStrip({ credentialLine }: CredentialsStripProps) {
   const credentials: CredentialItem[] = [
-    { label: "Role", value: role },
-    { label: "Domains", value: industriesLine },
-    { label: "Credential", value: credentialLine, dot: "bg-accent-warm" },
-    { label: "Clearance", value: "Active Secret", dot: "bg-green-500" },
+    { label: "Title", value: credentialLine },
     { label: "Cloud", value: "AWS Solutions Architect" },
+    { label: "Service area", value: "Remote, anywhere" },
   ];
 
   return (
@@ -52,7 +44,7 @@ export function CredentialsStrip({
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-warm-gray sm:grid-cols-3 lg:grid-cols-5"
+        className="mx-auto grid max-w-7xl grid-cols-1 divide-y divide-warm-gray sm:grid-cols-3 sm:divide-x sm:divide-y-0"
       >
         {credentials.map((item) => (
           <motion.div

@@ -8,6 +8,6 @@ export const size = {
 };
 export const contentType = "image/png";
 export const alt =
-  `${DEFAULT_SITE_PROFILE.siteName} - ${DEFAULT_SITE_PROFILE.authorRole} shipping production systems from prototype to production.`;
+  `${DEFAULT_SITE_PROFILE.siteName} - ${DEFAULT_SITE_PROFILE.credentialLine}`;
 
 export default OpenGraphImage;

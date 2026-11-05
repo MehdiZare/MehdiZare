@@ -10,7 +10,7 @@ export function buildLlmsTxtContent(): string {
     "# llms.txt - mehdi-zare.com",
     "",
     "name: Mehdi Zare",
-    "description: Principal AI Engineer and CFA Charterholder. Production AI systems across finance, defense, healthcare, and enterprise.",
+    "description: Founder and AI consultant, and CFA Charterholder. Builds and runs small products with AI agents, and helps founders and small teams do the same, remotely.",
     `canonical_host: ${siteUrl}`,
     `sitemap: ${buildAbsolutePath("/sitemap.xml", siteUrl)}`,
     "",
