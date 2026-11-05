@@ -189,29 +189,29 @@ test("the footer location line matches the structured address defaults", () => {
   );
 });
 
-test("the current employer name agrees across visible copies and structured data (#105)", () => {
+test("no current employer is published in taxonomy, defaults, or visible career copy", () => {
   assert.ok(primaryAuthor, "data/taxonomy.json: expected a primary author");
 
-  const canonical = primaryAuthor.worksForName;
-  assert.equal(
-    canonical,
-    DEFAULT_SITE_PROFILE.authorWorksForName,
-    "taxonomy worksForName and DEFAULT_SITE_PROFILE.authorWorksForName must agree before comparing visible copies"
-  );
+  assert.equal(primaryAuthor.worksForName, "");
+  assert.equal(primaryAuthor.worksForUrl, "");
+  assert.equal(DEFAULT_SITE_PROFILE.authorWorksForName, "");
+  assert.equal(DEFAULT_SITE_PROFILE.authorWorksForUrl, "");
 
+  const removedEmployers = /Entarian|Booz Allen/;
   const trackRecordSource = readFileSync(
     resolve(repoRoot, "apps/web/src/components/home/TrackRecord.tsx"),
     "utf8"
   );
-  assert.match(
-    trackRecordSource,
-    /DEFAULT_SITE_PROFILE\.authorWorksForName/,
-    "TrackRecord must source the current employer from DEFAULT_SITE_PROFILE.authorWorksForName, not a hardcoded literal"
+  const aboutSource = readFileSync(
+    resolve(repoRoot, "apps/web/src/content/fallbacks/about.ts"),
+    "utf8"
   );
 
+  assert.doesNotMatch(trackRecordSource, removedEmployers);
+  assert.doesNotMatch(aboutSource, removedEmployers);
   assert.equal(
-    fallbackExperiences[0]?.company,
-    DEFAULT_SITE_PROFILE.authorWorksForName,
-    "the about fallback's current experience company must match authorWorksForName"
+    fallbackExperiences.some((experience) => experience.current),
+    false,
+    "the about fallback must not mark a current employer"
   );
 });

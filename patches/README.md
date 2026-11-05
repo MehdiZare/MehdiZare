@@ -45,7 +45,7 @@ and restore the unmodified high-severity audit command after validation.
 Only **GHSA-mrhx-c7xc-m3w5** (zod can exhaust memory while validating oversized
 constrained collections), only for **zod 3.x**, is accepted by
 `pnpm audit:security` (owner decision 2026-10-24). zod fixes it only in 4.6.6,
-and Strapi 5.58 (`@strapi/admin`, `@strapi/core`, the AI SDK and MCP server it
+and Strapi 5.61 (`@strapi/types` and koa-body, plus the AI SDK it
 bundles) requires the zod 3 API, so neither an upgrade nor an override is
 possible: zod 4's root export is a different API. The workspace pin
 `zod: "3.25.76"` stays. The finding is a denial-of-service on oversized input
@@ -58,13 +58,10 @@ upgrade, then remove `isAcceptedZodAdvisory` and this section.
 
 ## Strapi webpack adapter
 
-`@strapi__strapi@5.58.0.patch` replaces the hand-written response shim in both
-published watch entrypoints with `webpack-dev-middleware.koaWrapper()`. The
-underlying `devMiddleware` remains available for readiness, the admin HTML
-fallback and cleanup. This allows the pinned middleware 8.5.0 to use its
-supported Koa response, status and streaming APIs. Without the patch, both
-7.4.6 and 8.5.0 fail at `res.removeHeader` during asset requests.
-The two changed files no longer advertise their now-stale generated source maps.
+Strapi 5.61 ships `webpack-dev-middleware.koaWrapper()` in both published watch
+entrypoints, so the `@strapi/strapi@5.58.0` patch is gone. The workspace still
+pins `webpack-dev-middleware` 8.x so the Koa response, status, and streaming
+APIs stay on the supported middleware line.
 
 The integration regression invokes Strapi's actual CommonJS `watch()` (the CLI
 entrypoint), its public webpack configuration hook, a real compiler and Koa,
@@ -73,9 +70,5 @@ admin HTML fallback, encoded traversal and shutdown, without a CMS database.
 The separate middleware regression covers the missing-publicPath-slash traversal.
 
 Strapi's standalone ESM webpack config has a pre-existing named-export error
-with both webpack 5.109.2 and 5.112.0 on Node 24.12.0. That entrypoint is not
-covered by the CLI regression; this patch does not claim to fix it. The CMS
+on Node 24. That entrypoint is not covered by the CLI regression. The CMS
 production build uses the default Vite path.
-
-Remove this patch and the override when a supported Strapi release ships the
-middleware upgrade and Koa integration; rerun the adapter regression first.

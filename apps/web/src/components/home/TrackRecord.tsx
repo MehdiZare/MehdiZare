@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { Label } from "@/components/shared/Label";
-import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 
 interface TrackRecordEntry {
   org: string;
@@ -16,27 +15,6 @@ interface TrackRecordEntry {
 }
 
 const entries: TrackRecordEntry[] = [
-  {
-    org: DEFAULT_SITE_PROFILE.authorWorksForName,
-    monogram: "EN",
-    role: "Principal AI Engineer / Cloud Architect",
-    dates: "2025 – Present",
-    description:
-      "Built GenAI systems for federal cybersecurity operations, focused on production observability and threat-informed monitoring in federal environments where reliability is non-negotiable.",
-    category: "Cybersecurity",
-    categoryColor: "bg-red-500/10 text-red-700",
-    current: true,
-  },
-  {
-    org: "Booz Allen",
-    monogram: "BA",
-    role: "Senior AI/ML Engineer",
-    dates: "2024 – 2025",
-    description:
-      "Delivered containerized GenAI solutions for government and enterprise teams that needed secure, scalable deployments rather than lab demos.",
-    category: "Defense",
-    categoryColor: "bg-blue-500/10 text-blue-700",
-  },
   {
     org: "Adviser",
     monogram: "AD",
@@ -53,7 +31,7 @@ const entries: TrackRecordEntry[] = [
     role: "Quantitative Analysis Manager",
     dates: "2020 – 2024",
     description:
-      "Led ML-driven liquidity forecasting across finance, data engineering, and compliance teams, bridging quantitative analysis and enterprise decision-making.",
+      "Led ML-driven liquidity forecasting across finance, data engineering, and compliance teams.",
     category: "Finance",
     categoryColor: "bg-amber-500/10 text-amber-700",
   },
@@ -111,14 +89,13 @@ export function TrackRecord() {
   return (
     <section id="track-record" className="bg-paper py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <Label>03 &mdash; Track Record</Label>
+        <Label>03. Track record</Label>
 
         <h2 className="mt-6 font-serif text-4xl font-bold leading-tight text-ink sm:text-5xl">
-          Shipped across industries. Deep in each one.
+          Track record
         </h2>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-mid-gray">
-          Principal-level AI engineering across four regulated, high-stakes domains. Each
-          required learning the business &mdash; not just the tech stack.
+          What I&apos;ve worked on, and what each job taught me about shipping.
         </p>
 
         {/* Timeline */}

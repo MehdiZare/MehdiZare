@@ -9,8 +9,8 @@
       "name": "Mehdi Zare, CFA",
       "slug": "mehdi-zare",
       "isPrimary": true,
-      "headline": "Principal AI Engineer",
-      "bioShort": "Principal AI engineer shipping production systems across finance, defense, healthcare, and enterprise.",
+      "headline": "Founder and AI consultant",
+      "bioShort": "Founder and AI consultant. I build and run small products with AI agents, and I help founders and small teams do the same, remotely.",
       "websiteUrl": "https://www.mehdi-zare.com",
       "linkedinUrl": "https://linkedin.com/in/mehdizare",
       "sameAs": [
@@ -20,9 +20,9 @@
         { "platform": "Medium", "url": "https://medium.com/@mehdi-zare" },
         { "platform": "Seeking Alpha", "url": "https://seekingalpha.com/author/mehdi-zare" }
       ],
-      "jobTitle": "Principal AI Engineer",
-      "worksForName": "Entarian",
-      "worksForUrl": "https://entarian.com",
+      "jobTitle": "Founder and AI consultant",
+      "worksForName": "",
+      "worksForUrl": "",
       "alumniOf": [
         "University of Maryland, Smith School of Business",
         "University of Tehran"
@@ -36,8 +36,7 @@
       ],
       "credentials": [
         { "title": "CFA Charterholder", "issuer": "CFA Institute" },
-        { "title": "AWS Certified Solutions Architect - Associate", "issuer": "Amazon Web Services" },
-        { "title": "Secret Security Clearance", "issuer": "U.S. Government" }
+        { "title": "AWS Certified Solutions Architect - Associate", "issuer": "Amazon Web Services" }
       ],
       "addressLocality": "Miami",
       "addressRegion": "FL",
@@ -56,7 +55,7 @@
       "intro": "I build AI systems for a living. These posts cover what it actually takes to get models, agents, and pipelines into production — the architecture decisions, the failure modes, and the patterns that work across industries.",
       "seo": {
         "metaTitle": "AI Engineering — Mehdi Zare",
-        "metaDescription": "Practical posts on building and deploying AI systems in production. Agents, RAG, LLMs, ML pipelines, and real-world architecture from a Principal AI Engineer.",
+        "metaDescription": "Practical posts on building and deploying AI systems in production. Agents, RAG, LLMs, ML pipelines, and real-world architecture from a Founder and AI consultant.",
         "canonicalURL": "https://www.mehdi-zare.com/blog/category/ai-engineering",
         "keywords": "AI engineering, production AI, LLM deployment, RAG architecture, ML pipelines, AI agents"
       },
@@ -115,7 +114,7 @@
       "intro": "I hold a CFA Charter and build AI systems. That combination is rare, and it shapes how I think about both fields. These posts explore what happens when you apply real engineering rigor to financial problems — and real financial thinking to AI.",
       "seo": {
         "metaTitle": "AI + Finance — Mehdi Zare",
-        "metaDescription": "Where AI engineering meets investing and financial analysis. Written by a CFA Charterholder and Principal AI Engineer building at the intersection.",
+        "metaDescription": "Where AI engineering meets investing and financial analysis. Written by a CFA Charterholder and Founder and AI consultant.",
         "canonicalURL": "https://www.mehdi-zare.com/blog/category/ai-finance",
         "keywords": "AI finance, CFA AI, financial AI, AI investing, quantitative analysis, fintech AI"
       },
@@ -216,12 +215,12 @@
       "parent": null,
       "description": "AI-powered threats, secure AI deployment, Zero Trust, and building for high-stakes environments.",
       "headline": "Cybersecurity",
-      "intro": "I ship AI for federal cybersecurity missions. The stakes are real, the constraints are brutal, and 'move fast and break things' will get your clearance revoked. These posts cover what's different about building AI when security isn't optional.",
+      "intro": "Posts on AI-powered threats, secure deployment, and what changes when security is part of the system.",
       "seo": {
         "metaTitle": "AI & Cybersecurity — Mehdi Zare",
-        "metaDescription": "AI-powered threats, secure deployment, and building AI for high-stakes environments. Written by a Principal AI Engineer working federal cybersecurity missions.",
+        "metaDescription": "AI-powered threats, secure deployment, and building AI when security is part of the system. Written by Mehdi Zare, Founder and AI consultant.",
         "canonicalURL": "https://www.mehdi-zare.com/blog/category/cybersecurity",
-        "keywords": "AI cybersecurity, AI threats, secure AI deployment, Zero Trust AI, federal cybersecurity, GovCloud AI"
+        "keywords": "AI cybersecurity, AI threats, secure AI deployment, Zero Trust AI"
       },
       "children": [
         {
@@ -444,10 +443,10 @@
       "slug": "databricks",
       "description": "Data engineering and ML workflows on the Databricks platform.",
       "headline": "Databricks",
-      "intro": "I've built GenAI pipelines on Databricks for federal environments. These posts cover what works — Spark workflows, MLflow integration, and deploying models in enterprise settings.",
+      "intro": "Posts on data engineering and ML workflows on Databricks: Spark workflows, MLflow integration, and deploying models.",
       "seo": {
         "metaTitle": "Databricks — Mehdi Zare",
-        "metaDescription": "Data engineering and ML workflows on Databricks. Spark pipelines, MLflow, and deploying AI in enterprise and government environments.",
+        "metaDescription": "Data engineering and ML workflows on Databricks. Spark pipelines, MLflow, and deploying models.",
         "canonicalURL": "https://www.mehdi-zare.com/blog/tag/databricks",
         "keywords": "Databricks, Spark, MLflow, data engineering, ML pipelines, enterprise AI"
       }
@@ -457,12 +456,12 @@
       "slug": "aws-bedrock",
       "description": "Building with AWS Bedrock for managed LLM access and AI services.",
       "headline": "AWS Bedrock",
-      "intro": "AWS Bedrock is how I access foundation models in environments where you can't just call OpenAI. These posts cover Bedrock patterns for enterprise and government use cases.",
+      "intro": "Posts on AWS Bedrock for managed access to foundation models, including RAG and production patterns.",
       "seo": {
         "metaTitle": "AWS Bedrock — Mehdi Zare",
-        "metaDescription": "Building with AWS Bedrock for enterprise and government AI. Managed LLM access, RAG integration, and production patterns.",
+        "metaDescription": "Building with AWS Bedrock. Managed LLM access, RAG integration, and production patterns.",
         "canonicalURL": "https://www.mehdi-zare.com/blog/tag/aws-bedrock",
-        "keywords": "AWS Bedrock, foundation models, managed LLM, enterprise AI, GovCloud AI, AWS AI"
+        "keywords": "AWS Bedrock, foundation models, managed LLM, RAG, AWS AI"
       }
     },
     {
@@ -538,7 +537,7 @@
       "intro": "Large language models are the most overhyped and most underestimated technology at the same time. These posts cut through the noise — real capabilities, real limitations, and what it takes to use them in production.",
       "seo": {
         "metaTitle": "LLMs (Large Language Models) — Mehdi Zare",
-        "metaDescription": "Large language models in practice. Capabilities, limitations, and what it takes to use LLMs in production across finance, defense, and healthcare.",
+        "metaDescription": "Large language models in practice. Capabilities, limitations, and what it takes to use LLMs in production.",
         "canonicalURL": "https://www.mehdi-zare.com/blog/tag/llms",
         "keywords": "LLMs, large language models, GPT, Claude, LLM production, language model applications"
       }
@@ -642,7 +641,7 @@
       "intro": "Zero Trust was designed for humans. Now we need it for AI agents too. These posts explore what Zero Trust means when your users include autonomous systems making API calls.",
       "seo": {
         "metaTitle": "Zero Trust for AI — Mehdi Zare",
-        "metaDescription": "Zero Trust architecture for AI systems and agent workflows. Securing autonomous AI in enterprise and government environments.",
+        "metaDescription": "Zero Trust architecture for AI systems and agent workflows.",
         "canonicalURL": "https://www.mehdi-zare.com/blog/tag/zero-trust",
         "keywords": "Zero Trust AI, Zero Trust architecture, AI security, agent security, enterprise AI security"
       }
@@ -678,10 +677,10 @@
       "slug": "defense",
       "description": "AI in defense and national security contexts.",
       "headline": "Defense",
-      "intro": "I've shipped AI for federal cybersecurity and defense programs. These posts cover what's unique about building AI when the stakes are national security — without crossing any lines on specifics.",
+      "intro": "Posts on AI in defense and national security contexts.",
       "seo": {
         "metaTitle": "AI in Defense — Mehdi Zare",
-        "metaDescription": "Building AI for defense and national security. Lessons from federal programs on constraints, compliance, and high-stakes deployment.",
+        "metaDescription": "Notes on AI in defense and national security contexts.",
         "canonicalURL": "https://www.mehdi-zare.com/blog/tag/defense",
         "keywords": "AI defense, national security AI, federal AI, government AI, defense technology"
       }
@@ -689,12 +688,12 @@
     {
       "name": "Healthcare",
       "slug": "healthcare",
-      "description": "AI in healthcare — from CMS programs to clinical applications.",
+      "description": "AI in healthcare.",
       "headline": "Healthcare",
-      "intro": "I built AI for CMS healthcare programs at Booz Allen. These posts cover what's different about healthcare AI — regulatory constraints, data sensitivity, and the stakes of getting it wrong.",
+      "intro": "Posts on healthcare AI: regulatory constraints, data sensitivity, and the cost of getting the workflow wrong.",
       "seo": {
         "metaTitle": "AI in Healthcare — Mehdi Zare",
-        "metaDescription": "Building AI for healthcare. CMS programs, regulatory constraints, and the unique challenges of deploying AI where patient outcomes are at stake.",
+        "metaDescription": "Notes on healthcare AI: regulatory constraints, data sensitivity, and the cost of getting the workflow wrong.",
         "canonicalURL": "https://www.mehdi-zare.com/blog/tag/healthcare",
         "keywords": "healthcare AI, CMS AI, medical AI, health technology, clinical AI, healthcare ML"
       }

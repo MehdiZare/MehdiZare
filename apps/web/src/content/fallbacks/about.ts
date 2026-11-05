@@ -7,15 +7,14 @@ import type {
   BlocksContent,
 } from "@/types/strapi";
 import type { SiteProfile } from "@/lib/site-profile";
-import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 import { getSiteUrl } from "@/lib/seo";
 
 function buildCanonicalAboutStory(): string[] {
   return [
     "I studied physics because I wanted to understand how things work from first principles. But I was never just a theorist — while earning my degree at the University of Tehran, I was already writing code and building products. That tension between rigorous analysis and the urge to ship something real has defined my entire career.",
     "Fardabook.com was the first proof. I founded a textbook-focused online bookstore and ran product, operations, and go-to-market from scratch. It taught me that building a company and building software are the same discipline: figure out what people need, then engineer a system that delivers it reliably.",
-    "I came to the U.S. for an MBA in Finance at the University of Maryland's Smith School of Business. That's where I discovered quantitative finance and started pursuing the CFA charter. I earned it while working at FI Consulting with the Office of Financial Research. The CFA didn't just add a credential — it gave me the language to operate inside regulated, high-stakes environments.",
-    "Today I build production AI systems — the kind that run in federal cybersecurity operations, government defense programs, and Fortune 500 financial institutions. The physics taught me to think in systems. The finance taught me to speak the language of risk. The entrepreneurship taught me to ship. That combination is how I take AI from prototype to production in domains where failure isn't an option.",
+    "I came to the U.S. for an MBA in Finance at the University of Maryland's Smith School of Business. That's where I discovered quantitative finance and started pursuing the CFA charter. I earned it while working at FI Consulting with the Office of Financial Research. The CFA gave me the language of capital markets.",
+    "Today I build and run my own small products with AI agents, and I help founders and small teams set up the same kind of system, remotely. The physics taught me to think in systems. The finance taught me to speak the language of risk. The entrepreneurship taught me to ship.",
   ];
 }
 
@@ -23,9 +22,7 @@ export const fallbackStats: StatItem[] = [
   { id: 1, value: "12+", label: "Years building software and AI systems" },
   { id: 2, value: "10+", label: "AI systems shipped to production" },
   { id: 3, value: "6+", label: "Products built and shipped end-to-end" },
-  { id: 4, value: "4", label: "Regulated industries shipped in" },
-  { id: 5, value: "CFA", label: "Charterholder" },
-  { id: 6, value: "Secret", label: "Active clearance" },
+  { id: 4, value: "CFA", label: "Charterholder" },
 ];
 
 export const fallbackCredentials: Credential[] = [
@@ -35,31 +32,12 @@ export const fallbackCredentials: Credential[] = [
     title: "AWS Certified Solutions Architect - Associate",
     issuer: "Amazon Web Services",
   },
-  { id: 3, title: "Secret Security Clearance", issuer: "U.S. Government" },
-  { id: 4, title: "Founder Fellow (ODF21)", issuer: "On Deck" },
+  { id: 3, title: "Founder Fellow (ODF21)", issuer: "On Deck" },
 ];
 
 export const fallbackExperiences: Experience[] = [
   {
     id: 1,
-    title: "Principal AI Engineer / Cloud Architect",
-    company: DEFAULT_SITE_PROFILE.authorWorksForName,
-    startDate: "2025",
-    current: true,
-    description:
-      "Built GenAI systems for federal cybersecurity operations, focused on production observability and threat-informed monitoring in federal environments where reliability is non-negotiable.",
-  },
-  {
-    id: 2,
-    title: "Senior AI/ML Engineer",
-    company: "Booz Allen",
-    startDate: "2024",
-    endDate: "2025",
-    description:
-      "Delivered containerized GenAI solutions for government and enterprise teams that needed secure, scalable deployments rather than lab demos.",
-  },
-  {
-    id: 3,
     title: "Co-Founder",
     company: "Adviser",
     startDate: "2024",
@@ -74,7 +52,7 @@ export const fallbackExperiences: Experience[] = [
     startDate: "2020",
     endDate: "2024",
     description:
-      "Led ML-driven liquidity forecasting across finance, data engineering, and compliance teams, bridging quantitative analysis and enterprise decision-making.",
+      "Led ML-driven liquidity forecasting across finance, data engineering, and compliance teams.",
   },
   {
     id: 5,

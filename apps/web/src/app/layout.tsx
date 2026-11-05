@@ -18,7 +18,7 @@ const siteUrl = getSiteUrl();
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteProfile = await getSiteProfile();
-  const titleDefault = `${siteProfile.siteName} | ${siteProfile.authorRole}`;
+  const titleDefault = `${siteProfile.siteName} | ${siteProfile.credentialLine}`;
 
   return {
     metadataBase: new URL(siteUrl),
@@ -55,7 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
           url: "/opengraph-image",
           width: 1200,
           height: 630,
-          alt: `${siteProfile.siteName} - ${siteProfile.authorRole}`,
+          alt: `${siteProfile.siteName} - ${siteProfile.credentialLine}`,
         },
       ],
     },

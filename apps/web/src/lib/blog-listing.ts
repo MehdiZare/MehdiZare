@@ -9,7 +9,7 @@ import { firstFilled, formatSlugName } from "@/lib/strings";
 export const BLOG_PAGE_SIZE = 9;
 
 export const BLOG_PAGE_DESCRIPTION =
-  "Writing on production AI systems, LLM architecture, and shipping AI in finance, defense, healthcare, and enterprise.";
+  "Writing on production AI systems, LLM architecture, and AI agents.";
 
 
 /**

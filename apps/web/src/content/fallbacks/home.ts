@@ -23,15 +23,6 @@ export function buildHomeFallback(siteProfile: SiteProfile): HomeFallbackData {
   };
 }
 
-export function splitIndustries(industriesLine: string): string[] {
-  const parsed = industriesLine
-    .split(/[|·,]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-  return parsed.length > 0 ? parsed : ["Finance", "Defense", "Healthcare", "Enterprise"];
-}
-
 export interface HomeWritingSource {
   title?: string | null;
   href: string;

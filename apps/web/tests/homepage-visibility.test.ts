@@ -123,7 +123,6 @@ test("homepage motion reveal variants do not hide content at opacity 0", () => {
     readSource("src/components/shared/AnimatedSection.tsx"),
     readSource("src/components/home/Hero.tsx"),
     readSource("src/components/home/HeroStats.tsx"),
-    readSource("src/components/home/ClientLogos.tsx"),
     readSource("src/components/home/CredentialsStrip.tsx"),
     readSource("src/components/home/TrackRecord.tsx"),
   ];

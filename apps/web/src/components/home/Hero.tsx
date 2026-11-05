@@ -8,7 +8,6 @@ import { HeroStats } from "@/components/home/HeroStats";
 
 interface HeroProps {
   credentialLine: string;
-  highlightPhrase: string;
   headline: string;
   subheadline: string;
   primaryCtaLabel: string;
@@ -37,7 +36,6 @@ const childVariants = {
 
 export function Hero({
   credentialLine,
-  highlightPhrase,
   headline,
   subheadline,
   primaryCtaLabel,
@@ -45,14 +43,6 @@ export function Hero({
   secondaryCtaLabel,
   secondaryCtaHref,
 }: HeroProps) {
-  const hasEmphasisPhrase = subheadline.includes(highlightPhrase);
-  const leadSubheadline = hasEmphasisPhrase
-    ? subheadline
-        .replace(` — ${highlightPhrase}`, "")
-        .replace(` - ${highlightPhrase}`, "")
-        .replace(highlightPhrase, "")
-        .trim()
-    : subheadline;
 
   return (
     <section id="hero" className="-mt-20 flex min-h-screen items-center bg-paper pt-20">
@@ -69,27 +59,16 @@ export function Hero({
 
           <motion.h1
             variants={childVariants}
-            className="mt-6 font-serif text-4xl font-bold leading-[1.1] text-ink sm:text-5xl lg:text-7xl"
+            className="mt-6 font-serif text-4xl font-bold leading-[1.1] text-ink sm:text-5xl lg:text-6xl"
           >
-            {headline.includes("to production.") ? (
-              <>
-                {headline.split("to production.")[0]}
-                <br className="hidden lg:block" />
-                <em className="italic">to production.</em>
-              </>
-            ) : (
-              headline
-            )}
+            {headline}
           </motion.h1>
 
           <motion.p
             variants={childVariants}
             className="mt-6 max-w-xl text-base leading-relaxed text-mid-gray sm:text-lg"
           >
-            {leadSubheadline}
-            {hasEmphasisPhrase && (
-              <span className="mt-4 block text-ink">{highlightPhrase}</span>
-            )}
+            {subheadline}
           </motion.p>
 
           <motion.div

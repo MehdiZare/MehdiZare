@@ -8,7 +8,7 @@ export const size = {
 };
 export const contentType = "image/png";
 export const alt =
-  `${DEFAULT_SITE_PROFILE.siteName} - ${DEFAULT_SITE_PROFILE.authorRole} shipping production systems from prototype to production.`;
+  `${DEFAULT_SITE_PROFILE.siteName} - ${DEFAULT_SITE_PROFILE.credentialLine}`;
 
 export default function OpenGraphImage() {
   return new ImageResponse(
@@ -45,10 +45,10 @@ export default function OpenGraphImage() {
             maxWidth: "980px",
           }}
         >
-          <div style={{ fontSize: 68, lineHeight: 1.05, fontWeight: 700 }}>
+          <div style={{ fontSize: 48, lineHeight: 1.15, fontWeight: 700 }}>
             {DEFAULT_SITE_PROFILE.positioningHeadline}
           </div>
-          <div style={{ fontSize: 30, lineHeight: 1.25, color: "#374151" }}>
+          <div style={{ fontSize: 26, lineHeight: 1.3, color: "#374151" }}>
             {DEFAULT_SITE_PROFILE.siteDescription}
           </div>
         </div>

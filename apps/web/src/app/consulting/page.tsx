@@ -6,7 +6,11 @@ import { CalComTrigger } from "@/components/scheduling/CalComTrigger";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
-import { buildConsultingFallback } from "@/content/fallbacks";
+import {
+  buildConsultingFallback,
+  consultingDescription,
+  consultingMetadataTitle,
+} from "@/content/fallbacks";
 import {
   buildBreadcrumbJsonLd,
   buildFAQJsonLd,
@@ -18,27 +22,26 @@ import { getSiteProfile } from "@/lib/site-profile";
 
 const schedulerSectionId = "book";
 const schedulerAnchorHref = `#${schedulerSectionId}`;
-const consultingDescription =
-  "AI strategy, architecture reviews, hands-on implementation, and fractional AI leadership for finance, healthcare, government, and enterprise teams.";
+const serviceArea = "Remote, anywhere";
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteProfile = await getSiteProfile();
-  // The CMS row used to supply this title and the repo constant was only the
-  // outage fallback, so dropping the CMS read silently retitled the page from
-  // "AI Consulting for High-Stakes Teams" to "Consulting". #100 pins that title
-  // for GSC, so take it from the same fallback the <h1> renders.
-  const { title: consultingTitle } = buildConsultingFallback(siteProfile);
+  // The page title and the <h1> are different strings on purpose. Metadata
+  // uses the search title; the heading uses the same fallback the page renders.
+  // #100 pinned them together when both were one CMS title. They still have to
+  // come from this module, not a short hardcoded "Consulting".
+  void siteProfile;
   const consultingKeywords = [
     "AI consulting",
-    "production AI systems",
-    "LLM engineering",
-    "AI architecture",
-    "fractional AI leadership",
+    "AI agents",
+    "agent workflow",
+    "fractional CTO",
+    "startup AI",
   ];
 
   return buildPageMetadata({
     pathname: "/consulting",
-    title: consultingTitle,
+    title: consultingMetadataTitle,
     description: consultingDescription,
     type: "website",
     keywords: consultingKeywords,
@@ -69,16 +72,6 @@ export default async function ConsultingPage() {
           addressCountry: siteProfile.author.addressCountry,
         }
       : undefined;
-  const serviceAreaName = [
-    siteProfile.author.addressLocality,
-    siteProfile.author.addressRegion,
-    siteProfile.author.addressCountry,
-  ]
-    .filter(Boolean)
-    .join(", ");
-  const areaServed = serviceAreaName
-    ? [{ "@type": "Place", name: serviceAreaName }, { "@type": "Country", name: "United States" }]
-    : [{ "@type": "Country", name: "United States" }];
   const consultingServiceJsonLd = {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
@@ -104,7 +97,7 @@ export default async function ConsultingPage() {
       "@type": "Audience",
       audienceType: audience.title,
     })),
-    areaServed,
+    areaServed: serviceArea,
     availableLanguage: ["English"],
     mainEntityOfPage: {
       "@id": `${siteUrl}/consulting#webpage`,
@@ -138,6 +131,9 @@ export default async function ConsultingPage() {
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-mid-gray">Consulting</p>
             <h1 className="mt-4 font-serif text-4xl leading-tight text-ink sm:text-5xl">{data.title}</h1>
             <p className="mt-6 max-w-3xl text-xl leading-relaxed text-mid-gray">{data.subtitle}</p>
+            <p className="mt-4 font-mono text-xs uppercase tracking-[0.2em] text-mid-gray">
+              Service area: {serviceArea}
+            </p>
             <p className="mt-4 max-w-3xl text-sm text-mid-gray">
               Looking for the{" "}
               <TrackedLink
@@ -162,9 +158,39 @@ export default async function ConsultingPage() {
       <section className="py-16">
         <div className="mx-auto max-w-7xl px-6">
           <AnimatedSection>
-            <SectionHeading title="Who I Help" subtitle="Teams where domain context and AI delivery both matter" />
+            <SectionHeading
+              title="What I run myself"
+              subtitle="No client logos or results here until there are real ones I can back up."
+            />
           </AnimatedSection>
-          <div className="mt-10 grid gap-6 md:grid-cols-2">
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {data.proof.map((item, index) => (
+              <AnimatedSection key={item.id} delay={index * 0.08}>
+                <article className="border border-warm-gray bg-paper p-6">
+                  <h3 className="font-serif text-lg text-ink">
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-4 transition-colors hover:text-mid-gray"
+                    >
+                      {item.name}
+                    </a>
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-mid-gray">{item.description}</p>
+                </article>
+              </AnimatedSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16">
+        <div className="mx-auto max-w-7xl px-6">
+          <AnimatedSection>
+            <SectionHeading title="Who it's for" subtitle="Founders and small teams. Fully remote." />
+          </AnimatedSection>
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
             {data.audiences.map((audience, index) => (
               <AnimatedSection key={audience.id} delay={index * 0.08}>
                 <article className="border border-warm-gray bg-paper p-6">
@@ -178,16 +204,40 @@ export default async function ConsultingPage() {
       </section>
 
       <section className="py-16">
+        <div className="mx-auto max-w-3xl px-6">
+          <AnimatedSection>
+            <SectionHeading title="Not a fit" />
+          </AnimatedSection>
+          <AnimatedSection delay={0.1} className="mt-8">
+            <ul className="space-y-3 border border-warm-gray bg-paper p-6">
+              {data.notAFit.map((item) => (
+                <li key={item} className="text-sm leading-relaxed text-mid-gray">
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      <section className="py-16">
         <div className="mx-auto max-w-7xl px-6">
           <AnimatedSection>
-            <SectionHeading title="How I Can Help" subtitle="Flexible engagement models tailored to your needs" />
+            <SectionHeading title="How I can help" subtitle="Three offers. Remote." />
           </AnimatedSection>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {data.services.map((service, index) => (
               <AnimatedSection key={service.id} delay={index * 0.1}>
                 <div className="border border-warm-gray bg-paper p-6">
                   <h3 className="font-serif text-lg text-ink">{service.name}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-mid-gray">{service.scope}</p>
+                  <p className="mt-3 text-sm font-medium text-ink">{service.scope}</p>
+                  <ul className="mt-4 space-y-3">
+                    {service.details.map((detail) => (
+                      <li key={detail} className="text-sm leading-relaxed text-mid-gray">
+                        {detail}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </AnimatedSection>
             ))}
@@ -230,18 +280,14 @@ export default async function ConsultingPage() {
       <section className="py-16">
         <div className="mx-auto max-w-4xl px-6">
           <AnimatedSection>
-            <SectionHeading title="How It Works" subtitle="Simple process designed for executive clarity and execution speed" />
+            <SectionHeading title="How it works" subtitle="Remote, from the first call." />
           </AnimatedSection>
           <AnimatedSection delay={0.15} className="mt-8">
             <div className="grid gap-4 sm:grid-cols-3">
-              {[
-                "Discovery Call (free 20 min)",
-                "Custom Proposal",
-                "Engagement Kickoff",
-              ].map((step, index) => (
+              {data.howItWorks.map((step, index) => (
                 <div key={step} className="border border-warm-gray bg-paper p-5 text-center">
                   <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-warm">Step {index + 1}</p>
-                  <p className="mt-3 text-sm font-medium text-ink">{step}</p>
+                  <p className="mt-3 text-sm font-medium leading-relaxed text-ink">{step}</p>
                 </div>
               ))}
             </div>
@@ -252,13 +298,15 @@ export default async function ConsultingPage() {
       <section id={schedulerSectionId} className="py-16">
         <div className="mx-auto max-w-4xl px-6">
           <AnimatedSection>
-            <SectionHeading title="Book a Discovery Call" subtitle="Schedule a free 20-minute session" />
+            <SectionHeading
+              title="Book a free 20-minute call"
+              subtitle="We talk about one workflow and whether I can help."
+            />
           </AnimatedSection>
           <AnimatedSection delay={0.15} className="mt-10">
             <div className="border border-warm-gray bg-paper p-8 text-center">
               <p className="mx-auto max-w-2xl text-sm text-mid-gray">
-                Pick a time that works for you and we&apos;ll focus on your
-                goals, current blockers, and fastest path to production.
+                Pick a time that works for you. The call is free, and the work after it is remote.
               </p>
               <CalComTrigger
                 className="mt-6"

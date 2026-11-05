@@ -289,7 +289,7 @@ export interface AuthorWorksFor {
  *
  * Same unit semantics as {@link resolveAuthorAddress}: `worksFor` is one
  * Organization node, and merging name and url independently published mixed
- * employers -- `Entarian` with another org's careers URL, or the inverse.
+ * employers -- one company's name with another company's careers URL, or the inverse.
  * A record that supplies either field supplies both as-is; only a record with
  * neither inherits the site owner's pair.
  *

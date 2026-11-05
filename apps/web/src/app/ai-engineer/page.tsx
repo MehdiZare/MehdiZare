@@ -122,7 +122,7 @@ export default async function AiEngineerPage() {
           <AnimatedSection>
             <SectionHeading
               title="What this AI engineer does"
-              subtitle="Systems that have to run in finance, not just look good in a demo"
+              subtitle="Systems a small team can keep running, not a demo that needs babysitting"
             />
           </AnimatedSection>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
@@ -144,21 +144,16 @@ export default async function AiEngineerPage() {
         <div className="mx-auto max-w-7xl px-6">
           <AnimatedSection>
             <SectionHeading
-              title="Finance is the domain"
-              subtitle="The CFA is not decoration — it is how the work stays honest"
+              title="Learn the work first"
+              subtitle="Physics, an MBA in finance, and the CFA"
             />
           </AnimatedSection>
           <AnimatedSection delay={0.15} className="mt-10">
             <div className="mx-auto max-w-3xl space-y-5 text-lg leading-relaxed text-mid-gray">
               <p>
-                Plenty of teams can stand up a chatbot. Fewer can put a model next
-                to a funding forecast, a research workflow, or a risk process and
-                have it survive contact with operations.
-              </p>
-              <p>
                 I trained as a physicist, then earned an MBA in finance and the CFA
-                charter. That combination is the job: learn the domain first, then
-                engineer the system that ships.
+                charter. I learn the workflow before I pick a tool, then I engineer
+                the system your team can keep running.
               </p>
             </div>
           </AnimatedSection>
@@ -169,8 +164,8 @@ export default async function AiEngineerPage() {
         <div className="mx-auto max-w-7xl px-6">
           <AnimatedSection>
             <SectionHeading
-              title="Selected finance work"
-              subtitle="Proof that the AI engineer title is earned in markets, not slides"
+              title="Selected work"
+              subtitle="Capital One, the CFA, Adviser, and FI Consulting"
             />
           </AnimatedSection>
           <div className="mt-10 grid gap-6 md:grid-cols-2">

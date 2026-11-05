@@ -199,7 +199,7 @@ type TokenRow = {
   permissions?: { action: string }[];
 };
 
-/** Production wiring against Strapi 5.58's admin content-API token service. */
+/** Production wiring against Strapi 5.61's admin content-API token service. */
 export function strapiManagedTokenDeps(strapi: Core.Strapi): ManagedTokenDeps {
   const tokens = strapi.service('admin::api-token-content-api') as unknown as {
     create(attributes: TokenAttributes & { lifespan: null }): Promise<{ id: number | string }>;
