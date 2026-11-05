@@ -12,7 +12,7 @@ export function isPatchedBracesAdvisory(advisory) {
     && advisory.findings.every(finding => finding.version === '3.0.3');
 }
 
-// Strapi 5.58 requires zod 3 and zod ships the fix only in 4.6.6, so this exact
+// Strapi 5.61 still installs zod 3 (koa-body and @strapi/types). zod ships the fix only in 4.6.6, so this exact
 // advisory is accepted on zod 3.x until Strapi moves to zod 4; see patches/README.md.
 export function isAcceptedZodAdvisory(advisory) {
   return advisory.module_name === 'zod'
