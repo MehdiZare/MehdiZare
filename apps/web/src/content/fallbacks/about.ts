@@ -14,7 +14,7 @@ function buildCanonicalAboutStory(): string[] {
     "I studied physics because I wanted to understand how things work from first principles. But I was never just a theorist — while earning my degree at the University of Tehran, I was already writing code and building products. That tension between rigorous analysis and the urge to ship something real has defined my entire career.",
     "Fardabook.com was the first proof. I founded a textbook-focused online bookstore and ran product, operations, and go-to-market from scratch. It taught me that building a company and building software are the same discipline: figure out what people need, then engineer a system that delivers it reliably.",
     "I came to the U.S. for an MBA in Finance at the University of Maryland's Smith School of Business. That's where I discovered quantitative finance and started pursuing the CFA charter. I earned it while working at FI Consulting with the Office of Financial Research. The CFA gave me the language of capital markets.",
-    "Today I build and run my own AI products with agent workflows, and I help founders and CTOs take theirs from prototype to production, remotely. The physics taught me to think in systems. The finance taught me to speak the language of risk. The entrepreneurship taught me to ship.",
+    "Today I build and run my own products with AI coding agents, and I help founders and CTOs take theirs from prototype to production, remotely. The physics taught me to think in systems. The finance taught me to speak the language of risk. The entrepreneurship taught me to ship.",
   ];
 }
 

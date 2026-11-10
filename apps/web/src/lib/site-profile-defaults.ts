@@ -21,7 +21,7 @@ export const DEFAULT_SITE_PROFILE = {
   positioningHeadline:
     "I help founders and CTOs turn AI prototypes into reliable products.",
   positioningSubheadline:
-    "I'm an AI and cloud architect and a CFA charterholder. I build and run my own AI products with agent workflows, and I help founders and CTOs get theirs from a working demo to a system customers rely on, remotely.",
+    "I'm an AI and cloud architect and a CFA charterholder. I build and run my own products with AI coding agents, and I help founders and CTOs get theirs from a working demo to a system customers rely on, remotely.",
   positioningHighlight: "Remote, anywhere.",
   credentialLine: "AI and cloud architect · CFA Charterholder",
   industriesLine: "Remote, anywhere",
@@ -34,7 +34,7 @@ export const DEFAULT_SITE_PROFILE = {
   authorName: "Mehdi Zare, CFA",
   authorRole: "AI and cloud architect",
   authorBioShort:
-    "AI and cloud architect. I build and run AI products with agent workflows, and I help founders and CTOs take theirs from prototype to production, remotely.",
+    "AI and cloud architect. I build and run my own products with AI coding agents, and I help founders and CTOs take theirs from prototype to production, remotely.",
   authorSlug: "mehdi-zare",
   authorWebsiteUrl: "https://www.mehdi-zare.com",
   authorLinkedinUrl: "https://linkedin.com/in/mehdizare",

@@ -18,7 +18,7 @@ export function NarrativeSection() {
           </p>
           <p>
             I&apos;ve built AI and data systems at large companies, and now I build
-            and run my own AI products with agent workflows. I help founders and
+            and run my own products with AI coding agents. I help founders and
             CTOs take theirs from prototype to production, remotely.
           </p>
         </div>

@@ -34,7 +34,7 @@ const services: ServiceCard[] = [
     number: "03",
     title: "Fractional AI and cloud architect",
     description:
-      "A monthly engagement. I review designs and what your team and its agents ship, make the model and architecture calls with you, and keep reliability and cost in check.",
+      "A monthly engagement. I review designs and what your team and its agents ship, make the model and build-versus-buy calls with you, and keep reliability and cost in check. Weekly check-in and async help.",
     href: "/consulting",
   },
 ];

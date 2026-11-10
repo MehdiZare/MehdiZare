@@ -107,7 +107,7 @@ export function buildAiEngineerFallback(
   return {
     title: aiEngineerMetadataTitle,
     headline: aiEngineerMetadataTitle,
-    subtitle: `${siteProfile.authorName} is an AI and cloud architect. He builds and runs AI products with agent workflows, and helps founders and CTOs take theirs from prototype to production, remotely.`,
+    subtitle: `${siteProfile.authorName} is an AI and cloud architect. He builds and runs his own products with AI coding agents, and helps founders and CTOs take theirs from prototype to production, remotely.`,
     description: `AI engineer ${siteProfile.siteName} helps founders and CTOs turn AI prototypes into reliable products. Remote.`,
     capabilities: aiEngineerCapabilities,
     proofPoints: aiEngineerProofPoints,
