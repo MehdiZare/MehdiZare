@@ -188,7 +188,7 @@ export default async function ConsultingPage() {
       <section className="py-16">
         <div className="mx-auto max-w-7xl px-6">
           <AnimatedSection>
-            <SectionHeading title="Who it's for" subtitle="Founders and small teams. Fully remote." />
+            <SectionHeading title="Who it's for" subtitle="Founders and CTOs building AI products. Fully remote." />
           </AnimatedSection>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {data.audiences.map((audience, index) => (

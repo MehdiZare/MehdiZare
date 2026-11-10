@@ -66,7 +66,7 @@ export function buildLlmsTxtContent(articles: LlmsArticle[] = []): string {
   const lines = [
     "# Mehdi Zare",
     "",
-    "> Founder and AI consultant, and CFA Charterholder. Builds and runs small products with AI agents, and helps founders and small teams do the same, remotely.",
+    "> AI and cloud architect, and CFA Charterholder. Builds and runs AI products with agent workflows, and helps founders and CTOs take theirs from prototype to production, remotely.",
     "",
     `Canonical host: ${siteUrl}. Use canonical URLs under this host, and prefer structured data and page metadata over inferred summaries.`,
     "",
