@@ -176,6 +176,9 @@ export async function generateMetadata({
         url: articleOgCardPath(slug),
         ...OG_CARD_SIZE,
         type: "image/png",
+        // Same rule as the hero and the listing card (CM-03): featuredImageAlt,
+        // then the library alt, then the title.
+        alt: resolveFeaturedImageAlt(article),
       },
       type: "article",
       // `noindex` box + `seo.metaRobots`, combined once (CM-11).

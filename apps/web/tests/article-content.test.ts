@@ -54,6 +54,22 @@ test("a cleared or whitespace alt counts as absent, not as an empty alt", () => 
   );
 });
 
+test("og:image:alt for a post follows the same cover alt rule", () => {
+  type OgImage = { alt?: string };
+  const ogAlt = (article: Parameters<typeof resolveFeaturedImageAlt>[0]) =>
+    ((buildPageMetadata({
+      pathname: "/blog/post",
+      title: "Title",
+      description: "desc",
+      defaultImage: { url: "/blog/post/opengraph-image", width: 1200, height: 630, alt: resolveFeaturedImageAlt(article) },
+      type: "article",
+    }).openGraph?.images ?? []) as OgImage[])[0]?.alt;
+
+  assert.equal(ogAlt({ title: "Title", featuredImageAlt: "Per-article alt", featuredImage: cover("Library") }), "Per-article alt");
+  assert.equal(ogAlt({ title: "Title", featuredImage: cover("Library") }), "Library");
+  assert.equal(ogAlt({ title: "Title" }), "Title");
+});
+
 // ── Robots / noindex (CM-11) ────────────────────────────────────────────
 
 test("the noindex box renders noindex, follow and keeps an editor's follow directive", () => {
