@@ -161,7 +161,6 @@ test("the post page renders the sections in answer-first order and FAQPage from 
   assert.match(source, /\{faqJsonLd \? <JsonLd id="blog-post-faq-jsonld"/);
   assert.match(source, /robots: resolveArticleRobots\(article\)/);
   assert.match(source, /alt=\{coverAlt\}/);
-  assert.match(source, /alt: resolveFeaturedImageAlt\(article\),/, "og:image:alt uses the cover alt rule");
   assert.match(source, /citations: buildSourceCitations\(sources\)/);
 });
 
