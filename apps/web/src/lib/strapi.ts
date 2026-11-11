@@ -322,6 +322,100 @@ const articlePopulate = {
   seo: { populate: { metaImage: { populate: "*" } } },
 };
 
+/**
+ * Article attributes added by the answer-first content model (CM-02 et al.).
+ *
+ * The CMS and the web deploy separately, and Strapi 5 answers a `fields` or
+ * `populate` key it does not know with `400 Invalid key`. Queries without a
+ * `fields` list (the listings, the post page) receive the new scalars for free
+ * once the CMS has them, so only explicit `fields` lists and the component
+ * populates can trip that. `fetchArticles` strips these keys and retries once
+ * on a 400, so a web deploy that lands before the CMS deploy degrades to the
+ * old model instead of 404ing every post and emptying the sitemap and feed.
+ */
+export const CONTENT_MODEL_V2_SCALAR_FIELDS = [
+  "contentUpdatedAt",
+  "featuredImageAlt",
+  "series",
+  "seriesPart",
+  "crossPostXUrl",
+  "crossPostLinkedinUrl",
+  "noindex",
+] as const;
+
+export const CONTENT_MODEL_V2_COMPONENTS = [
+  "keyTakeaways",
+  "faq",
+  "sources",
+  "comparisonTables",
+] as const;
+
+const CONTENT_MODEL_V2_KEYS: ReadonlySet<string> = new Set([
+  ...CONTENT_MODEL_V2_SCALAR_FIELDS,
+  ...CONTENT_MODEL_V2_COMPONENTS,
+]);
+
+/**
+ * The post page's populate: the shared one plus the four components only a
+ * post renders. Listings keep `articlePopulate`, so a card grid never pulls
+ * FAQs, sources or tables.
+ */
+const articlePostPopulate = {
+  ...articlePopulate,
+  keyTakeaways: true,
+  faq: true,
+  sources: true,
+  comparisonTables: true,
+};
+
+/**
+ * `params` with every content-model v2 key removed from `fields` and from a
+ * top-level `populate` object, or `null` when there was nothing to remove.
+ * Filters are left alone on purpose: dropping a `series` filter would turn a
+ * sibling lookup into "every article".
+ */
+export function stripContentModelV2(params: FetchAPIParams): FetchAPIParams | null {
+  let stripped = false;
+  const next: FetchAPIParams = { ...params };
+
+  if (Array.isArray(params.fields)) {
+    const fields = params.fields.filter((field) => !CONTENT_MODEL_V2_KEYS.has(field));
+    if (fields.length !== params.fields.length) {
+      next.fields = fields;
+      stripped = true;
+    }
+  }
+
+  const populate = params.populate;
+  if (populate && typeof populate === "object" && !Array.isArray(populate)) {
+    const entries = Object.entries(populate);
+    const kept = entries.filter(([key]) => !CONTENT_MODEL_V2_KEYS.has(key));
+    if (kept.length !== entries.length) {
+      next.populate = Object.fromEntries(kept);
+      stripped = true;
+    }
+  }
+
+  return stripped ? next : null;
+}
+
+function isBadRequest(error: unknown): boolean {
+  return error instanceof StrapiRequestError && error.status === 400;
+}
+
+async function fetchArticles(params: FetchAPIParams): Promise<StrapiCollectionResponse<Article>> {
+  try {
+    return await fetchAPI<StrapiCollectionResponse<Article>>("/articles", params);
+  } catch (error) {
+    const legacy = isBadRequest(error) ? stripContentModelV2(params) : null;
+    if (!legacy) throw error;
+    console.warn(
+      "[strapi] /articles rejected a content-model v2 key (is the CMS deployed with the new article schema?); retrying without them"
+    );
+    return fetchAPI<StrapiCollectionResponse<Article>>("/articles", legacy);
+  }
+}
+
 const authorPopulate = {
   sameAs: { populate: "*" },
   profileImage: { populate: "*" },
@@ -331,7 +425,7 @@ const authorPopulate = {
 export async function getArticles(
   params?: FetchAPIParams
 ): Promise<StrapiCollectionResponse<Article>> {
-  return fetchAPI<StrapiCollectionResponse<Article>>("/articles", {
+  return fetchArticles({
     populate: articlePopulate,
     ...params,
   });
@@ -340,12 +434,39 @@ export async function getArticles(
 export async function getArticleBySlug(
   slug: string
 ): Promise<StrapiCollectionResponse<Article>> {
-  return fetchAPI<StrapiCollectionResponse<Article>>("/articles", {
-    populate: articlePopulate,
+  return fetchArticles({
+    populate: articlePostPopulate,
     filters: {
       slug: { $eq: slug },
     },
   });
+}
+
+/** The fields a series navigation needs, nothing else. */
+const SERIES_ARTICLE_FIELDS = ["title", "slug", "seriesPart", "publishedDate", "publishedAt"] as const;
+
+/** Upper bound on parts listed; a series is a handful of posts, not a catalog. */
+export const SERIES_PART_LIMIT = 50;
+
+/**
+ * Every published part of `series`, ordered by part, with only the fields the
+ * series navigation renders. Not retried without the v2 keys on a 400:
+ * `series` is the filter, and a CMS without the field cannot have a post in a
+ * series, so a rejected query means "no siblings".
+ */
+export async function getArticlesInSeries(series: string): Promise<Article[]> {
+  try {
+    const response = await fetchAPI<StrapiCollectionResponse<Article>>("/articles", {
+      fields: SERIES_ARTICLE_FIELDS,
+      filters: { series: { $eq: series } },
+      sort: ["seriesPart:asc", "publishedDate:asc"],
+      pagination: { page: 1, pageSize: SERIES_PART_LIMIT },
+    });
+    return Array.isArray(response.data) ? response.data : [];
+  } catch (error) {
+    if (isBadRequest(error)) return [];
+    throw error;
+  }
 }
 
 export async function getAuthors(
