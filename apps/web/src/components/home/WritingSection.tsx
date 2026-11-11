@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { buildHomeWritingCards } from "@/content/fallbacks";
 import { getArticles } from "@/lib/strapi";
-import { ARTICLE_LISTING_SORT, sortArticlesByPublishedDesc } from "@/lib/article-dates";
+import { ARTICLE_LISTING_SORT, LISTING_OVERFETCH, sortArticlesByPublishedDesc } from "@/lib/article-dates";
 import { Label } from "@/components/shared/Label";
 
 const HOME_ARTICLE_LIMIT = 3;
-const LISTING_OVERFETCH = 5;
 
 const mediumPublications = [
   {

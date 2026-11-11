@@ -183,6 +183,16 @@ export interface FetchAllPagesOptions {
   deadlineMs?: number;
 }
 
+export interface FetchAllPagesResult<T> {
+  items: T[];
+  /**
+   * False when a later page failed, the caller deadline stopped the walk, or
+   * STRAPI_MAX_PAGES cut it short of Strapi's pageCount. Callers that treat a
+   * missing row as "does not exist" must ignore `items` unless this is true.
+   */
+  complete: boolean;
+}
+
 /**
  * Walk a collection page by page (caller supplies `sort`), stopping at
  * STRAPI_MAX_PAGES. Truncation is logged rather than silent so a catalog that
@@ -194,12 +204,12 @@ export interface FetchAllPagesOptions {
  * `deadlineMs` skips a further page when remaining time cannot cover
  * STRAPI_TIMEOUT_MS.
  */
-export async function fetchAllPages<T>(
+export async function fetchAllPagesResult<T>(
   fetchPage: (params: FetchAPIParams) => Promise<StrapiCollectionResponse<T>>,
   label: string,
   params: Omit<FetchAPIParams, "pagination"> = {},
   options: FetchAllPagesOptions = {}
-): Promise<T[]> {
+): Promise<FetchAllPagesResult<T>> {
   const items: T[] = [];
   let page = 1;
 
@@ -212,7 +222,7 @@ export async function fetchAllPages<T>(
       console.warn(
         `[strapi] ${label}: stopping pagination to honor caller deadline; returning ${items.length} row(s)`
       );
-      break;
+      return { items, complete: false };
     }
 
     let response: StrapiCollectionResponse<T>;
@@ -227,7 +237,7 @@ export async function fetchAllPages<T>(
           `[strapi] ${label}: page ${page} failed after ${items.length} row(s); returning partial results`,
           error
         );
-        return items;
+        return { items, complete: false };
       }
       throw error;
     }
@@ -243,7 +253,7 @@ export async function fetchAllPages<T>(
 
     const pageCount = response.meta?.pagination?.pageCount ?? 1;
     if (page >= pageCount) {
-      break;
+      return { items, complete: true };
     }
 
     if (page >= STRAPI_MAX_PAGES) {
@@ -252,13 +262,20 @@ export async function fetchAllPages<T>(
           `but Strapi reports ${pageCount}; entries beyond ` +
           `${STRAPI_MAX_PAGES * PAGE_SIZE} are omitted.`
       );
-      break;
+      return { items, complete: false };
     }
 
     page += 1;
   }
+}
 
-  return items;
+export async function fetchAllPages<T>(
+  fetchPage: (params: FetchAPIParams) => Promise<StrapiCollectionResponse<T>>,
+  label: string,
+  params: Omit<FetchAPIParams, "pagination"> = {},
+  options: FetchAllPagesOptions = {}
+): Promise<T[]> {
+  return (await fetchAllPagesResult(fetchPage, label, params, options)).items;
 }
 
 function flattenParams(

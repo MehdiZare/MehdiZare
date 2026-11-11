@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { getArticles, getCategories } from "@/lib/strapi";
 import { firstFilled, formatSlugName } from "@/lib/strings";
-import { ARTICLE_LISTING_SORT, sortArticlesByPublishedDesc } from "@/lib/article-dates";
+import {
+  ARTICLE_LISTING_SORT,
+  LISTING_OVERFETCH,
+  sortArticlesByPublishedDesc,
+} from "@/lib/article-dates";
 
 // Deliberately not re-exported. This module imports `@/lib/strapi`, which
 // reaches `server-only`, so a client component that reached `formatSlugName`
@@ -238,15 +242,20 @@ type ListingArticles = Awaited<ReturnType<typeof getArticles>>["data"];
 /** How many posts a taxonomy listing shows per source slug. */
 export const TAXONOMY_LISTING_PAGE_SIZE = 12;
 
-function getTaxonomyArticles(filters: Record<string, unknown>) {
-  return getArticles({
+async function getTaxonomyArticles(filters: Record<string, unknown>) {
+  const result = await getArticles({
     filters,
     sort: ARTICLE_LISTING_SORT,
     pagination: {
       page: 1,
-      pageSize: TAXONOMY_LISTING_PAGE_SIZE,
+      pageSize: TAXONOMY_LISTING_PAGE_SIZE + LISTING_OVERFETCH,
     },
   });
+
+  return {
+    ...result,
+    data: sortArticlesByPublishedDesc(result.data).slice(0, TAXONOMY_LISTING_PAGE_SIZE),
+  };
 }
 
 /**

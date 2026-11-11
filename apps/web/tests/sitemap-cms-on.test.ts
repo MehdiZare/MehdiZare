@@ -570,6 +570,27 @@ test("a CMS whose terms all have no posts emits no taxonomy URLs instead of the 
   assert.ok(!urls.some((url) => url.includes("/blog/tag/")));
 });
 
+test("a partial article walk lists taxonomy terms the fetched rows never mentioned", async () => {
+  const { urls } = await runSitemap({
+    articles: [
+      {
+        slug: "page-one",
+        publishedAt: "2026-08-01T10:00:00.000Z",
+        category: { slug: "kept" },
+        tags: [{ slug: "kept-tag" }],
+      },
+    ],
+    articlePageCount: 3,
+    failArticlePage: 2,
+    categories: [{ slug: "kept" }, { slug: "later-page" }],
+    tags: [{ slug: "kept-tag" }, { slug: "later-page-tag" }],
+  });
+
+  assert.ok(urls.includes(`${SITE_URL}/blog/category/later-page`));
+  assert.ok(urls.includes(`${SITE_URL}/blog/tag/later-page-tag`));
+  assert.ok(urls.includes(`${SITE_URL}/blog/page-one`));
+});
+
 test("a failed article walk lists the taxonomy unfiltered rather than dropping it", async () => {
   const { urls } = await runSitemap({
     failArticlePage: 1,

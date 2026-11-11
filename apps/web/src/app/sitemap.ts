@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import type { Article, Author, Category, Tag, SEO } from "@/types/strapi";
 import {
   fetchAllPages,
+  fetchAllPagesResult,
   getArticles,
   getAuthors,
   getCategories,
@@ -111,8 +112,8 @@ const SITEMAP_ARTICLE_FIELDS = {
   },
 } as const;
 
-function getAllArticlesForSitemap(deadlineMs?: number): Promise<Article[]> {
-  return fetchAllPages(
+function getAllArticlesForSitemap(deadlineMs?: number) {
+  return fetchAllPagesResult(
     getArticles,
     "articles",
     {
@@ -451,16 +452,20 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     ]);
 
   let articlePages: MetadataRoute.Sitemap = [];
-  // null when the article walk failed: post counts are unknown, so the
-  // taxonomy is listed unfiltered rather than dropped.
+  // null when the article walk failed or stopped early: post counts are
+  // unknown, so the taxonomy is listed unfiltered rather than dropped.
+  // A fulfilled partial walk (later-page error, deadline, or the page cap)
+  // is the same situation — `fetchAllPagesResult` reports it as incomplete.
   let termPostDates: ReturnType<typeof collectTermPostDates> | null = null;
   if (articlesResult.status === "fulfilled") {
-    const articles = articlesResult.value;
+    const articles = articlesResult.value.items;
     pageTimestamps.blog = maxValidDate(
       articles.map((article) => resolveArticleLastModified(article)?.toISOString()),
       pageTimestamps.blog
     );
-    termPostDates = collectTermPostDates(articles);
+    if (articlesResult.value.complete) {
+      termPostDates = collectTermPostDates(articles);
+    }
     articlePages = mapArticlePages(articles);
     if (articles.length > 0 && !articles.some(article => normalizeSlug(article.slug))) {
       // Rows came back but mapArticlePages emitted nothing — a fields/populate

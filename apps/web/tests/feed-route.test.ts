@@ -153,14 +153,19 @@ test("FEED_ALTERNATE_TYPES is ready for alternates.types", () => {
   assert.equal(FEED_ALTERNATE_TYPES["application/rss+xml"][0].url, "/feed.xml");
 });
 
-test("FEED_TITLE matches the Site Profile name (feed-constants stays import-free)", async () => {
+test("FEED_TITLE is the Site Profile name, not a second copy of it", async () => {
   const { DEFAULT_SITE_PROFILE } = await import("../src/lib/site-profile-defaults.ts");
   const { FEED_TITLE } = await import("../src/lib/feed-constants.ts");
   assert.equal(FEED_TITLE, `${DEFAULT_SITE_PROFILE.siteName} | Blog`);
 
   const { readFileSync } = await import("node:fs");
   const source = readFileSync(new URL("../src/lib/feed-constants.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /^\s*import\s/m, "seo.ts imports this; an import here risks a cycle");
+  assert.match(source, /from "\.\/site-profile-defaults"/);
+  assert.doesNotMatch(
+    source,
+    /from ["']@\/lib\/(seo|feed|strapi)|from ["']\.\/(seo|feed|strapi)/,
+    "seo.ts imports this module; importing seo, feed, or strapi here cycles"
+  );
 });
 
 test("page metadata and the root layout both carry the RSS alternate", async () => {

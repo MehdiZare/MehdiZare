@@ -30,9 +30,14 @@ export const SITE_PUBLISH_HOUR = 9;
  * then the system publish time as a tiebreak for undated rows and same-day
  * posts. Postgres sorts NULLs first under DESC and Strapi 5 does not add
  * `NULLS LAST`, so callers also run `sortArticlesByPublishedDesc` over the
- * page they get back.
+ * page they get back. A window of exactly N rows can be filled by undated
+ * posts and drop a dated one the in-memory sort would have kept, so a
+ * single-page slice over-fetches {@link LISTING_OVERFETCH} extra rows first.
  */
 export const ARTICLE_LISTING_SORT: string[] = ["publishedDate:desc", "publishedAt:desc"];
+
+/** Extra rows a single-page listing fetches before sorting and slicing. */
+export const LISTING_OVERFETCH = 5;
 
 export interface ArticleDateSource {
   publishedDate?: string | null;

@@ -186,20 +186,40 @@ export function resolveAuthorPageIdentity(
  * name above a profile link to another, and points `BlogPosting.author.@id` at
  * a `Person` node the visible byline contradicts.
  *
- * So a present relation is resolved by exactly the rule `/author/[slug]` uses.
- * Delegating rather than repeating it is the point: this module exists because
- * the two routes drifted while each spelled the same rule for itself.
+ * So a present relation is resolved by exactly the rule `/author/[slug]` uses
+ * for its name. Role, bio, and identity URLs are not: those fallbacks are the
+ * site owner's, and stamping them onto a guest is the same misattribution
+ * {@link resolveAuthorAddress} refuses for address. A guest with a blank field
+ * gets nothing there, which the byline and `sameAs` both omit. Only the site
+ * owner (including an article with no author relation) inherits the profile.
+ *
+ * `siteOwnerSlug` is the slug `isSiteOwnerAuthor` compares. Callers that have
+ * one must pass it, or a present owner record with a cleared field looks like
+ * a guest and loses the profile fallback.
  */
+const GUEST_IDENTITY_FALLBACKS: AuthorIdentityFallbacks = {
+  authorName: "",
+  authorRole: "",
+  authorBioShort: "",
+  websiteUrl: "",
+  linkedinUrl: "",
+};
+
 export function resolveArticleAuthorIdentity(
   source: AuthorIdentitySource | null | undefined,
   fallbacks: AuthorIdentityFallbacks,
-  canonicalOrigin: string
+  canonicalOrigin: string,
+  siteOwnerSlug = ""
 ): AuthorIdentity {
-  return resolveAuthorPageIdentity(
-    source ?? { name: fallbacks.authorName },
-    fallbacks,
-    canonicalOrigin
-  );
+  if (isSiteOwnerAuthor(source, siteOwnerSlug)) {
+    return resolveAuthorPageIdentity(
+      source ?? { name: fallbacks.authorName },
+      fallbacks,
+      canonicalOrigin
+    );
+  }
+
+  return resolveAuthorPageIdentity(source ?? {}, GUEST_IDENTITY_FALLBACKS, canonicalOrigin);
 }
 
 /**

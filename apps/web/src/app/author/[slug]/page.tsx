@@ -8,7 +8,7 @@ import { StrapiImage } from "@/components/shared/StrapiImage";
 import { getSiteProfile } from "@/lib/site-profile";
 import { fetchAllPages, getArticles, getAuthorBySlug, getAuthors } from "@/lib/strapi";
 import { serverEnv } from "@/lib/server-env";
-import { ARTICLE_LISTING_SORT, sortArticlesByPublishedDesc } from "@/lib/article-dates";
+import { ARTICLE_LISTING_SORT, LISTING_OVERFETCH, sortArticlesByPublishedDesc } from "@/lib/article-dates";
 import {
   CMS_PRERENDER_AUTHOR_SLUG,
   findCmsPrerenderAuthor,
@@ -38,7 +38,6 @@ interface AuthorPageProps {
 }
 
 const AUTHOR_ARTICLE_LIMIT = 24;
-const LISTING_OVERFETCH = 5;
 
 type AuthorList = Awaited<ReturnType<typeof getAuthors>>["data"];
 

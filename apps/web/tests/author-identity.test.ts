@@ -203,6 +203,7 @@ test("article author identity falls back to the site owner when there is no auth
 
 test("article author identity treats blank CMS values as absent, not as present", () => {
   // This is the `??` bug: every one of these fields would otherwise win as "".
+  // A guest does not inherit the owner's role or bio in their place.
   const identity = resolveArticleAuthorIdentity(
     {
       slug: "jane-doe",
@@ -212,15 +213,16 @@ test("article author identity treats blank CMS values as absent, not as present"
       bioShort: "",
     },
     FALLBACKS,
-    ORIGIN
+    ORIGIN,
+    "mehdi-zare"
   );
 
   // The name falls back to the slug label, not to the site owner: the route
   // still links the byline to /author/jane-doe, so borrowing `authorName` here
   // would name one person above a profile link to another.
   assert.equal(identity.name, "Jane Doe");
-  assert.equal(identity.role, FALLBACKS.authorRole);
-  assert.equal(identity.bioShort, FALLBACKS.authorBioShort);
+  assert.equal(identity.role, "");
+  assert.equal(identity.bioShort, "");
 });
 
 test("article author identity never borrows the site owner's name for a linked author", () => {
@@ -255,30 +257,46 @@ test("article author identity still falls back to the site owner with no relatio
   assert.equal(identity.name, FALLBACKS.authorName);
 });
 
-test("article author identity never lets a blank URL reach Person url or sameAs", () => {
-  // The most severe leak in #83: "" is invalid structured data, not just blank
-  // copy. The author route already guarded this; the article route did not.
+test("a guest article author does not inherit the site owner's URLs or role", () => {
+  // Blank is not the owner's website. Callers omit an empty string; publishing
+  // the owner's LinkedIn as this guest's sameAs would attribute the wrong person.
   const identity = resolveArticleAuthorIdentity(
-    { slug: "jane-doe", name: "Jane Doe", websiteUrl: "   ", linkedinUrl: "" },
+    { slug: "jane-doe", name: "Jane Doe", websiteUrl: "   ", linkedinUrl: "", jobTitle: "" },
     FALLBACKS,
-    ORIGIN
+    ORIGIN,
+    "mehdi-zare"
   );
 
-  assert.equal(identity.websiteUrl, FALLBACKS.websiteUrl);
-  assert.equal(identity.linkedinUrl, FALLBACKS.linkedinUrl);
-  assert.notEqual(identity.websiteUrl, "");
-  assert.notEqual(identity.linkedinUrl, "");
+  assert.equal(identity.websiteUrl, "");
+  assert.equal(identity.linkedinUrl, "");
+  assert.equal(identity.role, "");
+  assert.notEqual(identity.websiteUrl, FALLBACKS.websiteUrl);
+  assert.notEqual(identity.linkedinUrl, FALLBACKS.linkedinUrl);
 });
 
-test("article author identity rejects an unparseable URL instead of emitting it", () => {
+test("article author identity rejects an unparseable guest URL instead of the owner's", () => {
   const identity = resolveArticleAuthorIdentity(
     { slug: "jane-doe", name: "Jane Doe", websiteUrl: "not a url", linkedinUrl: "javascript:alert(1)" },
     FALLBACKS,
-    ORIGIN
+    ORIGIN,
+    "mehdi-zare"
+  );
+
+  assert.equal(identity.websiteUrl, "");
+  assert.equal(identity.linkedinUrl, "");
+});
+
+test("a site-owner article still fills blank identity fields from the profile", () => {
+  const identity = resolveArticleAuthorIdentity(
+    { slug: "mehdi-zare", name: "Mehdi Zare", websiteUrl: "  ", linkedinUrl: "", jobTitle: "" },
+    FALLBACKS,
+    ORIGIN,
+    "mehdi-zare"
   );
 
   assert.equal(identity.websiteUrl, FALLBACKS.websiteUrl);
   assert.equal(identity.linkedinUrl, FALLBACKS.linkedinUrl);
+  assert.equal(identity.role, FALLBACKS.authorRole);
 });
 
 test("article author identity normalizes a canonical-origin URL the same way the author route does", () => {

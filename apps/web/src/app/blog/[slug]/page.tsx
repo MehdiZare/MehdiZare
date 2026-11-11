@@ -228,7 +228,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const authorIdentity = resolveArticleAuthorIdentity(
     articleAuthor,
     authorIdentityFallbacks(siteProfile),
-    CANONICAL_IDENTITY_ORIGIN
+    CANONICAL_IDENTITY_ORIGIN,
+    siteProfile.author.slug
   );
   const {
     name: authorName,
