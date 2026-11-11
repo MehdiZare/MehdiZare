@@ -1,6 +1,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { serverEnv } from "@/lib/server-env";
+import { buildIndexNowUrls, isIndexNowEnabled, submitToIndexNow } from "@/lib/indexnow";
 
 type RevalidatePayload = {
   secret?: string;
@@ -44,6 +45,9 @@ function collectPaths(payload: RevalidatePayload): string[] {
     "/blog",
     "/sitemap.xml",
     "/robots.txt",
+    "/feed.xml",
+    "/llms.txt",
+    "/.well-known/llms.txt",
     "/author/[slug]",
     "/blog/[slug]",
     "/blog/page/[page]",
@@ -75,6 +79,30 @@ function collectPaths(payload: RevalidatePayload): string[] {
   }
 
   return [...paths];
+}
+
+/**
+ * Tell IndexNow about a changed post once the response is out. `after` keeps
+ * the function alive for it on Vercel without delaying the webhook. Outside a
+ * request scope (direct calls in tests) `after` throws, so the task runs
+ * detached instead. `submitToIndexNow` never rejects and has its own short
+ * timeout, so neither path can fail or hang the webhook.
+ */
+function scheduleIndexNow(payload: RevalidatePayload): void {
+  if (!isIndexNowEnabled()) return;
+  const urls = buildIndexNowUrls({
+    event: payload.event,
+    model: payload.model,
+    encodedSlug: payload.entry?.slug ? sanitizeSlug(payload.entry.slug) : null,
+  });
+  if (urls.length === 0) return;
+
+  const task = () => submitToIndexNow(urls);
+  try {
+    after(task);
+  } catch {
+    void task();
+  }
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -119,6 +147,8 @@ export async function POST(request: Request): Promise<Response> {
       revalidatePath(path);
     }
   }
+
+  scheduleIndexNow(payload);
 
   return NextResponse.json({
     ok: true,

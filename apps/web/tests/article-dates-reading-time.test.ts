@@ -85,7 +85,32 @@ test("missing or unparseable updatedAt falls back to datePublished", () => {
   });
 });
 
-// ── reading time (CM-10) ───────────────────────────────────────────────
+test("dateModified prefers contentUpdatedAt over updatedAt, with the same clamp", () => {
+  assert.deepEqual(
+    resolveArticleDates({
+      publishedDate: "2026-08-30",
+      contentUpdatedAt: "2026-09-15T08:00:00.000Z",
+      updatedAt: "2026-10-01T00:00:00.000Z",
+    }),
+    {
+      datePublished: "2026-08-30T09:00:00-04:00",
+      dateModified: "2026-09-15T08:00:00.000Z",
+    }
+  );
+  assert.deepEqual(
+    resolveArticleDates({
+      publishedDate: "2026-08-30",
+      contentUpdatedAt: "2026-08-01T00:00:00.000Z",
+      updatedAt: "2026-10-01T00:00:00.000Z",
+    }),
+    {
+      datePublished: "2026-08-30T09:00:00-04:00",
+      dateModified: "2026-08-30T09:00:00-04:00",
+    }
+  );
+});
+
+// ── reading time (CM-10)───────────────────────────────────────────────
 
 function paragraph(text: string) {
   return { type: "paragraph", children: [{ type: "text", text }] };
