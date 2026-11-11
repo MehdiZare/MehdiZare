@@ -1,0 +1,24 @@
+{
+  "collectionName": "components_article_sources",
+  "info": {
+    "displayName": "Source",
+    "icon": "link",
+    "description": "A cited source, rendered in the post's Sources list and as BlogPosting citation"
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "required": true
+    },
+    "publisher": {
+      "type": "string"
+    },
+    "accessedAt": {
+      "type": "date"
+    }
+  }
+}

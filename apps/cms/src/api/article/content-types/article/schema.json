@@ -57,6 +57,51 @@
     "seo": {
       "type": "component",
       "component": "shared.seo"
+    },
+    "contentUpdatedAt": {
+      "type": "datetime"
+    },
+    "featuredImageAlt": {
+      "type": "string",
+      "maxLength": 160
+    },
+    "keyTakeaways": {
+      "type": "component",
+      "repeatable": true,
+      "component": "article.key-takeaway",
+      "max": 5
+    },
+    "faq": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.faq-item"
+    },
+    "sources": {
+      "type": "component",
+      "repeatable": true,
+      "component": "article.source"
+    },
+    "comparisonTables": {
+      "type": "component",
+      "repeatable": true,
+      "component": "article.comparison-table"
+    },
+    "series": {
+      "type": "string"
+    },
+    "seriesPart": {
+      "type": "integer",
+      "min": 1
+    },
+    "crossPostXUrl": {
+      "type": "string"
+    },
+    "crossPostLinkedinUrl": {
+      "type": "string"
+    },
+    "noindex": {
+      "type": "boolean",
+      "default": false
     }
   }
 }

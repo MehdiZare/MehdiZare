@@ -209,3 +209,44 @@ test("the category and tag fields that were omitted stay in schema.json", () => 
     }
   }
 });
+
+// CM-02/03/05/06/07/08/11/12, GEO-05. The answer-first content model is
+// additive: every new article attribute is optional, so the live posts keep
+// publishing before editors backfill them. A `required` flag here (including
+// on featuredImage) would block re-publishing any post that lacks the value
+// until it is filled in -- that tightening is a separate, later step.
+const CONTENT_MODEL_V2_ARTICLE_FIELDS: Record<string, { type: string; component?: string }> = {
+  contentUpdatedAt: { type: "datetime" },
+  featuredImageAlt: { type: "string" },
+  keyTakeaways: { type: "component", component: "article.key-takeaway" },
+  faq: { type: "component", component: "shared.faq-item" },
+  sources: { type: "component", component: "article.source" },
+  comparisonTables: { type: "component", component: "article.comparison-table" },
+  series: { type: "string" },
+  seriesPart: { type: "integer" },
+  crossPostXUrl: { type: "string" },
+  crossPostLinkedinUrl: { type: "string" },
+  noindex: { type: "boolean" },
+};
+
+test("the content-model v2 article fields exist, keep their types, and stay optional", () => {
+  const attributes = schemaAttributes(
+    resolve(cmsRoot, "src/api/article/content-types/article/schema.json"),
+  ) as Record<string, { type?: string; component?: string; required?: boolean; repeatable?: boolean; max?: number; maxLength?: number; default?: unknown }>;
+
+  for (const [field, expected] of Object.entries(CONTENT_MODEL_V2_ARTICLE_FIELDS)) {
+    const spec = attributes[field];
+    assert.ok(spec, `article schema.json must define ${field}`);
+    assert.equal(spec.type, expected.type, `${field} type`);
+    if (expected.component) {
+      assert.equal(spec.component, expected.component, `${field} component`);
+      assert.equal(spec.repeatable, true, `${field} is a repeatable component`);
+    }
+    assert.notEqual(spec.required, true, `${field} must stay optional so existing posts keep validating`);
+  }
+
+  assert.notEqual(attributes.featuredImage?.required, true, "featuredImage stays optional until every live post has a cover");
+  assert.equal(attributes.keyTakeaways?.max, 5);
+  assert.equal(attributes.featuredImageAlt?.maxLength, 160);
+  assert.equal(attributes.noindex?.default, false);
+});
