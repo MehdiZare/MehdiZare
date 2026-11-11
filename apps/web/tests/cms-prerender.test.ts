@@ -12,8 +12,12 @@ import {
   CMS_PRERENDER_CATEGORY_SLUG,
   CMS_PRERENDER_BLOG_PAGE,
   CMS_PRERENDER_HTML_FILES,
+  CMS_PRERENDER_SERIES,
+  CMS_PRERENDER_SERIES_PART,
+  CMS_PRERENDER_SERIES_PART_SLUG,
   CMS_PRERENDER_TAG_SLUG,
   findCmsPrerenderArticle,
+  findCmsPrerenderSeries,
   findCmsPrerenderAuthor,
 } from "../src/content/fixtures/cms-prerender.ts";
 
@@ -25,6 +29,7 @@ test("the prerender fixture slugs match the records and the HTML list", () => {
     [
       `author/${CMS_PRERENDER_AUTHOR_SLUG}.html`,
       `blog/${CMS_PRERENDER_ARTICLE_SLUG}.html`,
+      `blog/${CMS_PRERENDER_SERIES_PART_SLUG}.html`,
       `blog/category/${CMS_PRERENDER_CATEGORY_SLUG}.html`,
       `blog/page/${CMS_PRERENDER_BLOG_PAGE}.html`,
       `blog/tag/${CMS_PRERENDER_TAG_SLUG}.html`,
@@ -64,6 +69,10 @@ test("category and tag fixture slugs exist in the taxonomy seed, so those pages 
 
 test("finders return the fixture for its slug and nothing else", () => {
   assert.equal(findCmsPrerenderArticle(CMS_PRERENDER_ARTICLE_SLUG)?.id, CMS_PRERENDER_ARTICLE.id);
+  assert.equal(
+    findCmsPrerenderArticle(CMS_PRERENDER_SERIES_PART_SLUG)?.id,
+    CMS_PRERENDER_SERIES_PART.id
+  );
   assert.equal(findCmsPrerenderArticle("some-other-post"), undefined);
   assert.equal(findCmsPrerenderAuthor(CMS_PRERENDER_AUTHOR_SLUG)?.id, CMS_PRERENDER_AUTHOR.id);
   assert.equal(findCmsPrerenderAuthor("guest-author"), undefined);
@@ -74,12 +83,41 @@ test("the pagination fixture is page 2, not the /blog redirect", () => {
   assert.notEqual(CMS_PRERENDER_BLOG_PAGE, "1");
 });
 
-test("the fake article slug is noindex so a CMS-off public deploy cannot rank it", () => {
-  assert.match(
-    CMS_PRERENDER_ARTICLE.seo?.metaRobots ?? "",
-    /noindex/i,
-    "ssr-visibility-fixture is not a real post; metaRobots must include noindex"
+test("the fake article slugs are noindex so a CMS-off public deploy cannot rank them", () => {
+  for (const article of [CMS_PRERENDER_ARTICLE, CMS_PRERENDER_SERIES_PART]) {
+    assert.match(
+      article.seo?.metaRobots ?? "",
+      /noindex/i,
+      `${article.slug} is not a real post; metaRobots must include noindex`
+    );
+    assert.equal(article.noindex, true, `${article.slug} also ticks the noindex box`);
+  }
+});
+
+test("the article fixture carries one of every answer-first section, so the CMS-off build renders each", () => {
+  assert.ok((CMS_PRERENDER_ARTICLE.keyTakeaways ?? []).length > 0, "keyTakeaways");
+  assert.ok((CMS_PRERENDER_ARTICLE.comparisonTables ?? []).length > 0, "comparisonTables");
+  assert.ok((CMS_PRERENDER_ARTICLE.sources ?? []).length > 0, "sources");
+  assert.ok((CMS_PRERENDER_ARTICLE.faq ?? []).length > 0, "faq");
+  assert.ok(CMS_PRERENDER_ARTICLE.featuredImageAlt, "featuredImageAlt");
+  assert.ok(CMS_PRERENDER_ARTICLE.crossPostXUrl && CMS_PRERENDER_ARTICLE.crossPostLinkedinUrl, "cross-posts");
+  assert.ok(
+    Date.parse(CMS_PRERENDER_ARTICLE.contentUpdatedAt ?? "") >
+      Date.parse(CMS_PRERENDER_ARTICLE.publishedDate ?? "") + 24 * 60 * 60 * 1000,
+    "contentUpdatedAt is a later day than publishedDate, so the Updated label renders"
   );
+});
+
+test("the fixture series resolves to both prerendered parts", () => {
+  const parts = findCmsPrerenderSeries(CMS_PRERENDER_SERIES).map((article) => article.slug);
+  assert.deepEqual(parts.sort(), [CMS_PRERENDER_ARTICLE_SLUG, CMS_PRERENDER_SERIES_PART_SLUG].sort());
+  for (const slug of parts) {
+    assert.ok(
+      CMS_PRERENDER_HTML_FILES.includes(`blog/${slug}.html` as (typeof CMS_PRERENDER_HTML_FILES)[number]),
+      `${slug} must be prerendered or the series link 404s`
+    );
+  }
+  assert.deepEqual(findCmsPrerenderSeries("another series"), []);
 });
 
 test("CMS-off generateStaticParams emits the fixture slugs", () => {

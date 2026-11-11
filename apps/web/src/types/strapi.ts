@@ -147,9 +147,52 @@ export interface Article {
   seo?: SEO;
   publishedDate?: string;
   readingTime?: number;
+  // Content model v2 (CM-02/03/05/06/07/08/11/12, GEO-05). All optional and
+  // nullable: rows saved before the CMS deploy carry none of them, and a
+  // cleared field arrives as `null` or `""`.
+  /** Editor-set "substance changed" datetime; drives dateModified and the Updated label. */
+  contentUpdatedAt?: string | null;
+  /** Per-article cover alt; wins over the media library `alternativeText`. */
+  featuredImageAlt?: string | null;
+  keyTakeaways?: KeyTakeaway[] | null;
+  faq?: FAQ[] | null;
+  sources?: ArticleSource[] | null;
+  comparisonTables?: ComparisonTable[] | null;
+  series?: string | null;
+  seriesPart?: number | null;
+  crossPostXUrl?: string | null;
+  crossPostLinkedinUrl?: string | null;
+  /** One-click noindex: renders `noindex, follow` and drops the post from sitemap, feed and llms.txt. */
+  noindex?: boolean | null;
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
+}
+
+export interface KeyTakeaway {
+  id?: number;
+  text: string;
+}
+
+export interface ArticleSource {
+  id?: number;
+  title: string;
+  url: string;
+  publisher?: string | null;
+  /** Date-only (`YYYY-MM-DD`). */
+  accessedAt?: string | null;
+}
+
+/**
+ * `columns` and `rows` are Strapi JSON fields, so their shape is only a
+ * convention (`string[]` and `string[][]`). Validate before rendering.
+ */
+export interface ComparisonTable {
+  id?: number;
+  caption?: string | null;
+  columns?: unknown;
+  rows?: unknown;
+  notes?: string | null;
 }
 
 // Shared content blocks
@@ -217,8 +260,9 @@ export interface BinaMover {
   analysisUrl?: string;
 }
 
+/** Shared with the article `shared.faq-item` component, where `id` may be absent. */
 export interface FAQ {
-  id: number;
+  id?: number;
   question: string;
   answer: string;
 }

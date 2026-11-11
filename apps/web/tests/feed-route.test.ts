@@ -11,12 +11,28 @@ const SITE = "https://www.mehdi-zare.com";
 
 let rows: Array<Record<string, unknown>> = [];
 let failCms = false;
+/** Answer 400 to content-model v2 keys, like a CMS not yet deployed with them. */
+let rejectContentModelV2 = false;
 const requested: URL[] = [];
+
+function requestsContentModelV2(url: URL): boolean {
+  return [...url.searchParams].some(
+    ([key, value]) =>
+      (key.startsWith("fields[") && ["contentUpdatedAt", "noindex"].includes(value)) ||
+      key.startsWith("populate[keyTakeaways]")
+  );
+}
 
 globalThis.fetch = (async (input: RequestInfo | URL) => {
   const url = new URL(String(input));
   requested.push(url);
   if (failCms) return new Response("down", { status: 503, statusText: "Service Unavailable" });
+  if (rejectContentModelV2 && requestsContentModelV2(url)) {
+    return new Response('{"error":{"status":400,"message":"Invalid key noindex"}}', {
+      status: 400,
+      statusText: "Bad Request",
+    });
+  }
   return new Response(
     JSON.stringify({ data: rows, meta: { pagination: { page: 1, pageSize: 25, pageCount: 1 } } }),
     { status: 200, headers: { "content-type": "application/json" } }
@@ -185,4 +201,107 @@ test("page metadata and the root layout both carry the RSS alternate", async () 
   assert.match(layout, /alternates:\s*\{[^}]*types:\s*\{\s*\.\.\.FEED_ALTERNATE_TYPES\s*\}/);
   const seo = readFileSync(new URL("../src/lib/seo.ts", import.meta.url), "utf8");
   assert.doesNotMatch(seo, /from\s+["'](\.\/feed|@\/lib\/feed)["']/, "seo.ts must not import lib/feed.ts");
+});
+
+// ── Content model v2 (CM-06 / CM-11 / GEO-08) ───────────────────────────
+
+const V2_POSTS = [
+  {
+    id: 10,
+    title: "Answer first",
+    slug: "answer-first",
+    excerpt: "The excerpt llms.txt used to show.",
+    publishedDate: "2026-09-10",
+    publishedAt: "2026-09-10T10:00:00.000Z",
+    keyTakeaways: [{ text: "Takeaway one" }, { text: "  " }, { text: "Takeaway two!" }],
+  },
+  {
+    id: 11,
+    title: "Ticked noindex",
+    slug: "ticked-noindex",
+    excerpt: "Must not be syndicated.",
+    publishedDate: "2026-09-11",
+    publishedAt: "2026-09-11T10:00:00.000Z",
+    noindex: true,
+  },
+  {
+    id: 12,
+    title: "Excerpt only",
+    slug: "excerpt-only",
+    excerpt: "No takeaways here.",
+    publishedDate: "2026-09-09",
+    publishedAt: "2026-09-09T10:00:00.000Z",
+    keyTakeaways: [],
+  },
+];
+
+test("the feed query requests contentUpdatedAt and noindex, but not the takeaways it never renders", async () => {
+  rows = V2_POSTS;
+  failCms = false;
+  rejectContentModelV2 = false;
+  await fetchFeed();
+  const query = requested.find((url) => url.pathname === "/api/articles")?.searchParams;
+  assert.ok(query);
+  const fields = [...query].filter(([key]) => key.startsWith("fields[")).map(([, value]) => value);
+  assert.ok(fields.includes("contentUpdatedAt"));
+  assert.ok(fields.includes("noindex"));
+  assert.equal(
+    [...query.keys()].some((key) => key.startsWith("populate[keyTakeaways]")),
+    false,
+    "the RSS feed does not populate keyTakeaways"
+  );
+});
+
+test("the llms.txt query adds the takeaways to the feed query", async () => {
+  rows = V2_POSTS;
+  failCms = false;
+  rejectContentModelV2 = false;
+  requested.length = 0;
+  await (await getLlmsTxt()).text();
+  const query = requested.find((url) => url.pathname === "/api/articles")?.searchParams;
+  assert.ok(query);
+  const fields = [...query].filter(([key]) => key.startsWith("fields[")).map(([, value]) => value);
+  assert.ok(fields.includes("noindex"));
+  assert.equal(query.get("populate[keyTakeaways]"), "true");
+  assert.equal(query.get("populate[seo][fields][0]"), "metaRobots", "and keeps the feed's populate");
+});
+
+test("a noindex post is left out of the feed and llms.txt", async () => {
+  rows = V2_POSTS;
+  failCms = false;
+  rejectContentModelV2 = false;
+  const { body } = await fetchFeed();
+  assert.doesNotMatch(body, /ticked-noindex/);
+  assert.equal(body.split("<item>").length - 1, 2);
+
+  const llms = await (await getLlmsTxt()).text();
+  assert.doesNotMatch(llms, /ticked-noindex/);
+});
+
+test("llms.txt describes a post by its key takeaways, else its excerpt", async () => {
+  rows = V2_POSTS;
+  failCms = false;
+  rejectContentModelV2 = false;
+  const llms = await (await getLlmsTxt()).text();
+  assert.match(
+    llms,
+    new RegExp(`^- \\[Answer first\\]\\(${SITE}/blog/answer-first\\): Takeaway one\\. Takeaway two!$`, "m")
+  );
+  assert.match(llms, new RegExp(`^- \\[Excerpt only\\]\\(${SITE}/blog/excerpt-only\\): No takeaways here\\.$`, "m"));
+});
+
+test("a CMS without the v2 fields still feeds every post: the query retries without them", async () => {
+  rows = POSTS;
+  failCms = false;
+  rejectContentModelV2 = true;
+  try {
+    const { body } = await fetchFeed();
+    assert.equal(body.split("<item>").length - 1, 2, "the old-model posts are all syndicated");
+    const articleRequests = requested.filter((url) => url.pathname === "/api/articles");
+    assert.equal(articleRequests.length, 2);
+    assert.equal(requestsContentModelV2(articleRequests[1]), false);
+    assert.equal(articleRequests[1].searchParams.get("fields[0]"), "title");
+  } finally {
+    rejectContentModelV2 = false;
+  }
 });

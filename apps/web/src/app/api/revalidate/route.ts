@@ -2,6 +2,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { after, NextResponse } from "next/server";
 import { serverEnv } from "@/lib/server-env";
 import { buildIndexNowUrls, isIndexNowEnabled, submitToIndexNow } from "@/lib/indexnow";
+import { isArticleIndexable } from "@/lib/article-content";
 
 type RevalidatePayload = {
   secret?: string;
@@ -9,9 +10,29 @@ type RevalidatePayload = {
   model?: string;
   entry?: {
     slug?: string;
+    noindex?: unknown;
+    seo?: { metaRobots?: unknown } | null;
   };
   paths?: string[];
 };
+
+/**
+ * False when the webhook entry renders noindex (the `noindex` box, or a
+ * `seo.metaRobots` with `noindex`/`none`), by the same rule as the page's
+ * robots meta. The body is untrusted JSON, so only a real boolean and a real
+ * string are read; anything else counts as unset.
+ */
+function isEntryIndexable(entry: RevalidatePayload["entry"]): boolean {
+  if (!entry || typeof entry !== "object") return true;
+  const metaRobots =
+    entry.seo && typeof entry.seo === "object" && typeof entry.seo.metaRobots === "string"
+      ? entry.seo.metaRobots
+      : undefined;
+  return isArticleIndexable({
+    noindex: entry.noindex === true,
+    seo: metaRobots === undefined ? undefined : { id: 0, metaRobots },
+  });
+}
 
 function extractSecret(
   request: Request,
@@ -90,6 +111,8 @@ function collectPaths(payload: RevalidatePayload): string[] {
  */
 function scheduleIndexNow(payload: RevalidatePayload): void {
   if (!isIndexNowEnabled()) return;
+  // A noindex post is kept out of the sitemap and feed; do not ping it either.
+  if (!isEntryIndexable(payload.entry)) return;
   const urls = buildIndexNowUrls({
     event: payload.event,
     model: payload.model,

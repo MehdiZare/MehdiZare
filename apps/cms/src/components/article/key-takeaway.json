@@ -1,0 +1,14 @@
+{
+  "collectionName": "components_article_key_takeaways",
+  "info": {
+    "displayName": "Key Takeaway",
+    "icon": "bulletList",
+    "description": "One answer-first takeaway rendered at the top of the post"
+  },
+  "attributes": {
+    "text": {
+      "type": "text",
+      "required": true
+    }
+  }
+}

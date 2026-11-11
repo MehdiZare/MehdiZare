@@ -119,6 +119,42 @@ test("draft saves, other models, missing slugs and non-production deployments su
   assert.deepEqual(calls, []);
 });
 
+test("a noindex entry (the box, or metaRobots noindex/none) is not submitted, but is still revalidated", async () => {
+  for (const entry of [
+    { slug: "ticked", noindex: true },
+    { slug: "robots-noindex", seo: { metaRobots: "NOINDEX, follow" } },
+    { slug: "robots-none", seo: { metaRobots: "none" } },
+    { slug: "both", noindex: true, seo: { metaRobots: "index, follow" } },
+  ]) {
+    resetRevalidateCalls();
+    const response = await POST(webhook({ event: "entry.publish", model: "article", entry }));
+    assert.equal(response.status, 200, entry.slug);
+    assert.deepEqual(revalidateTagCalls, [{ tag: "strapi", profile: "max" }], `${entry.slug} still revalidates`);
+  }
+  await settle();
+  assert.deepEqual(calls, [], "no IndexNow submission for a noindex post");
+});
+
+test("an indexable entry is submitted, and a malformed noindex/seo does not break the webhook", async () => {
+  for (const entry of [
+    // `none` inside another directive's value is not the `none` directive.
+    { slug: "preview-none", seo: { metaRobots: "index, follow, max-image-preview:none" } },
+    { slug: "unticked", noindex: false, seo: { metaRobots: null } },
+    { slug: "junk", noindex: "true", seo: { metaRobots: 42 } },
+    { slug: "junk-seo", seo: "noindex" },
+  ]) {
+    calls.length = 0;
+    const response = await POST(webhook({ event: "entry.publish", model: "article", entry }));
+    assert.equal(response.status, 200, entry.slug);
+    await settle();
+    assert.equal(
+      calls.filter((call) => call.url === INDEXNOW_ENDPOINT).length,
+      1,
+      `${entry.slug} is submitted`
+    );
+  }
+});
+
 test("isIndexNowEnabled only answers yes for the production deployment", () => {
   assert.equal(isIndexNowEnabled({ VERCEL_ENV: "production" }), true);
   assert.equal(isIndexNowEnabled({ VERCEL_ENV: "preview" }), false);

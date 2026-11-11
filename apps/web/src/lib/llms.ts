@@ -1,12 +1,19 @@
 import { getSiteUrl } from "./seo";
 import { BLOG_PAGE_DESCRIPTION } from "./blog-listing";
 import { FEED_PATH } from "./feed";
+import { resolveLlmsDescription } from "./article-content";
+import type { KeyTakeaway } from "../types/strapi";
 
-/** The posts llms.txt lists; a subset of the CMS article shape. */
+/**
+ * The posts llms.txt lists; a subset of the CMS article shape. The route
+ * passes rows that already passed the feed's indexability filter, so a
+ * `noindex` post never reaches here.
+ */
 export interface LlmsArticle {
   title?: string | null;
   slug?: string | null;
   excerpt?: string | null;
+  keyTakeaways?: KeyTakeaway[] | null;
 }
 
 /** Upper bound on posts listed, so a growing catalog cannot bloat the file. */
@@ -39,7 +46,8 @@ function buildPostLinks(articles: LlmsArticle[], siteUrl: string): string[] {
       link(
         title,
         buildAbsolutePath(`/blog/${encodeURIComponent(slug)}`, siteUrl),
-        article.excerpt ?? undefined
+        // Answer-first: the takeaways when the post has them, else the excerpt.
+        resolveLlmsDescription(article)
       ),
     ];
   }).slice(0, LLMS_POST_LIMIT);

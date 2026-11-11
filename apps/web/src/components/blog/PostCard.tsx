@@ -3,6 +3,7 @@ import type { Article } from "@/types/strapi";
 import { CmsImage } from "@/components/shared/CmsImage";
 import { toAbsoluteStrapiMediaUrl } from "@/lib/public-env";
 import { resolveReadingTimeMinutes } from "@/lib/reading-time";
+import { resolveFeaturedImageAlt } from "@/lib/article-content";
 
 /**
  * Matches the listing grid (`md:grid-cols-2 lg:grid-cols-3` in `max-w-7xl`):
@@ -56,7 +57,7 @@ export function PostCard({ article }: PostCardProps) {
         {imageUrl ? (
           <CmsImage
             src={imageUrl}
-            alt={article.featuredImage?.alternativeText || article.title}
+            alt={resolveFeaturedImageAlt(article)}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes={POST_CARD_IMAGE_SIZES}

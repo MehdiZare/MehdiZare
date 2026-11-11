@@ -457,23 +457,52 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
     author: Schema.Attribute.Relation<'manyToOne', 'api::author.author'> &
       Schema.Attribute.Required;
     category: Schema.Attribute.Relation<'manyToOne', 'api::category.category'>;
+    comparisonTables: Schema.Attribute.Component<
+      'article.comparison-table',
+      true
+    >;
     content: Schema.Attribute.Blocks;
+    contentUpdatedAt: Schema.Attribute.DateTime;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    crossPostLinkedinUrl: Schema.Attribute.Text;
+    crossPostXUrl: Schema.Attribute.Text;
     excerpt: Schema.Attribute.Text;
+    faq: Schema.Attribute.Component<'shared.faq-item', true>;
     featuredImage: Schema.Attribute.Media<'images'>;
+    featuredImageAlt: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 160;
+      }>;
+    keyTakeaways: Schema.Attribute.Component<'article.key-takeaway', true> &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 5;
+        },
+        number
+      >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::article.article'
     > &
       Schema.Attribute.Private;
+    noindex: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     publishedAt: Schema.Attribute.DateTime;
     publishedDate: Schema.Attribute.Date;
     readingTime: Schema.Attribute.Integer;
     seo: Schema.Attribute.Component<'shared.seo', false>;
+    series: Schema.Attribute.String;
+    seriesPart: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
     slug: Schema.Attribute.UID<'title'>;
+    sources: Schema.Attribute.Component<'article.source', true>;
     tags: Schema.Attribute.Relation<'manyToMany', 'api::tag.tag'>;
     title: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;

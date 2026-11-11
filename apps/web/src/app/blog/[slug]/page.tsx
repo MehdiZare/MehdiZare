@@ -5,12 +5,27 @@ import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { AiEngineerProfileLink } from "@/components/seo/AiEngineerProfileLink";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { fetchAllPages, getArticles, getArticleBySlug } from "@/lib/strapi";
+import {
+  fetchAllPages,
+  getArticles,
+  getArticleBySlug,
+  getArticlesInSeries,
+} from "@/lib/strapi";
 import { serverEnv } from "@/lib/server-env";
 import {
   CMS_PRERENDER_ARTICLE_SLUG,
+  CMS_PRERENDER_SERIES_PART_SLUG,
   findCmsPrerenderArticle,
+  findCmsPrerenderSeries,
 } from "@/content/fixtures/cms-prerender";
+import {
+  ArticleFaq,
+  ArticleSources,
+  ComparisonTables,
+  CrossPostLinks,
+  KeyTakeaways,
+  SeriesNav,
+} from "@/components/blog/ArticleSections";
 import { StrapiImage } from "@/components/shared/StrapiImage";
 import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
 import { TableOfContents } from "@/components/blog/TableOfContents";
@@ -26,14 +41,29 @@ import {
 } from "@/lib/author-identity";
 import {
   ARTICLE_LISTING_SORT,
+  formatSiteDate,
   resolveArticleDates,
+  resolveContentUpdatedAt,
   sortArticlesByPublishedDesc,
 } from "@/lib/article-dates";
+import {
+  buildSourceCitations,
+  resolveArticleRobots,
+  resolveComparisonTables,
+  resolveCrossPosts,
+  resolveFaqItems,
+  resolveFeaturedImageAlt,
+  resolveKeyTakeaways,
+  resolveSeries,
+  resolveSources,
+  type ResolvedSeries,
+} from "@/lib/article-content";
 import { resolveReadingTimeMinutes } from "@/lib/reading-time";
 import { blankToUndefined } from "@/lib/strings";
 import {
   buildBlogPostingJsonLd,
   buildBreadcrumbJsonLd,
+  buildFAQJsonLd,
   buildNoIndexMetadata,
   buildPageMetadata,
   buildWebPageJsonLd,
@@ -86,9 +116,27 @@ async function getAllArticles(): Promise<ArticleList> {
   return sortArticlesByPublishedDesc(articles);
 }
 
+/**
+ * The post's series and its parts, or null. A failed lookup still names the
+ * series (with no links): the navigation is optional, the post is not.
+ */
+async function getSeries(article: ArticleRecord): Promise<ResolvedSeries | null> {
+  const name = blankToUndefined(article.series);
+  if (!name) return null;
+  try {
+    const siblings = serverEnv.strapiDisabled
+      ? findCmsPrerenderSeries(name)
+      : await getArticlesInSeries(name);
+    return resolveSeries(article, siblings);
+  } catch (error) {
+    console.warn(`[blog] series lookup failed for "${name}"`, error);
+    return resolveSeries(article, []);
+  }
+}
+
 export async function generateStaticParams() {
   if (serverEnv.strapiDisabled) {
-    return [{ slug: CMS_PRERENDER_ARTICLE_SLUG }];
+    return [{ slug: CMS_PRERENDER_ARTICLE_SLUG }, { slug: CMS_PRERENDER_SERIES_PART_SLUG }];
   }
 
   try {
@@ -130,6 +178,8 @@ export async function generateMetadata({
         type: "image/png",
       },
       type: "article",
+      // `noindex` box + `seo.metaRobots`, combined once (CM-11).
+      robots: resolveArticleRobots(article),
       publishedTime: datePublished,
       modifiedTime: dateModified,
       authors: [toAbsoluteUrl(articleAuthorPath(article, siteProfile.author.profilePath))],
@@ -268,6 +318,18 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const resolvedKeywords = articleKeywords.length > 0 ? articleKeywords : fallbackKeywords;
   const { datePublished, dateModified } = resolveArticleDates(article);
   const readingTimeMinutes = resolveReadingTimeMinutes(article.readingTime, article.content);
+  // Answer-first sections (CM-05/06/07/08/12, GEO-05). Resolved once: the
+  // page renders these arrays and the JSON-LD is built from the same ones.
+  const contentUpdatedAt = resolveContentUpdatedAt(article);
+  const keyTakeaways = resolveKeyTakeaways(article);
+  const comparisonTables = resolveComparisonTables(article);
+  const sources = resolveSources(article);
+  const faqItems = resolveFaqItems(article);
+  const crossPosts = resolveCrossPosts(article);
+  const series = await getSeries(article);
+  const coverAlt = resolveFeaturedImageAlt(article);
+  // FAQPage only mirrors the visible FAQ section; null when there is none.
+  const faqJsonLd = buildFAQJsonLd(faqItems);
   const blogPostingJsonLd = buildBlogPostingJsonLd({
     pathname: articlePath,
     headline: article.title,
@@ -291,6 +353,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       imageUrl: toAbsoluteMediaUrl(authorImage?.url),
     },
     publisherId: toPersonId(),
+    citations: buildSourceCitations(sources),
+    discussionUrl: crossPosts.x ?? crossPosts.linkedin,
   });
 
   return (
@@ -309,6 +373,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         data={article.seo?.structuredData}
       />
       <JsonLd id="blog-post-jsonld" data={blogPostingJsonLd} />
+      {faqJsonLd ? <JsonLd id="blog-post-faq-jsonld" data={faqJsonLd} /> : null}
       <JsonLd
         id="blog-post-breadcrumb-jsonld"
         data={buildBreadcrumbJsonLd([
@@ -340,6 +405,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     {formatDate(displayDate)}
                   </time>
                 )}
+                {contentUpdatedAt && (
+                  <span className="font-mono text-xs text-mid-gray">
+                    Updated{" "}
+                    <time dateTime={contentUpdatedAt}>{formatSiteDate(contentUpdatedAt)}</time>
+                  </span>
+                )}
                 {readingTimeMinutes && (
                   <span className="font-mono text-xs text-mid-gray/60">
                     {readingTimeMinutes} min read
@@ -352,6 +423,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 {article.title}
               </h1>
 
+              {/* Answer first: the takeaways sit right under the title. */}
+              <KeyTakeaways items={keyTakeaways} />
+
               {/* Featured Image */}
               {article.featuredImage && (
                 <div className="mt-8 aspect-video overflow-hidden relative">
@@ -360,7 +434,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     fill
                     preload
                     sizes={HERO_IMAGE_SIZES}
-                    fallbackAlt={article.title}
+                    alt={coverAlt}
                     className="object-cover"
                   />
                 </div>
@@ -373,6 +447,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               {AI_ENGINEER_IN_CONTENT_BLOG_SLUGS.has(article.slug) ? (
                 <AiEngineerProfileLink section="blog_body" className="mt-10" />
               ) : null}
+
+              <ComparisonTables tables={comparisonTables} />
+              <ArticleSources sources={sources} />
+              <SeriesNav series={series} />
+              <ArticleFaq items={faqItems} />
+              <CrossPostLinks links={crossPosts} />
 
               {/* Tags */}
               {article.tags && article.tags.length > 0 && (

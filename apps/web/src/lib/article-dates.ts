@@ -44,10 +44,10 @@ export interface ArticleDateSource {
   publishedAt?: string | null;
   updatedAt?: string | null;
   /**
-   * Editor-set "substance changed" date. The article schema does not have this
-   * field yet, so no query requests it -- Strapi 5 rejects unknown `fields`
-   * with a 400. Once the CMS adds it, add it to the narrowed field lists and
-   * it flows through here unchanged.
+   * Editor-set "substance changed" datetime (CM-02). The narrowed field lists
+   * (sitemap, feed) request it; the post page gets it with every other scalar.
+   * Against a CMS without the field, `getArticles` drops it and retries, so an
+   * older row simply has none and `updatedAt` stands in.
    */
   contentUpdatedAt?: string | null;
 }
@@ -165,6 +165,44 @@ export function resolveArticleDates(source: ArticleDateSource): ArticleDates {
   }
 
   return { datePublished, dateModified };
+}
+
+/** `YYYY-MM-DD` of an instant in the site timezone. */
+function siteCalendarDay(time: number, timeZone = SITE_TIME_ZONE): string {
+  // en-CA formats as YYYY-MM-DD.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(time));
+}
+
+/**
+ * The visible "Updated <date>" rule (CM-02): the editor's `contentUpdatedAt`,
+ * only when it falls on a later calendar day (site timezone) than the
+ * published date. Never the system `updatedAt` -- a typo fix, a relation edit
+ * or a re-publish moves that, and the label would claim a substantive update
+ * that never happened. A same-day correction shows no label.
+ */
+export function resolveContentUpdatedAt(source: ArticleDateSource): string | undefined {
+  const updated = validTimestamp(source.contentUpdatedAt);
+  const updatedTime = parseTime(updated);
+  const publishedTime = parseTime(resolveDatePublished(source));
+  if (!updated || updatedTime === undefined || publishedTime === undefined) return undefined;
+  return siteCalendarDay(updatedTime) > siteCalendarDay(publishedTime) ? updated : undefined;
+}
+
+/** `August 30, 2026` for an instant, on the site's calendar. */
+export function formatSiteDate(value: string, timeZone = SITE_TIME_ZONE): string | undefined {
+  const time = parseTime(value);
+  if (time === undefined) return undefined;
+  return new Date(time).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone,
+  });
 }
 
 function toDate(value: string | undefined): Date | undefined {

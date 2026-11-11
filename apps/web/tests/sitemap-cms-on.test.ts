@@ -28,6 +28,20 @@ interface Scenario {
   articlePageCount: number;
   /** Article pagination[page] that should fail (504), to pin partial results. */
   failArticlePage?: number;
+  /** Answer 400 Invalid key to any content-model v2 field, like a CMS not yet deployed with it. */
+  rejectContentModelV2?: boolean;
+}
+
+const CONTENT_MODEL_V2_KEYS = ["contentUpdatedAt", "noindex", "keyTakeaways", "featuredImageAlt"];
+
+function requestsContentModelV2(url: URL): string | undefined {
+  for (const [key, value] of url.searchParams) {
+    const hit = CONTENT_MODEL_V2_KEYS.find(
+      (field) => (key.startsWith("fields[") && value === field) || key.startsWith(`populate[${field}]`)
+    );
+    if (hit) return hit;
+  }
+  return undefined;
 }
 
 function emptyScenario(): Scenario {
@@ -74,6 +88,15 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     case "/api/articles":
       if (scenario.failArticlePage != null && page === scenario.failArticlePage) {
         return new Response("gateway timeout", { status: 504, statusText: "Gateway Timeout" });
+      }
+      if (scenario.rejectContentModelV2) {
+        const key = requestsContentModelV2(url);
+        if (key) {
+          return new Response(
+            JSON.stringify({ error: { status: 400, name: "ValidationError", message: `Invalid key ${key}` } }),
+            { status: 400, statusText: "Bad Request", headers: { "content-type": "application/json" } }
+          );
+        }
       }
       return collection(scenario.articles, scenario.articlePageCount);
     case "/api/authors":
@@ -283,8 +306,11 @@ test("the article query asks only for what the sitemap renders", async () => {
       params.get("fields[2]"),
       params.get("fields[3]"),
       params.get("fields[4]"),
+      params.get("fields[5]"),
+      params.get("fields[6]"),
     ],
-    ["slug", "updatedAt", "publishedAt", "publishedDate", null],
+    // contentUpdatedAt drives lastmod (CM-02); noindex drops the post (CM-11).
+    ["slug", "updatedAt", "publishedAt", "publishedDate", "contentUpdatedAt", "noindex", null],
     "narrowing the query is what keeps the full article populate out of the sitemap read"
   );
   assert.equal(params.get("populate[category][fields][0]"), "slug");
@@ -739,4 +765,51 @@ test("sitemap lastmod is never earlier than the JSON-LD datePublished for the sa
       `${article.slug}: sitemap lastmod and JSON-LD dateModified are the same instant`
     );
   }
+});
+
+// ── Content model v2 (CM-02 / CM-11) ─────────────────────────────────────
+
+test("a post with the noindex box ticked is left out of the sitemap", async () => {
+  const { urls } = await runSitemap({
+    articles: [
+      { slug: "visible", noindex: false },
+      { slug: "unset", noindex: null },
+      { slug: "ticked", noindex: true },
+      { slug: "ticked-with-index-robots", noindex: true, seo: { metaRobots: "index, follow" } },
+    ],
+  });
+  assert.deepEqual(articleUrls(urls), [`${SITE_URL}/blog/visible`, `${SITE_URL}/blog/unset`]);
+});
+
+test("contentUpdatedAt is the article lastmod when the CMS has it", async () => {
+  const { entries } = await runSitemap({
+    articles: [
+      {
+        slug: "refreshed",
+        publishedDate: "2026-08-30",
+        publishedAt: "2026-08-30T14:00:00.000Z",
+        updatedAt: "2026-10-20T09:00:00.000Z",
+        contentUpdatedAt: "2026-09-15T12:00:00.000Z",
+      },
+    ],
+  });
+  assert.equal(
+    lastmodOf(entries, `${SITE_URL}/blog/refreshed`),
+    "2026-09-15T12:00:00.000Z",
+    "a later system save (typo fix) does not move lastmod past the editorial update"
+  );
+});
+
+test("a CMS without the v2 fields still lists every article: the query retries without them", async () => {
+  const { urls } = await runSitemap({
+    rejectContentModelV2: true,
+    articles: [{ slug: "old-model", updatedAt: "2026-02-02T00:00:00.000Z" }],
+  });
+  assert.deepEqual(articleUrls(urls), [`${SITE_URL}/blog/old-model`]);
+
+  const articleRequests = requestedUrls.filter((url) => url.pathname === "/api/articles");
+  assert.equal(articleRequests.length, 2, "one rejected request, one retry");
+  assert.ok(requestsContentModelV2(articleRequests[0]), "the first request asks for the v2 fields");
+  assert.equal(requestsContentModelV2(articleRequests[1]), undefined, "the retry drops them");
+  assert.equal(articleRequests[1].searchParams.get("fields[0]"), "slug", "the retry keeps the old fields");
 });

@@ -413,7 +413,8 @@ test("the post page wires the card, the inline author, dates and reading time", 
 test("StrapiImage forwards sizes and falls back to a non-empty alt", () => {
   const source = readSource("src/components/shared/StrapiImage.tsx");
   assert.match(source, /sizes=\{sizes\}/);
-  assert.match(source, /blankToUndefined\(image\.alternativeText\) \?\? blankToUndefined\(fallbackAlt\)/);
+  // featuredImageAlt (the `alt` prop) wins over the library alt, then the fallback (CM-03).
+  assert.match(source, /firstFilled\(altOverride, image\.alternativeText, fallbackAlt\)/);
 
   const postCard = readSource("src/components/blog/PostCard.tsx");
   assert.match(postCard, /sizes=\{POST_CARD_IMAGE_SIZES\}/);

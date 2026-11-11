@@ -107,6 +107,12 @@ interface BuildPageMetadataOptions {
   /** `article:tag` values (type `article` only). */
   tags?: string[];
   keywords?: string | string[];
+  /**
+   * Resolved robots value; wins over `seo.metaRobots`. Posts pass
+   * `resolveArticleRobots` so the `noindex` checkbox and `metaRobots` combine
+   * in one place (CM-11).
+   */
+  robots?: string;
 }
 
 interface WebPageJsonLdOptions {
@@ -146,6 +152,10 @@ interface BlogPostingJsonLdOptions {
   /** Inline author Person. Its `id` wins over `authorId`. */
   author?: BlogPostingAuthor;
   publisherId?: string;
+  /** schema.org `citation`: the post's structured sources (CM-07). */
+  citations?: Array<{ name: string; url: string }>;
+  /** Where the post is discussed off-site (the X / LinkedIn cross-post). */
+  discussionUrl?: string;
 }
 
 interface BlogListItem {
@@ -482,12 +492,13 @@ export function buildPageMetadata({
   section,
   tags,
   keywords,
+  robots: robotsOverride,
 }: BuildPageMetadataOptions): Metadata {
   const resolvedTitle = seo?.metaTitle?.trim() || title;
   const documentTitle = composeDocumentTitle(resolvedTitle);
   const resolvedDescription = seo?.metaDescription?.trim() || description;
   const canonical = resolveCanonicalUrl(pathname, seo?.canonicalURL);
-  const robots = normalizeRobotsValue(seo?.metaRobots);
+  const robots = normalizeRobotsValue(robotsOverride ?? seo?.metaRobots);
   // seo.metaImage is the deliberate social override; then the caller's
   // generated card; then the page image; then the site-wide card.
   const images =
@@ -810,6 +821,8 @@ export function buildBlogPostingJsonLd({
   authorId,
   author,
   publisherId,
+  citations,
+  discussionUrl,
 }: BlogPostingJsonLdOptions): Record<string, unknown> {
   const siteUrl = getSiteUrl();
   const canonical = toAbsoluteUrl(pathname, siteUrl);
@@ -850,6 +863,15 @@ export function buildBlogPostingJsonLd({
     isPartOf: {
       "@id": `${siteUrl}/#website`,
     },
+    citation:
+      citations && citations.length > 0
+        ? citations.map((citation) => ({
+            "@type": "CreativeWork",
+            name: citation.name,
+            url: citation.url,
+          }))
+        : undefined,
+    discussionUrl: blankToUndefined(discussionUrl),
   };
 }
 

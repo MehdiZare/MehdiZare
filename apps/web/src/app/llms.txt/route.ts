@@ -11,7 +11,7 @@ export const revalidate = 300;
 export async function GET(): Promise<Response> {
   let articles: LlmsArticle[] = [];
   try {
-    articles = await getRecentArticlesForFeed(LLMS_POST_LIMIT);
+    articles = await getRecentArticlesForFeed(LLMS_POST_LIMIT, { withTakeaways: true });
   } catch (error) {
     // Prerendered at build with the CMS off: fall back to the static sections.
     console.warn(

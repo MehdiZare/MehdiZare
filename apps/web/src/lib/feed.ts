@@ -1,6 +1,6 @@
 import type { Article } from "@/types/strapi";
 import { getArticles } from "@/lib/strapi";
-import { normalizeRobotsValue } from "@/lib/seo";
+import { isArticleIndexable } from "@/lib/article-content";
 import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 import { BLOG_PAGE_DESCRIPTION } from "@/lib/blog-listing";
 import {
@@ -16,16 +16,40 @@ export { FEED_ALTERNATE_TYPES, FEED_PATH, FEED_TITLE } from "@/lib/feed-constant
 export const FEED_ITEM_LIMIT = 20;
 
 /**
- * Only what the feed renders. Every field here exists in the article schema;
- * Strapi 5 rejects unknown `fields` with a 400.
+ * Only what the RSS feed renders. `contentUpdatedAt` and `noindex` are
+ * content-model v2 (CM-02/11): `getArticles` drops them and retries once if
+ * Strapi answers `400 Invalid key` because the CMS has not been deployed with
+ * them yet, so the feed degrades to the old fields rather than going empty.
+ * The feed never renders takeaways, so it does not populate them.
  */
-const FEED_ARTICLE_QUERY = {
-  fields: ["title", "slug", "excerpt", "publishedDate", "publishedAt", "updatedAt"],
+export const FEED_ARTICLE_QUERY = {
+  fields: [
+    "title",
+    "slug",
+    "excerpt",
+    "publishedDate",
+    "publishedAt",
+    "updatedAt",
+    "contentUpdatedAt",
+    "noindex",
+  ],
   populate: {
     category: { fields: ["name", "slug"] },
     tags: { fields: ["name", "slug"] },
     author: { fields: ["name"] },
     seo: { fields: ["metaRobots"] },
+  },
+};
+
+/**
+ * The feed query plus `keyTakeaways` (CM-06, also v2): llms.txt describes a
+ * post by its takeaways, the feed does not.
+ */
+export const LLMS_ARTICLE_QUERY = {
+  ...FEED_ARTICLE_QUERY,
+  populate: {
+    ...FEED_ARTICLE_QUERY.populate,
+    keyTakeaways: true,
   },
 };
 
@@ -38,11 +62,6 @@ export function escapeXml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
-}
-
-function isIndexable(article: Article): boolean {
-  const directives = normalizeRobotsValue(article.seo?.metaRobots)?.split(", ") ?? [];
-  return !directives.some((directive) => directive === "noindex" || directive === "none");
 }
 
 function trimmed(value: string | null | undefined): string | undefined {
@@ -86,7 +105,7 @@ function buildItem(article: Article, siteUrl: string): string | null {
 export function buildRssFeed(articles: Article[], siteUrl: string): string {
   // Rows that cannot render (no slug or title) are dropped before the cap, so
   // they never cost a slot.
-  const entries = sortArticlesByPublishedDesc(articles.filter(isIndexable))
+  const entries = sortArticlesByPublishedDesc(articles.filter(isArticleIndexable))
     .map((article) => ({ article, item: buildItem(article, siteUrl) }))
     .filter((entry): entry is { article: Article; item: string } => entry.item !== null)
     .slice(0, FEED_ITEM_LIMIT);
@@ -120,17 +139,21 @@ export function buildRssFeed(articles: Article[], siteUrl: string): string {
 }
 
 /**
- * The newest posts for the feed and llms.txt, newest first. Over-fetches by a
- * few rows so noindex posts dropped later do not shrink the list. Throws when
- * the CMS is unavailable; callers fall back to static output.
+ * The newest posts for the feed (or, with `withTakeaways`, for llms.txt),
+ * newest first. Over-fetches by a few rows so noindex posts dropped later do
+ * not shrink the list. Throws when the CMS is unavailable; callers fall back
+ * to static output.
  */
-export async function getRecentArticlesForFeed(limit = FEED_ITEM_LIMIT): Promise<Article[]> {
+export async function getRecentArticlesForFeed(
+  limit = FEED_ITEM_LIMIT,
+  options: { withTakeaways?: boolean } = {}
+): Promise<Article[]> {
   const response = await getArticles({
-    ...FEED_ARTICLE_QUERY,
+    ...(options.withTakeaways ? LLMS_ARTICLE_QUERY : FEED_ARTICLE_QUERY),
     sort: ARTICLE_LISTING_SORT,
     pagination: { page: 1, pageSize: limit + 5 },
   });
   return sortArticlesByPublishedDesc(
-    Array.isArray(response.data) ? response.data.filter(isIndexable) : []
+    Array.isArray(response.data) ? response.data.filter(isArticleIndexable) : []
   ).slice(0, limit);
 }
