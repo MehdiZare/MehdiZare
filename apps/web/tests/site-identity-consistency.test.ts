@@ -2,12 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import {
   DEFAULT_SITE_PROFILE,
   DEFAULT_SOCIAL_LINKS,
 } from "../src/lib/site-profile-defaults.ts";
 import { fallbackExperiences } from "../src/content/fallbacks/about.ts";
+import { CareerTimeline } from "../src/components/about/CareerTimeline.tsx";
+import { TrackRecord } from "../src/components/home/TrackRecord.tsx";
 
 // Site identity copy that the live site actually reads lives in two places:
 //
@@ -189,7 +193,11 @@ test("the footer location line matches the structured address defaults", () => {
   );
 });
 
-test("no current employer is published in taxonomy, defaults, or visible career copy", () => {
+test("structured data names no employer, while the visible timeline lists the roles", () => {
+  // The Person JSON-LD (`worksFor`) stays empty: the site's identity is the
+  // independent architect and his own products. The home track record and
+  // the About timeline still list current and past roles by name, and the two
+  // lists must agree.
   assert.ok(primaryAuthor, "data/taxonomy.json: expected a primary author");
 
   assert.equal(primaryAuthor.worksForName, "");
@@ -197,21 +205,30 @@ test("no current employer is published in taxonomy, defaults, or visible career 
   assert.equal(DEFAULT_SITE_PROFILE.authorWorksForName, "");
   assert.equal(DEFAULT_SITE_PROFILE.authorWorksForUrl, "");
 
-  const removedEmployers = /Entarian|Booz Allen/;
-  const trackRecordSource = readFileSync(
-    resolve(repoRoot, "apps/web/src/components/home/TrackRecord.tsx"),
-    "utf8"
+  // Render both surfaces. Reading `org: "..."` out of the component source
+  // fails when only the quotes or indentation change.
+  const trackRecordHtml = renderToStaticMarkup(createElement(TrackRecord));
+  const aboutHtml = renderToStaticMarkup(
+    createElement(CareerTimeline, { experiences: fallbackExperiences })
   );
-  const aboutSource = readFileSync(
-    resolve(repoRoot, "apps/web/src/content/fallbacks/about.ts"),
-    "utf8"
+  const trackRecordOrgs = [...trackRecordHtml.matchAll(/<h3[^>]*>([^<]+)<\/h3>/g)].map(
+    (match) => match[1]
   );
+  const aboutCompanies = [
+    ...aboutHtml.matchAll(/<h3[^>]*>[^<]*<\/h3><p[^>]*>([^<]+)<\/p>/g),
+  ].map((match) => match[1]);
 
-  assert.doesNotMatch(trackRecordSource, removedEmployers);
-  assert.doesNotMatch(aboutSource, removedEmployers);
-  assert.equal(
-    fallbackExperiences.some((experience) => experience.current),
-    false,
-    "the about fallback must not mark a current employer"
+  assert.deepEqual(
+    trackRecordOrgs,
+    aboutCompanies,
+    "the home track record and the About timeline must list the same organisations in the same order"
   );
+  assert.deepEqual(
+    aboutCompanies,
+    fallbackExperiences.map((experience) => experience.company),
+    "the About timeline must render fallbackExperiences in order"
+  );
+  for (const company of ["Bina Capital", "RoboWrite", "Rewardopedia", "Entarian", "Booz Allen"]) {
+    assert.ok(trackRecordOrgs.includes(company), `track record is missing ${company}`);
+  }
 });

@@ -14,7 +14,74 @@ interface TrackRecordEntry {
   current?: boolean;
 }
 
+const PRODUCT_TAG = "bg-emerald-500/10 text-emerald-700";
+const ENTERPRISE_TAG = "bg-blue-500/10 text-blue-700";
+
 const entries: TrackRecordEntry[] = [
+  {
+    org: "Bina Capital",
+    monogram: "BC",
+    role: "Founder",
+    dates: "2026 – Present",
+    description:
+      "Free, comparison-first education for new US investors, built and run with AI coding agents. Education only, not advice.",
+    category: "Product",
+    categoryColor: PRODUCT_TAG,
+    current: true,
+  },
+  {
+    org: "RoboWrite",
+    monogram: "RW",
+    role: "Founder",
+    dates: "2025 – Present",
+    description:
+      "A content operations platform for agencies, built and run with AI coding agents.",
+    category: "Product",
+    categoryColor: PRODUCT_TAG,
+    current: true,
+  },
+  {
+    org: "Rewardopedia",
+    monogram: "RP",
+    role: "Co-founder & CTO",
+    dates: "2025 – Present",
+    description:
+      "Runs the technology behind a credit card rewards guide, built and shipped with AI coding agents.",
+    category: "Product",
+    categoryColor: PRODUCT_TAG,
+    current: true,
+  },
+  {
+    org: "Entarian",
+    monogram: "EN",
+    role: "Principal AI Engineer / Cloud Architect",
+    dates: "2025 – Present",
+    description:
+      "Builds production GenAI systems for cybersecurity operations, with observability and monitoring designed in from the start.",
+    category: "Enterprise",
+    categoryColor: ENTERPRISE_TAG,
+    current: true,
+  },
+  {
+    org: "Booz Allen",
+    monogram: "BA",
+    role: "Senior AI/ML Engineer",
+    dates: "2024 – 2025",
+    description:
+      "Delivered containerized GenAI solutions for enterprise teams that needed secure, scalable deployments rather than lab demos.",
+    category: "Enterprise",
+    categoryColor: ENTERPRISE_TAG,
+  },
+  {
+    org: "Effective World",
+    monogram: "EW",
+    role: "Chief AI Scientist",
+    dates: "2024",
+    description:
+      "Led AI and data science initiatives to improve audience intelligence and campaign optimization, connecting model outputs to operational marketing decisions.",
+    category: "SMB",
+    categoryColor: "bg-sky-500/10 text-sky-700",
+  },
   {
     org: "Adviser",
     monogram: "AD",
@@ -44,16 +111,6 @@ const entries: TrackRecordEntry[] = [
       "Earned the CFA charter while contributing to financial data series work with the Office of Financial Research, translating policy and market context into usable analytical outputs.",
     category: "Finance",
     categoryColor: "bg-amber-500/10 text-amber-700",
-  },
-  {
-    org: "Effective World",
-    monogram: "EW",
-    role: "Chief AI Scientist",
-    dates: "2024",
-    description:
-      "Led AI and data science initiatives to improve audience intelligence and campaign optimization, connecting model outputs to operational marketing decisions.",
-    category: "Startup",
-    categoryColor: "bg-violet-500/10 text-violet-700",
   },
   {
     org: "Fardabook.com",
