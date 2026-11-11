@@ -64,7 +64,8 @@ function collectPaths(payload: RevalidatePayload): string[] {
   const paths = new Set<string>([
     "/",
     "/blog",
-    "/sitemap.xml",
+    // The sitemap route handler; /sitemap.xml rewrites to it (see that route).
+    "/sitemap-main.xml",
     "/robots.txt",
     "/feed.xml",
     "/llms.txt",
@@ -154,16 +155,16 @@ export async function POST(request: Request): Promise<Response> {
 
   for (const path of paths) {
     // `"page"` is for dynamic *page* routes, whose implicit tag set includes
-    // `_N_T_<route>/page`. `/sitemap.xml` is a metadata route: its tags are
-    // `_N_T_/sitemap.xml/route` and `_N_T_/sitemap.xml`, never `/page`. Read
-    // straight off a build: `.next/server/app/sitemap.xml.meta` carries
-    // `x-next-cache-tags: ...,_N_T_/sitemap.xml/route,_N_T_/sitemap.xml,strapi`.
+    // `_N_T_<route>/page`. `/sitemap-main.xml` (like `/feed.xml`) is a route
+    // handler: its tags are `_N_T_/sitemap-main.xml/route` and
+    // `_N_T_/sitemap-main.xml`, never `/page`. A build's
+    // `.next/server/app/sitemap-main.xml.meta` lists them in x-next-cache-tags.
     //
-    // So a typeless `revalidatePath("/sitemap.xml")` emits exactly the tag the
-    // route registers and has always worked. Passing `"page"` emits
-    // `_N_T_/sitemap.xml/page`, which nothing registers -- it would quietly
-    // never invalidate. There is no `"route"` type to pass instead; typeless is
-    // the correct call, so `/sitemap.xml` takes the branch below.
+    // So a typeless `revalidatePath("/sitemap-main.xml")` emits exactly the tag
+    // the route registers. Passing `"page"` emits `_N_T_/sitemap-main.xml/page`,
+    // which nothing registers -- it would quietly never invalidate. There is no
+    // `"route"` type to pass instead; typeless is the correct call, so the
+    // sitemap takes the branch below.
     if (path.includes("[") && path.includes("]")) {
       revalidatePath(path, "page");
     } else {

@@ -23,27 +23,17 @@ import taxonomy from "../../../../data/taxonomy.json";
 const SITE_URL = getSiteUrl();
 
 /**
- * Bounded ISR, not `force-dynamic`.
- *
- * `revalidate = 3600` was what let a published post sit out of the sitemap for
- * up to an hour (#110). Five minutes closes that without making the route
- * uncacheable: a metadata route hardcodes `cache-control: public, max-age=0,
- * must-revalidate`, so a dynamic sitemap means one uncached, four-way paginated
- * Strapi walk per crawler hit, with no CDN shielding and no stale copy to serve
- * if Strapi is slow. Under ISR a degraded regeneration never reaches a crawler,
- * because the previous good copy is served while the new one builds (#118).
- *
- * Invalidation still works on publish, and both paths are real -- read off a
- * build, `.next/server/app/sitemap.xml.meta` carries
- * `x-next-cache-tags: ...,_N_T_/sitemap.xml/route,_N_T_/sitemap.xml,strapi`.
- * The webhook's `revalidatePath("/sitemap.xml")` matches the second tag and its
- * `revalidateTag("strapi")` matches the third.
+ * Sitemap entries for every indexable page. Served as XML by
+ * `app/sitemap-main.xml/route.ts`, which `/sitemap.xml` rewrites to; that file
+ * explains why this is not an `app/sitemap.ts` metadata route, and holds the
+ * route's `revalidate` and `maxDuration`.
  */
-export const revalidate = 300;
-/** Isolate budget: must exceed SITEMAP_DEADLINE_MS so a slow CMS walk can still return the fallback. */
-export const maxDuration = 20;
 
-/** Must stay below maxDuration * 1000 so buildDegradedSitemap can return before the isolate is killed. Does not abort in-flight CMS fetches. */
+/**
+ * Must stay below the route's `maxDuration` (20 s) * 1000 so
+ * buildDegradedSitemap can return before the isolate is killed. Does not abort
+ * in-flight CMS fetches.
+ */
 export const SITEMAP_DEADLINE_MS = 16_000;
 
 /**

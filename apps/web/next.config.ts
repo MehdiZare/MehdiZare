@@ -130,6 +130,13 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname, "../.."),
   },
+  async rewrites() {
+    return [
+      // The sitemap is a route handler at /sitemap-main.xml so it stays an ISR
+      // prerender on Vercel; see src/app/sitemap-main.xml/route.ts.
+      { source: "/sitemap.xml", destination: "/sitemap-main.xml" },
+    ];
+  },
   async headers() {
     return [
       {

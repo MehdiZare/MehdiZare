@@ -112,9 +112,8 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   }
 }) as typeof fetch;
 
-const { default: sitemap, maxDuration, SITEMAP_DEADLINE_MS } = await import(
-  "../src/app/sitemap.ts"
-);
+const { default: sitemap, SITEMAP_DEADLINE_MS } = await import("../src/lib/sitemap.ts");
+const { maxDuration } = await import("../src/app/sitemap-main.xml/route.ts");
 const { resolveArticleDates } = await import("../src/lib/article-dates.ts");
 const { buildBlogPostingJsonLd } = await import("../src/lib/seo.ts");
 
@@ -421,7 +420,7 @@ test("sitemap collection reads stay on the shared, tagged Strapi cache", async (
   assert.ok(collectionCaches.length > 0, "the sitemap must read CMS collections");
   assert.ok(
     collectionCaches.every((cache) => cache !== "no-store"),
-    'A `no-store` read carries no cache entry, so it carries no `strapi` tag either -- and the tag is what lets the publish webhook invalidate this route. Verified on a build: sitemap.xml.meta lists `strapi` among its x-next-cache-tags.'
+    'A `no-store` read carries no cache entry, so it carries no `strapi` tag either -- and the tag is what lets the publish webhook invalidate this route. Verified on a build: sitemap-main.xml.meta lists `strapi` among its x-next-cache-tags.'
   );
 });
 
