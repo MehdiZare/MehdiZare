@@ -38,6 +38,12 @@ export async function resolve(specifier, context, nextResolve) {
     return nextResolve("next/server.js", context);
   }
 
+  // Same extensionless-subpath gap as next/server: server components that
+  // render a <Link> need it to resolve before a test can render them.
+  if (specifier === "next/link") {
+    return nextResolve("next/link.js", context);
+  }
+
   if (specifier === "server-only") {
     return {
       url: SERVER_ONLY_STUB.href,

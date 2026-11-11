@@ -3,7 +3,7 @@ import type { StrapiImage as StrapiImageType } from "@/types/strapi";
 import { CmsImage } from "@/components/shared/CmsImage";
 import { cn } from "@/lib/utils";
 import { toAbsoluteStrapiMediaUrl } from "@/lib/public-env";
-import { blankToUndefined } from "@/lib/strings";
+import { firstFilled } from "@/lib/strings";
 
 interface StrapiImageProps {
   image: StrapiImageType | null | undefined;
@@ -21,6 +21,11 @@ interface StrapiImageProps {
    * in an 8/12 column downloads roughly twice the pixels it shows.
    */
   sizes?: string;
+  /**
+   * Alt text that wins over the media library `alternativeText`: the
+   * per-article `featuredImageAlt` (CM-03). Blank counts as absent.
+   */
+  alt?: string | null;
   /**
    * Alt text when the CMS media has no `alternativeText`. A blank alt marks the
    * image decorative, which hides covers from Google Images and screen readers.
@@ -61,6 +66,7 @@ export function StrapiImage({
   height,
   preload = false,
   sizes,
+  alt: altOverride,
   fallbackAlt,
   fallback,
 }: StrapiImageProps) {
@@ -76,7 +82,8 @@ export function StrapiImage({
   }
 
   const src = getStrapiImageUrl(image.url);
-  const alt = blankToUndefined(image.alternativeText) ?? blankToUndefined(fallbackAlt) ?? "";
+  const alt =
+    firstFilled(altOverride, image.alternativeText, fallbackAlt) ?? "";
 
   return (
     <CmsImage
