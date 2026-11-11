@@ -24,7 +24,7 @@ test("llms.txt follows the llmstxt.org shape: H1, blockquote summary, H2 link se
   assert.match(lines[2], /^> \S/);
   assert.equal(
     lines[2],
-    "> Founder and AI consultant, and CFA Charterholder. Builds and runs small products with AI agents, and helps founders and small teams do the same, remotely."
+    "> AI and cloud architect, and CFA Charterholder. Builds and runs his own products with AI coding agents, and helps founders and CTOs take theirs from prototype to production, remotely."
   );
 
   for (const heading of ["## Services", "## About", "## Writing", "## Optional"]) {
