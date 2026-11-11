@@ -29,7 +29,7 @@ test("consulting generateMetadata uses the search title and description, not a s
   assert.match(page, /description:\s*consultingDescription/);
   assert.equal(
     consultingMetadataTitle,
-    "AI agent setup for founders and small teams"
+    "AI and cloud architecture for founders and CTOs"
   );
   assert.match(consultingDescription, /Remote\.$/);
   assert.doesNotMatch(

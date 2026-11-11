@@ -15,6 +15,12 @@ import { DEFAULT_SITE_PROFILE, DEFAULT_SOCIAL_LINKS } from "@/lib/site-profile-d
  */
 
 export const CMS_PRERENDER_ARTICLE_SLUG = "ssr-visibility-fixture";
+/**
+ * Part 2 of the fixture series, so the series navigation renders a real link
+ * that resolves in a CMS-off build instead of pointing at a 404.
+ */
+export const CMS_PRERENDER_SERIES_PART_SLUG = "ssr-visibility-fixture-part-2";
+export const CMS_PRERENDER_SERIES = "SSR visibility fixture series";
 export const CMS_PRERENDER_AUTHOR_SLUG = DEFAULT_SITE_PROFILE.authorSlug;
 export const CMS_PRERENDER_CATEGORY_SLUG = "ai-engineering";
 export const CMS_PRERENDER_TAG_SLUG = "llms";
@@ -23,6 +29,7 @@ export const CMS_PRERENDER_BLOG_PAGE = "2";
 
 export const CMS_PRERENDER_HTML_FILES = [
   `blog/${CMS_PRERENDER_ARTICLE_SLUG}.html`,
+  `blog/${CMS_PRERENDER_SERIES_PART_SLUG}.html`,
   `author/${CMS_PRERENDER_AUTHOR_SLUG}.html`,
   `blog/category/${CMS_PRERENDER_CATEGORY_SLUG}.html`,
   `blog/tag/${CMS_PRERENDER_TAG_SLUG}.html`,
@@ -109,10 +116,90 @@ export const CMS_PRERENDER_ARTICLE: Article = {
   createdAt: STAMP,
   updatedAt: STAMP,
   publishedAt: STAMP,
+  // Content model v2: one of every answer-first section, so the CMS-off build
+  // prerenders each renderer and the post-build scan can check its HTML.
+  noindex: true,
+  // A later calendar day than publishedDate, so the "Updated" label renders.
+  contentUpdatedAt: "2026-02-20T15:00:00.000Z",
+  featuredImageAlt: "Fixture cover alt text",
+  keyTakeaways: [
+    { id: 1, text: "Fixture takeaway one: the answer comes first." },
+    { id: 2, text: "Fixture takeaway two: every section is server-rendered." },
+  ],
+  comparisonTables: [
+    {
+      id: 1,
+      caption: "Fixture comparison",
+      columns: ["Model", "Score", "Price"],
+      rows: [
+        ["Fixture A", "61", "$1"],
+        ["Fixture B", "56", "$2"],
+      ],
+      notes: "Fixture numbers, not real benchmarks.",
+    },
+  ],
+  sources: [
+    {
+      id: 1,
+      title: "Fixture source",
+      url: "https://example.com/fixture-source",
+      publisher: "Example",
+      accessedAt: "2026-01-14",
+    },
+  ],
+  series: CMS_PRERENDER_SERIES,
+  seriesPart: 1,
+  faq: [
+    {
+      id: 1,
+      question: "Is this fixture indexable?",
+      answer: "No. It is noindex so a CMS-off deploy cannot rank it.",
+    },
+  ],
+  crossPostXUrl: "https://x.com/mehdizare",
+  crossPostLinkedinUrl: "https://www.linkedin.com/in/mehdizare",
 };
 
+/** Part 2 of the fixture series; deliberately plain, so the old template is covered too. */
+export const CMS_PRERENDER_SERIES_PART: Article = {
+  id: 9006,
+  documentId: "ssr-fixture-article-part-2",
+  title: "SSR visibility fixture, part 2",
+  slug: CMS_PRERENDER_SERIES_PART_SLUG,
+  excerpt: "Second part of the committed fixture series.",
+  content: fixtureBody,
+  category: CMS_PRERENDER_CATEGORY,
+  tags: [CMS_PRERENDER_TAG],
+  author: CMS_PRERENDER_AUTHOR,
+  seo: {
+    id: 9007,
+    metaRobots: "noindex, nofollow",
+  },
+  noindex: true,
+  series: CMS_PRERENDER_SERIES,
+  seriesPart: 2,
+  publishedDate: STAMP,
+  readingTime: 1,
+  createdAt: STAMP,
+  updatedAt: STAMP,
+  publishedAt: STAMP,
+};
+
+export const CMS_PRERENDER_ARTICLES: readonly Article[] = [
+  CMS_PRERENDER_ARTICLE,
+  CMS_PRERENDER_SERIES_PART,
+];
+
 export function findCmsPrerenderArticle(slug: string): Article | undefined {
-  return slug === CMS_PRERENDER_ARTICLE.slug ? CMS_PRERENDER_ARTICLE : undefined;
+  return CMS_PRERENDER_ARTICLES.find((article) => article.slug === slug);
+}
+
+/** The fixture stand-in for `getArticlesInSeries`. */
+/** Trimmed, case-insensitive, like `getArticlesInSeries` (`$eqi`). */
+export function findCmsPrerenderSeries(series: string): Article[] {
+  const name = series.trim().toLowerCase();
+  if (!name) return [];
+  return CMS_PRERENDER_ARTICLES.filter((article) => article.series?.trim().toLowerCase() === name);
 }
 
 export function findCmsPrerenderAuthor(slug: string): Author | undefined {

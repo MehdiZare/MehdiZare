@@ -5,12 +5,27 @@ import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { AiEngineerProfileLink } from "@/components/seo/AiEngineerProfileLink";
 import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { fetchAllPages, getArticles, getArticleBySlug } from "@/lib/strapi";
+import {
+  fetchAllPages,
+  getArticles,
+  getArticleBySlug,
+  getArticlesInSeries,
+} from "@/lib/strapi";
 import { serverEnv } from "@/lib/server-env";
 import {
   CMS_PRERENDER_ARTICLE_SLUG,
+  CMS_PRERENDER_SERIES_PART_SLUG,
   findCmsPrerenderArticle,
+  findCmsPrerenderSeries,
 } from "@/content/fixtures/cms-prerender";
+import {
+  ArticleFaq,
+  ArticleSources,
+  ComparisonTables,
+  CrossPostLinks,
+  KeyTakeaways,
+  SeriesNav,
+} from "@/components/blog/ArticleSections";
 import { StrapiImage } from "@/components/shared/StrapiImage";
 import { BlocksRenderer } from "@/components/blog/BlocksRenderer";
 import { TableOfContents } from "@/components/blog/TableOfContents";
@@ -19,17 +34,44 @@ import { getSiteProfile } from "@/lib/site-profile";
 import {
   CANONICAL_IDENTITY_ORIGIN,
   authorIdentityFallbacks,
+  isSiteOwnerAuthor,
   resolveArticleAuthorIdentity,
+  resolveAuthorPersonId,
+  resolveAuthorSameAs,
 } from "@/lib/author-identity";
+import {
+  ARTICLE_LISTING_SORT,
+  formatSiteDate,
+  resolveArticleDates,
+  resolveContentUpdatedAt,
+  sortArticlesByPublishedDesc,
+} from "@/lib/article-dates";
+import {
+  buildSourceCitations,
+  resolveArticleRobots,
+  resolveComparisonTables,
+  resolveCrossPosts,
+  resolveFaqItems,
+  resolveFeaturedImageAlt,
+  resolveKeyTakeaways,
+  resolveSeries,
+  resolveSources,
+  type ResolvedSeries,
+} from "@/lib/article-content";
+import { resolveReadingTimeMinutes } from "@/lib/reading-time";
 import { blankToUndefined } from "@/lib/strings";
 import {
   buildBlogPostingJsonLd,
   buildBreadcrumbJsonLd,
+  buildFAQJsonLd,
   buildNoIndexMetadata,
   buildPageMetadata,
   buildWebPageJsonLd,
+  resolveSiteOwnerPersonUrl,
+  resolveSiteOwnerSameAs,
   splitKeywords,
   toAbsoluteMediaUrl,
+  toAbsoluteUrl,
   toPersonId,
 } from "@/lib/seo";
 
@@ -38,21 +80,63 @@ interface BlogPostPageProps {
 }
 
 type ArticleList = Awaited<ReturnType<typeof getArticles>>["data"];
+type ArticleRecord = ArticleList[number];
+
+/**
+ * The post's own generated share card (`./opengraph-image.tsx`). It is the
+ * default og:image / twitter:image and a guaranteed JSON-LD image, so a post
+ * with no cover never falls back to the generic site card, and a post with a
+ * 1920x1080 WebP cover shares a 1200x630 PNG. An uploaded `seo.metaImage`
+ * still overrides it.
+ */
+const OG_CARD_SIZE = { width: 1200, height: 630 } as const;
+
+function articleOgCardPath(slug: string): string {
+  return `/blog/${slug}/opengraph-image`;
+}
+
+/** The hero renders in the 8/12 column of `max-w-7xl`: ~795px from 1280px up. */
+const HERO_IMAGE_SIZES = "(min-width: 1280px) 795px, (min-width: 1024px) 66vw, 100vw";
+
+function articleAuthorPath(article: ArticleRecord, siteOwnerProfilePath: string): string {
+  const slug = blankToUndefined(article.author?.slug);
+  return slug ? `/author/${slug}` : siteOwnerProfilePath;
+}
 
 const AI_ENGINEER_IN_CONTENT_BLOG_SLUGS = new Set([
   "how-ai-works-from-data-to-decisions",
   "why-most-ai-projects-die-before-production-and-it-s-not-a-tech-problem",
 ]);
 
-function getAllArticles(): Promise<ArticleList> {
+async function getAllArticles(): Promise<ArticleList> {
   // Shared STRAPI_MAX_PAGES cap. Extra slugs still render on demand
-  // (dynamicParams defaults to true).
-  return fetchAllPages(getArticles, "articles", { sort: "publishedAt:desc" });
+  // (dynamicParams defaults to true). Same order as /blog, so previous/next
+  // walk the listing rather than the system publish time.
+  const articles = await fetchAllPages(getArticles, "articles", { sort: ARTICLE_LISTING_SORT });
+  return sortArticlesByPublishedDesc(articles);
+}
+
+/**
+ * The post's series and its parts, or null. A failed lookup still names the
+ * series (with no links): the navigation is optional, the post is not.
+ */
+async function getSeries(article: ArticleRecord): Promise<ResolvedSeries | null> {
+  const name = blankToUndefined(article.series);
+  if (!name) return null;
+  try {
+    const siblings = serverEnv.strapiDisabled
+      ? findCmsPrerenderSeries(name)
+      : await getArticlesInSeries(name);
+    return resolveSeries(article, siblings);
+  } catch (error) {
+    console.warn(`[blog] series lookup failed for "${name}"`, error);
+    return resolveSeries(article, []);
+  }
 }
 
 export async function generateStaticParams() {
   if (serverEnv.strapiDisabled) {
-    return [{ slug: CMS_PRERENDER_ARTICLE_SLUG }];
+    return [{ slug: CMS_PRERENDER_ARTICLE_SLUG }, { slug: CMS_PRERENDER_SERIES_PART_SLUG }];
   }
 
   try {
@@ -79,18 +163,31 @@ export async function generateMetadata({
       return buildNoIndexMetadata("Post Not Found");
     }
 
+    const siteProfile = await getSiteProfile();
+    const { datePublished, dateModified } = resolveArticleDates(article);
+    const tagNames = article.tags?.map((tag) => tag.name) ?? [];
+
     const metadata = buildPageMetadata({
       pathname: `/blog/${slug}`,
       title: article.title,
       description: article.excerpt?.trim() || article.title,
       seo: article.seo,
-      image: article.featuredImage,
+      defaultImage: {
+        url: articleOgCardPath(slug),
+        ...OG_CARD_SIZE,
+        type: "image/png",
+      },
       type: "article",
-      publishedTime: article.publishedDate || article.publishedAt,
-      modifiedTime: article.updatedAt,
+      // `noindex` box + `seo.metaRobots`, combined once (CM-11).
+      robots: resolveArticleRobots(article),
+      publishedTime: datePublished,
+      modifiedTime: dateModified,
+      authors: [toAbsoluteUrl(articleAuthorPath(article, siteProfile.author.profilePath))],
+      section: article.category?.name,
+      tags: tagNames,
       keywords:
-        article.tags && article.tags.length > 0
-          ? article.tags.map((tag) => tag.name)
+        tagNames.length > 0
+          ? tagNames
           : ["production AI engineering", "LLM systems", "AI architecture"],
     });
 
@@ -105,10 +202,13 @@ export async function generateMetadata({
 }
 
 function formatDate(dateString: string): string {
+  // `publishedDate` is date-only and parses as UTC midnight, so format in UTC
+  // or a server running in a US timezone renders the day before.
   return new Date(dateString).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "UTC",
   });
 }
 
@@ -178,7 +278,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const authorIdentity = resolveArticleAuthorIdentity(
     articleAuthor,
     authorIdentityFallbacks(siteProfile),
-    CANONICAL_IDENTITY_ORIGIN
+    CANONICAL_IDENTITY_ORIGIN,
+    siteProfile.author.slug
   );
   const {
     name: authorName,
@@ -187,31 +288,73 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     websiteUrl: authorWebsite,
     linkedinUrl: authorLinkedIn,
   } = authorIdentity;
-  const authorPath = blankToUndefined(articleAuthor?.slug)
-    ? `/author/${blankToUndefined(articleAuthor?.slug)}`
-    : siteProfile.author.profilePath;
-  const authorPersonId = toPersonId(authorPath);
+  const authorPath = articleAuthorPath(article, siteProfile.author.profilePath);
+  // One Person @id per human (GEO-01 / TS-04): the site owner is the layout's
+  // `/#person`, inlined here with name and url because Google does not follow
+  // an @id to a node on another page.
+  const authorIsSiteOwner = isSiteOwnerAuthor(articleAuthor, siteProfile.author.slug);
+  const authorPersonId = resolveAuthorPersonId(articleAuthor, siteProfile.author.slug);
+  const authorImage =
+    articleAuthor?.profileImage ??
+    (authorIsSiteOwner ? siteProfile.author.profileImage : undefined);
+  // The site owner's sameAs is the layout Person's (which leaves out its own
+  // `url`, the website). Both go through `resolveSiteOwnerSameAs`, the same
+  // `isSameUrl` comparison, so the two copies of `/#person` on this page agree.
+  const authorSameAs = authorIsSiteOwner
+    ? resolveSiteOwnerSameAs(siteProfile.author)
+    : resolveAuthorSameAs(authorIdentity, articleAuthor?.sameAs, CANONICAL_IDENTITY_ORIGIN);
   const authorInitials = buildInitials(authorName);
   const articleDescription =
     article.excerpt?.trim() || article.title;
-  const primaryImage =
-    toAbsoluteMediaUrl(article.seo?.metaImage?.url) ??
-    toAbsoluteMediaUrl(article.featuredImage?.url);
+  // Every available ratio: the social override, the 16:9 cover, and the
+  // 1200x630 card that always exists.
+  const articleImages = [
+    toAbsoluteMediaUrl(article.seo?.metaImage?.url),
+    toAbsoluteMediaUrl(article.featuredImage?.url),
+    toAbsoluteUrl(articleOgCardPath(article.slug)),
+  ].filter((url): url is string => Boolean(url));
   const articleKeywords = splitKeywords(article.seo?.keywords);
   const fallbackKeywords = article.tags?.map((tag) => tag.name) ?? [];
   const resolvedKeywords = articleKeywords.length > 0 ? articleKeywords : fallbackKeywords;
+  const { datePublished, dateModified } = resolveArticleDates(article);
+  const readingTimeMinutes = resolveReadingTimeMinutes(article.readingTime, article.content);
+  // Answer-first sections (CM-05/06/07/08/12, GEO-05). Resolved once: the
+  // page renders these arrays and the JSON-LD is built from the same ones.
+  const contentUpdatedAt = resolveContentUpdatedAt(article);
+  const keyTakeaways = resolveKeyTakeaways(article);
+  const comparisonTables = resolveComparisonTables(article);
+  const sources = resolveSources(article);
+  const faqItems = resolveFaqItems(article);
+  const crossPosts = resolveCrossPosts(article);
+  const series = await getSeries(article);
+  const coverAlt = resolveFeaturedImageAlt(article);
+  // FAQPage only mirrors the visible FAQ section; null when there is none.
+  const faqJsonLd = buildFAQJsonLd(faqItems);
   const blogPostingJsonLd = buildBlogPostingJsonLd({
     pathname: articlePath,
     headline: article.title,
     description: articleDescription,
-    imageUrl: primaryImage,
-    datePublished: displayDate,
-    dateModified: article.updatedAt,
+    imageUrls: articleImages,
+    datePublished,
+    dateModified,
     keywords: resolvedKeywords.length > 0 ? resolvedKeywords : undefined,
     articleSection: article.category?.name,
-    readingTimeMinutes: article.readingTime,
-    authorId: authorPersonId,
+    readingTimeMinutes,
+    author: {
+      id: authorPersonId,
+      name: authorName,
+      // Same `url` as the layout's `/#person` for the site owner, so the two
+      // copies of that @id on this page agree; guest authors keep their page.
+      url: authorIsSiteOwner
+        ? resolveSiteOwnerPersonUrl(siteProfile.author)
+        : toAbsoluteUrl(authorPath),
+      sameAs: authorSameAs,
+      jobTitle: authorRole,
+      imageUrl: toAbsoluteMediaUrl(authorImage?.url),
+    },
     publisherId: toPersonId(),
+    citations: buildSourceCitations(sources),
+    discussionUrl: crossPosts.x ?? crossPosts.linkedin,
   });
 
   return (
@@ -230,6 +373,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         data={article.seo?.structuredData}
       />
       <JsonLd id="blog-post-jsonld" data={blogPostingJsonLd} />
+      {faqJsonLd ? <JsonLd id="blog-post-faq-jsonld" data={faqJsonLd} /> : null}
       <JsonLd
         id="blog-post-breadcrumb-jsonld"
         data={buildBreadcrumbJsonLd([
@@ -261,9 +405,15 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     {formatDate(displayDate)}
                   </time>
                 )}
-                {article.readingTime && (
+                {contentUpdatedAt && (
+                  <span className="font-mono text-xs text-mid-gray">
+                    Updated{" "}
+                    <time dateTime={contentUpdatedAt}>{formatSiteDate(contentUpdatedAt)}</time>
+                  </span>
+                )}
+                {readingTimeMinutes && (
                   <span className="font-mono text-xs text-mid-gray/60">
-                    {article.readingTime} min read
+                    {readingTimeMinutes} min read
                   </span>
                 )}
               </div>
@@ -273,13 +423,18 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 {article.title}
               </h1>
 
+              {/* Answer first: the takeaways sit right under the title. */}
+              <KeyTakeaways items={keyTakeaways} />
+
               {/* Featured Image */}
               {article.featuredImage && (
                 <div className="mt-8 aspect-video overflow-hidden relative">
                   <StrapiImage
                     image={article.featuredImage}
                     fill
-                    priority
+                    preload
+                    sizes={HERO_IMAGE_SIZES}
+                    alt={coverAlt}
                     className="object-cover"
                   />
                 </div>
@@ -293,6 +448,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 <AiEngineerProfileLink section="blog_body" className="mt-10" />
               ) : null}
 
+              <ComparisonTables tables={comparisonTables} />
+              <ArticleSources sources={sources} />
+              <SeriesNav series={series} />
+              <ArticleFaq items={faqItems} />
+              <CrossPostLinks links={crossPosts} />
+
               {/* Tags */}
               {article.tags && article.tags.length > 0 && (
                 <div className="mt-10 flex flex-wrap gap-2 border-t border-warm-gray pt-6">
@@ -305,8 +466,19 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               {/* Author Card */}
               <div className="mt-10 border border-warm-gray bg-paper p-6 sm:p-8">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-muted font-serif text-xl text-ink">
-                    {authorInitials}
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden bg-muted">
+                    <StrapiImage
+                      image={authorImage}
+                      fill
+                      sizes="56px"
+                      fallbackAlt={authorName}
+                      className="object-cover"
+                      fallback={
+                        <div className="flex h-full w-full items-center justify-center font-serif text-xl text-ink">
+                          {authorInitials}
+                        </div>
+                      }
+                    />
                   </div>
                   <div>
                     <h3 className="font-serif text-lg text-ink">

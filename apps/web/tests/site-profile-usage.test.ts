@@ -16,9 +16,11 @@ const pageFiles = [
   "src/app/consulting/page.tsx",
   "src/app/ai-engineer/page.tsx",
   "src/app/contact/page.tsx",
-  "src/app/blog/page.tsx",
   "src/app/blog/[slug]/page.tsx",
 ];
+// `src/app/blog/page.tsx` renders no Site Profile value: its listing JSON-LD
+// points at the layout's `/#person` (`toPersonId()`), the same id every post
+// uses, so it no longer reads the profile.
 
 function readSource(relativePath: string): string {
   return readFileSync(resolve(process.cwd(), relativePath), "utf8");
@@ -92,5 +94,13 @@ test("layout wires each guarded prop to the profile field its contract names", (
         file.split("/").pop()?.replace(".tsx", "") ?? file
       }> -- otherwise the component guard for ${field} is pinned to a profile key nothing actually supplies (#96)`
     );
+  }
+});
+
+test("blog listings point the Blog author at the layout's /#person, not a profile-scoped id", () => {
+  for (const file of ["src/app/blog/page.tsx", "src/app/blog/page/[page]/page.tsx"]) {
+    const source = readSource(file);
+    assert.match(source, /canonicalAuthorId=\{toPersonId\(\)\}/, file);
+    assert.doesNotMatch(source, /toPersonId\(siteProfile/, file);
   }
 });

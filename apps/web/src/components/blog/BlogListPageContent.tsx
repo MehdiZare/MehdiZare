@@ -8,7 +8,10 @@ import {
   buildWebPageJsonLd,
   toAbsoluteMediaUrl,
 } from "@/lib/seo";
+import { resolveAuthorPersonId } from "@/lib/author-identity";
+import { resolveArticleDates } from "@/lib/article-dates";
 import { buildBlogPageUrl } from "@/lib/blog-listing";
+import { getSiteProfile } from "@/lib/site-profile";
 import { PostCard } from "@/components/blog/PostCard";
 
 interface BlogListPageContentProps {
@@ -27,7 +30,7 @@ interface BlogListPageContentProps {
   canonicalAuthorId: string;
 }
 
-export function BlogListPageContent({
+export async function BlogListPageContent({
   currentPage,
   articles,
   categories,
@@ -37,6 +40,7 @@ export function BlogListPageContent({
   canonicalPath,
   canonicalAuthorId,
 }: BlogListPageContentProps) {
+  const siteProfile = await getSiteProfile();
   const hasNextPage = pagination ? currentPage < pagination.pageCount : false;
   const hasPrevPage = currentPage > 1;
 
@@ -48,8 +52,13 @@ export function BlogListPageContent({
     posts: articles.map((article) => ({
       title: article.title,
       path: `/blog/${article.slug}`,
-      datePublished: article.publishedDate || article.publishedAt,
+      // The same datePublished the post page emits (09:00 New York on the
+      // editorial date), not the raw date-only CMS value.
+      datePublished: resolveArticleDates(article).datePublished,
       imageUrl: toAbsoluteMediaUrl(article.featuredImage?.url),
+      // The same id the post page and the layout use (GEO-01): `/#person` for
+      // the site owner, a profile-scoped id for a guest author.
+      authorId: resolveAuthorPersonId(article.author, siteProfile.author.slug),
     })),
   });
 

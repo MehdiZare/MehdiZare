@@ -28,6 +28,20 @@ interface Scenario {
   articlePageCount: number;
   /** Article pagination[page] that should fail (504), to pin partial results. */
   failArticlePage?: number;
+  /** Answer 400 Invalid key to any content-model v2 field, like a CMS not yet deployed with it. */
+  rejectContentModelV2?: boolean;
+}
+
+const CONTENT_MODEL_V2_KEYS = ["contentUpdatedAt", "noindex", "keyTakeaways", "featuredImageAlt"];
+
+function requestsContentModelV2(url: URL): string | undefined {
+  for (const [key, value] of url.searchParams) {
+    const hit = CONTENT_MODEL_V2_KEYS.find(
+      (field) => (key.startsWith("fields[") && value === field) || key.startsWith(`populate[${field}]`)
+    );
+    if (hit) return hit;
+  }
+  return undefined;
 }
 
 function emptyScenario(): Scenario {
@@ -75,6 +89,15 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
       if (scenario.failArticlePage != null && page === scenario.failArticlePage) {
         return new Response("gateway timeout", { status: 504, statusText: "Gateway Timeout" });
       }
+      if (scenario.rejectContentModelV2) {
+        const key = requestsContentModelV2(url);
+        if (key) {
+          return new Response(
+            JSON.stringify({ error: { status: 400, name: "ValidationError", message: `Invalid key ${key}` } }),
+            { status: 400, statusText: "Bad Request", headers: { "content-type": "application/json" } }
+          );
+        }
+      }
       return collection(scenario.articles, scenario.articlePageCount);
     case "/api/authors":
       return collection(scenario.authors, 1);
@@ -89,9 +112,10 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   }
 }) as typeof fetch;
 
-const { default: sitemap, maxDuration, SITEMAP_DEADLINE_MS } = await import(
-  "../src/app/sitemap.ts"
-);
+const { default: sitemap, SITEMAP_DEADLINE_MS } = await import("../src/lib/sitemap.ts");
+const { GET, maxDuration } = await import("../src/app/sitemap-main.xml/route.ts");
+const { resolveArticleDates } = await import("../src/lib/article-dates.ts");
+const { buildBlogPostingJsonLd } = await import("../src/lib/seo.ts");
 
 async function runSitemap(next: Partial<Scenario> = {}) {
   scenario = { ...emptyScenario(), ...next };
@@ -224,6 +248,14 @@ test("a later article page failure keeps page-1 URLs instead of dropping the cat
 
 test("CMS categories and tags replace the taxonomy fallback", async () => {
   const { urls } = await runSitemap({
+    articles: [
+      {
+        slug: "tagged-post",
+        publishedAt: "2026-02-01T00:00:00.000Z",
+        category: { slug: "cms-cat" },
+        tags: [{ slug: "cms-tag" }],
+      },
+    ],
     categories: [{ slug: "cms-cat", updatedAt: "2026-02-01T00:00:00.000Z" }, { slug: "  " }],
     tags: [{ slug: "cms-tag", updatedAt: "2026-02-01T00:00:00.000Z" }, { slug: null }],
   });
@@ -267,9 +299,25 @@ test("the article query asks only for what the sitemap renders", async () => {
 
   const params = articleRequest.searchParams;
   assert.deepEqual(
-    [params.get("fields[0]"), params.get("fields[1]"), params.get("fields[2]")],
-    ["slug", "updatedAt", "publishedAt"],
+    [
+      params.get("fields[0]"),
+      params.get("fields[1]"),
+      params.get("fields[2]"),
+      params.get("fields[3]"),
+      params.get("fields[4]"),
+      params.get("fields[5]"),
+      params.get("fields[6]"),
+    ],
+    // contentUpdatedAt drives lastmod (CM-02); noindex drops the post (CM-11).
+    ["slug", "updatedAt", "publishedAt", "publishedDate", "contentUpdatedAt", "noindex", null],
     "narrowing the query is what keeps the full article populate out of the sitemap read"
+  );
+  assert.equal(params.get("populate[category][fields][0]"), "slug");
+  assert.equal(params.get("populate[tags][fields][0]"), "slug");
+  assert.deepEqual(
+    [params.get("sort[0]"), params.get("sort[1]")],
+    ["publishedDate:desc", "publishedAt:desc"],
+    "editorial date first, system publish time as the tiebreak (CM-02)"
   );
   assert.equal(params.get("populate[featuredImage][fields][0]"), "url");
   assert.equal(
@@ -372,7 +420,7 @@ test("sitemap collection reads stay on the shared, tagged Strapi cache", async (
   assert.ok(collectionCaches.length > 0, "the sitemap must read CMS collections");
   assert.ok(
     collectionCaches.every((cache) => cache !== "no-store"),
-    'A `no-store` read carries no cache entry, so it carries no `strapi` tag either -- and the tag is what lets the publish webhook invalidate this route. Verified on a build: sitemap.xml.meta lists `strapi` among its x-next-cache-tags.'
+    'A `no-store` read carries no cache entry, so it carries no `strapi` tag either -- and the tag is what lets the publish webhook invalidate this route. Verified on a build: sitemap-main.xml.meta lists `strapi` among its x-next-cache-tags.'
   );
 });
 
@@ -491,4 +539,313 @@ test("missing CMS dates never turn a sitemap refresh into a content update", asy
   } finally {
     delete process.env.BUILD_TIME;
   }
+});
+
+function lastmodOf(entries: Array<{ url: string; lastModified?: string | Date }>, url: string) {
+  const entry = entries.find((candidate) => candidate.url === url);
+  assert.ok(entry, `${url} must be in the sitemap`);
+  return entry.lastModified instanceof Date
+    ? entry.lastModified.toISOString()
+    : entry.lastModified;
+}
+
+test("empty categories and tags are left out of the sitemap (TS-02 / CM-09 / GEO-14)", async () => {
+  const { urls } = await runSitemap({
+    articles: [
+      {
+        slug: "post",
+        publishedAt: "2026-08-01T10:00:00.000Z",
+        category: { slug: "llms-in-production" },
+        tags: [{ slug: "llms" }, { slug: "mcp" }],
+      },
+    ],
+    categories: [
+      { slug: "robowrite" },
+      {
+        slug: "ai-engineering",
+        children: [{ slug: "llms-in-production" }, { slug: "empty-child" }],
+      },
+      { slug: "llms-in-production" },
+      { slug: "empty-child" },
+    ],
+    tags: [{ slug: "llms" }, { slug: "mcp" }, { slug: "fastapi" }],
+  });
+
+  assert.deepEqual(
+    urls.filter((url) => url.includes("/blog/category/")).sort(),
+    [
+      `${SITE_URL}/blog/category/ai-engineering`,
+      `${SITE_URL}/blog/category/llms-in-production`,
+    ],
+    "a parent is kept when a child has posts; categories with none are dropped"
+  );
+  assert.deepEqual(
+    urls.filter((url) => url.includes("/blog/tag/")).sort(),
+    [`${SITE_URL}/blog/tag/llms`, `${SITE_URL}/blog/tag/mcp`]
+  );
+});
+
+test("a CMS whose terms all have no posts emits no taxonomy URLs instead of the seed list", async () => {
+  const { urls } = await runSitemap({
+    articles: [{ slug: "untagged", publishedAt: "2026-08-01T10:00:00.000Z" }],
+    categories: [{ slug: "robowrite" }],
+    tags: [{ slug: "fastapi" }],
+  });
+  assert.ok(!urls.some((url) => url.includes("/blog/category/")));
+  assert.ok(!urls.some((url) => url.includes("/blog/tag/")));
+});
+
+test("a partial article walk lists taxonomy terms the fetched rows never mentioned", async () => {
+  const { urls } = await runSitemap({
+    articles: [
+      {
+        slug: "page-one",
+        publishedAt: "2026-08-01T10:00:00.000Z",
+        category: { slug: "kept" },
+        tags: [{ slug: "kept-tag" }],
+      },
+    ],
+    articlePageCount: 3,
+    failArticlePage: 2,
+    categories: [{ slug: "kept" }, { slug: "later-page" }],
+    tags: [{ slug: "kept-tag" }, { slug: "later-page-tag" }],
+  });
+
+  assert.ok(urls.includes(`${SITE_URL}/blog/category/later-page`));
+  assert.ok(urls.includes(`${SITE_URL}/blog/tag/later-page-tag`));
+  assert.ok(urls.includes(`${SITE_URL}/blog/page-one`));
+});
+
+test("a failed article walk lists the taxonomy unfiltered rather than dropping it", async () => {
+  const { urls } = await runSitemap({
+    failArticlePage: 1,
+    categories: [{ slug: "robowrite" }],
+    tags: [{ slug: "fastapi" }],
+  });
+  assert.ok(urls.includes(`${SITE_URL}/blog/category/robowrite`));
+  assert.ok(urls.includes(`${SITE_URL}/blog/tag/fastapi`));
+});
+
+test("a taxonomy lastmod is its newest post, not the term row's updatedAt", async () => {
+  const { entries } = await runSitemap({
+    articles: [
+      {
+        slug: "older",
+        publishedAt: "2026-07-01T10:00:00.000Z",
+        updatedAt: "2026-07-01T10:00:00.000Z",
+        category: { slug: "child" },
+        tags: [{ slug: "llms" }],
+      },
+      {
+        slug: "newer",
+        publishedAt: "2026-08-15T10:00:00.000Z",
+        updatedAt: "2026-08-15T10:00:00.000Z",
+        category: { slug: "child" },
+        tags: [{ slug: "llms" }],
+      },
+    ],
+    categories: [
+      { slug: "parent", updatedAt: "2026-01-01T00:00:00.000Z", children: [{ slug: "child" }] },
+      { slug: "child", updatedAt: "2026-11-01T00:00:00.000Z" },
+    ],
+    tags: [{ slug: "llms", updatedAt: "2026-11-01T00:00:00.000Z" }],
+  });
+
+  assert.equal(lastmodOf(entries, `${SITE_URL}/blog/category/parent`), "2026-08-15T10:00:00.000Z");
+  assert.equal(lastmodOf(entries, `${SITE_URL}/blog/category/child`), "2026-08-15T10:00:00.000Z");
+  assert.equal(lastmodOf(entries, `${SITE_URL}/blog/tag/llms`), "2026-08-15T10:00:00.000Z");
+});
+
+test("article lastmod is dateModified: updatedAt clamped to datePublished (CM-02)", async () => {
+  const { entries } = await runSitemap({
+    articles: [
+      {
+        slug: "edited-later",
+        publishedDate: "2026-08-30",
+        publishedAt: "2026-08-30T14:00:00.000Z",
+        updatedAt: "2026-10-02T09:00:00.000Z",
+      },
+      {
+        slug: "republished",
+        publishedDate: "2026-02-25",
+        publishedAt: "2026-09-10T12:00:00.000Z",
+        updatedAt: "2026-09-10T12:00:00.000Z",
+      },
+      {
+        slug: "saved-before-publish-hour",
+        publishedDate: "2026-08-30",
+        publishedAt: "2026-08-30T10:00:00.000Z",
+        updatedAt: "2026-08-30T10:00:00.000Z",
+      },
+    ],
+  });
+
+  assert.equal(
+    lastmodOf(entries, `${SITE_URL}/blog/edited-later`),
+    "2026-10-02T09:00:00.000Z",
+    "a later edit moves lastmod, the same dateModified the page emits"
+  );
+  assert.equal(
+    lastmodOf(entries, `${SITE_URL}/blog/republished`),
+    "2026-09-10T12:00:00.000Z",
+    "lastmod follows updatedAt; the editorial publish date is unchanged"
+  );
+  assert.equal(
+    lastmodOf(entries, `${SITE_URL}/blog/saved-before-publish-hour`),
+    "2026-08-30T13:00:00.000Z",
+    "an updatedAt before 09:00 New York on the publish day is clamped up to datePublished"
+  );
+  assert.equal(
+    lastmodOf(entries, `${SITE_URL}/blog`),
+    "2026-10-02T09:00:00.000Z",
+    "/blog tracks the newest article lastmod"
+  );
+});
+
+test("a future-dated post's lastmod is clamped up to its datePublished, never before it", async () => {
+  const { entries } = await runSitemap({
+    articles: [
+      {
+        slug: "future-dated",
+        publishedDate: "2099-01-01",
+        publishedAt: "2026-08-01T10:00:00.000Z",
+        updatedAt: "2026-08-02T10:00:00.000Z",
+      },
+    ],
+  });
+
+  assert.equal(lastmodOf(entries, `${SITE_URL}/blog/future-dated`), "2099-01-01T14:00:00.000Z");
+});
+
+test("sitemap lastmod is never earlier than the JSON-LD datePublished for the same article", async () => {
+  const fixtures = [
+    {
+      // Saved at 10:00Z, before the 09:00 New York (13:00Z) publish instant.
+      slug: "same-day-early-save",
+      publishedDate: "2026-08-30",
+      publishedAt: "2026-08-30T10:00:00.000Z",
+      updatedAt: "2026-08-30T10:00:00.000Z",
+    },
+    {
+      // The live February post: no publishedDate, and Strapi stamped
+      // publishedAt a few ms after updatedAt.
+      slug: "undated-february",
+      publishedDate: null,
+      publishedAt: "2026-02-25T14:55:26.603Z",
+      updatedAt: "2026-02-25T14:55:26.569Z",
+    },
+    {
+      slug: "edited-later",
+      publishedDate: "2026-01-15",
+      publishedAt: "2026-01-15T16:00:00.000Z",
+      updatedAt: "2026-03-01T08:00:00.000Z",
+    },
+  ];
+  const { entries } = await runSitemap({ articles: fixtures });
+
+  for (const article of fixtures) {
+    const { datePublished, dateModified } = resolveArticleDates(article);
+    const jsonLd = buildBlogPostingJsonLd({
+      pathname: `/blog/${article.slug}`,
+      headline: article.slug,
+      description: article.slug,
+      datePublished,
+      dateModified,
+    });
+    const lastmod = lastmodOf(entries, `${SITE_URL}/blog/${article.slug}`);
+    assert.ok(lastmod, `${article.slug} is in the sitemap`);
+    assert.ok(
+      Date.parse(lastmod) >= Date.parse(String(jsonLd.datePublished)),
+      `${article.slug}: lastmod ${lastmod} precedes datePublished ${String(jsonLd.datePublished)}`
+    );
+    assert.equal(
+      Date.parse(lastmod),
+      Date.parse(String(jsonLd.dateModified)),
+      `${article.slug}: sitemap lastmod and JSON-LD dateModified are the same instant`
+    );
+  }
+});
+
+// ── Content model v2 (CM-02 / CM-11) ─────────────────────────────────────
+
+test("a post with the noindex box ticked is left out of the sitemap", async () => {
+  const { urls } = await runSitemap({
+    articles: [
+      { slug: "visible", noindex: false },
+      { slug: "unset", noindex: null },
+      { slug: "ticked", noindex: true },
+      { slug: "ticked-with-index-robots", noindex: true, seo: { metaRobots: "index, follow" } },
+    ],
+  });
+  assert.deepEqual(articleUrls(urls), [`${SITE_URL}/blog/visible`, `${SITE_URL}/blog/unset`]);
+});
+
+test("contentUpdatedAt is the article lastmod when the CMS has it", async () => {
+  const { entries } = await runSitemap({
+    articles: [
+      {
+        slug: "refreshed",
+        publishedDate: "2026-08-30",
+        publishedAt: "2026-08-30T14:00:00.000Z",
+        updatedAt: "2026-10-20T09:00:00.000Z",
+        contentUpdatedAt: "2026-09-15T12:00:00.000Z",
+      },
+    ],
+  });
+  assert.equal(
+    lastmodOf(entries, `${SITE_URL}/blog/refreshed`),
+    "2026-09-15T12:00:00.000Z",
+    "a later system save (typo fix) does not move lastmod past the editorial update"
+  );
+});
+
+test("a CMS without the v2 fields still lists every article: the query retries without them", async () => {
+  const { urls } = await runSitemap({
+    rejectContentModelV2: true,
+    articles: [{ slug: "old-model", updatedAt: "2026-02-02T00:00:00.000Z" }],
+  });
+  assert.deepEqual(articleUrls(urls), [`${SITE_URL}/blog/old-model`]);
+
+  const articleRequests = requestedUrls.filter((url) => url.pathname === "/api/articles");
+  assert.equal(articleRequests.length, 2, "one rejected request, one retry");
+  assert.ok(requestsContentModelV2(articleRequests[0]), "the first request asks for the v2 fields");
+  assert.equal(requestsContentModelV2(articleRequests[1]), undefined, "the retry drops them");
+  assert.equal(articleRequests[1].searchParams.get("fields[0]"), "slug", "the retry keeps the old fields");
+});
+
+// Owner decision on #152: a regeneration during a CMS outage serves the
+// fallback as a normal 200 (ISR caches it until Strapi recovers). Failing the
+// regeneration instead turned into 500s after a publish. These pin the route's
+// side of that: complete data reaches the XML, and a stalled CMS still returns
+// a valid sitemap rather than an error.
+
+test("the route serves the complete sitemap when the CMS is healthy", async () => {
+  scenario = {
+    ...emptyScenario(),
+    articles: [{ slug: "tagged-post", publishedAt: "2026-02-01T00:00:00.000Z", category: { slug: "cms-cat" } }],
+    categories: [{ slug: "cms-cat", updatedAt: "2026-02-01T00:00:00.000Z" }],
+  };
+  const response = await GET();
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), new RegExp(`<loc>${SITE_URL}/blog/tagged-post</loc>`));
+});
+
+test("a stalled CMS still gets a 200 fallback sitemap from the route, not an error", async (t) => {
+  scenario = emptyScenario();
+  stallCms = true;
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  t.after(() => {
+    stallCms = false;
+    for (const reject of stalledRejects.splice(0)) {
+      reject(new Error("stalled CMS test cleanup"));
+    }
+  });
+
+  const pending = GET();
+  t.mock.timers.tick(SITEMAP_DEADLINE_MS);
+  const response = await pending;
+  assert.equal(response.status, 200);
+  const body = await response.text();
+  assert.match(body, new RegExp(`<loc>${SITE_URL}/blog/category/ai-engineering</loc>`));
+  assert.doesNotMatch(body, new RegExp(`<loc>${SITE_URL}/blog/tagged-post</loc>`));
 });

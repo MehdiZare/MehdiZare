@@ -41,17 +41,42 @@ export interface FetchAPIParams {
   [key: string]: unknown;
 }
 
+/** `error.name` / `error.message` from a Strapi error body, when it is JSON. */
+interface StrapiErrorDetail {
+  name?: string;
+  message?: string;
+}
+
 class StrapiRequestError extends Error {
   readonly path: string;
   readonly status?: number;
   readonly statusText?: string;
+  readonly detail?: StrapiErrorDetail;
 
-  constructor(message: string, options: { path: string; status?: number; statusText?: string }) {
+  constructor(
+    message: string,
+    options: { path: string; status?: number; statusText?: string; detail?: StrapiErrorDetail }
+  ) {
     super(message);
     this.name = "StrapiRequestError";
     this.path = options.path;
     this.status = options.status;
     this.statusText = options.statusText;
+    this.detail = options.detail;
+  }
+}
+
+function parseStrapiErrorDetail(body: string): StrapiErrorDetail | undefined {
+  try {
+    const error = (JSON.parse(body) as { error?: unknown })?.error;
+    if (!error || typeof error !== "object") return undefined;
+    const { name, message } = error as Record<string, unknown>;
+    return {
+      name: typeof name === "string" ? name : undefined,
+      message: typeof message === "string" ? message : undefined,
+    };
+  } catch {
+    return undefined;
   }
 }
 
@@ -135,17 +160,18 @@ async function fetchStrapi(input: URL, init: RequestInit & { path: string }): Pr
   }
 
   if (!response.ok) {
-    const errorBody = truncateForLogs(await response.text());
+    const rawBody = await response.text();
     console.error("Strapi API request failed", {
       path: init.path,
       status: response.status,
       statusText: response.statusText,
-      bodyPreview: errorBody,
+      bodyPreview: truncateForLogs(rawBody),
     });
     throw new StrapiRequestError("Strapi API returned an error response", {
       path: init.path,
       status: response.status,
       statusText: response.statusText,
+      detail: parseStrapiErrorDetail(rawBody),
     });
   }
 
@@ -183,6 +209,16 @@ export interface FetchAllPagesOptions {
   deadlineMs?: number;
 }
 
+export interface FetchAllPagesResult<T> {
+  items: T[];
+  /**
+   * False when a later page failed, the caller deadline stopped the walk, or
+   * STRAPI_MAX_PAGES cut it short of Strapi's pageCount. Callers that treat a
+   * missing row as "does not exist" must ignore `items` unless this is true.
+   */
+  complete: boolean;
+}
+
 /**
  * Walk a collection page by page (caller supplies `sort`), stopping at
  * STRAPI_MAX_PAGES. Truncation is logged rather than silent so a catalog that
@@ -194,12 +230,12 @@ export interface FetchAllPagesOptions {
  * `deadlineMs` skips a further page when remaining time cannot cover
  * STRAPI_TIMEOUT_MS.
  */
-export async function fetchAllPages<T>(
+export async function fetchAllPagesResult<T>(
   fetchPage: (params: FetchAPIParams) => Promise<StrapiCollectionResponse<T>>,
   label: string,
   params: Omit<FetchAPIParams, "pagination"> = {},
   options: FetchAllPagesOptions = {}
-): Promise<T[]> {
+): Promise<FetchAllPagesResult<T>> {
   const items: T[] = [];
   let page = 1;
 
@@ -212,7 +248,7 @@ export async function fetchAllPages<T>(
       console.warn(
         `[strapi] ${label}: stopping pagination to honor caller deadline; returning ${items.length} row(s)`
       );
-      break;
+      return { items, complete: false };
     }
 
     let response: StrapiCollectionResponse<T>;
@@ -227,7 +263,7 @@ export async function fetchAllPages<T>(
           `[strapi] ${label}: page ${page} failed after ${items.length} row(s); returning partial results`,
           error
         );
-        return items;
+        return { items, complete: false };
       }
       throw error;
     }
@@ -243,7 +279,7 @@ export async function fetchAllPages<T>(
 
     const pageCount = response.meta?.pagination?.pageCount ?? 1;
     if (page >= pageCount) {
-      break;
+      return { items, complete: true };
     }
 
     if (page >= STRAPI_MAX_PAGES) {
@@ -252,13 +288,20 @@ export async function fetchAllPages<T>(
           `but Strapi reports ${pageCount}; entries beyond ` +
           `${STRAPI_MAX_PAGES * PAGE_SIZE} are omitted.`
       );
-      break;
+      return { items, complete: false };
     }
 
     page += 1;
   }
+}
 
-  return items;
+export async function fetchAllPages<T>(
+  fetchPage: (params: FetchAPIParams) => Promise<StrapiCollectionResponse<T>>,
+  label: string,
+  params: Omit<FetchAPIParams, "pagination"> = {},
+  options: FetchAllPagesOptions = {}
+): Promise<T[]> {
+  return (await fetchAllPagesResult(fetchPage, label, params, options)).items;
 }
 
 function flattenParams(
@@ -305,6 +348,110 @@ const articlePopulate = {
   seo: { populate: { metaImage: { populate: "*" } } },
 };
 
+/**
+ * Article attributes added by the answer-first content model (CM-02 et al.).
+ *
+ * The CMS and the web deploy separately, and Strapi 5 answers a `fields` or
+ * `populate` key it does not know with `400 Invalid key`. Queries without a
+ * `fields` list (the listings, the post page) receive the new scalars for free
+ * once the CMS has them, so only explicit `fields` lists and the component
+ * populates can trip that. `fetchArticles` strips these keys and retries once
+ * on that `400 Invalid key` (no other 400), so a web deploy that lands before
+ * the CMS deploy degrades to the old model instead of 404ing every post and
+ * emptying the sitemap and feed.
+ */
+export const CONTENT_MODEL_V2_SCALAR_FIELDS = [
+  "contentUpdatedAt",
+  "featuredImageAlt",
+  "series",
+  "seriesPart",
+  "crossPostXUrl",
+  "crossPostLinkedinUrl",
+  "noindex",
+] as const;
+
+export const CONTENT_MODEL_V2_COMPONENTS = [
+  "keyTakeaways",
+  "faq",
+  "sources",
+  "comparisonTables",
+] as const;
+
+const CONTENT_MODEL_V2_KEYS: ReadonlySet<string> = new Set([
+  ...CONTENT_MODEL_V2_SCALAR_FIELDS,
+  ...CONTENT_MODEL_V2_COMPONENTS,
+]);
+
+/**
+ * The post page's populate: the shared one plus the four components only a
+ * post renders. Listings keep `articlePopulate`, so a card grid never pulls
+ * FAQs, sources or tables.
+ */
+const articlePostPopulate = {
+  ...articlePopulate,
+  keyTakeaways: true,
+  faq: true,
+  sources: true,
+  comparisonTables: true,
+};
+
+/**
+ * `params` with every content-model v2 key removed from `fields` and from a
+ * top-level `populate` object, or `null` when there was nothing to remove.
+ * Filters are left alone on purpose: dropping a `series` filter would turn a
+ * sibling lookup into "every article".
+ */
+export function stripContentModelV2(params: FetchAPIParams): FetchAPIParams | null {
+  let stripped = false;
+  const next: FetchAPIParams = { ...params };
+
+  if (Array.isArray(params.fields)) {
+    const fields = params.fields.filter((field) => !CONTENT_MODEL_V2_KEYS.has(field));
+    if (fields.length !== params.fields.length) {
+      next.fields = fields;
+      stripped = true;
+    }
+  }
+
+  const populate = params.populate;
+  if (populate && typeof populate === "object" && !Array.isArray(populate)) {
+    const entries = Object.entries(populate);
+    const kept = entries.filter(([key]) => !CONTENT_MODEL_V2_KEYS.has(key));
+    if (kept.length !== entries.length) {
+      next.populate = Object.fromEntries(kept);
+      stripped = true;
+    }
+  }
+
+  return stripped ? next : null;
+}
+
+/**
+ * True only for Strapi's answer to a query key it does not know:
+ * `400 { error: { name: "ValidationError", message: "Invalid key <key>" } }`.
+ * Any other 400 (a bad filter value, a malformed query) is a real error and
+ * must not be masked by the deploy-order fallback.
+ */
+function isInvalidKeyError(error: unknown): boolean {
+  if (!(error instanceof StrapiRequestError) || error.status !== 400) return false;
+  const detail = error.detail;
+  if (!detail?.message?.includes("Invalid key")) return false;
+  return detail.name === undefined || detail.name === "ValidationError";
+}
+
+async function fetchArticles(params: FetchAPIParams): Promise<StrapiCollectionResponse<Article>> {
+  try {
+    return await fetchAPI<StrapiCollectionResponse<Article>>("/articles", params);
+  } catch (error) {
+    const legacy = isInvalidKeyError(error) ? stripContentModelV2(params) : null;
+    if (!legacy) throw error;
+    console.warn(
+      "[strapi] /articles rejected a content-model v2 key (is the CMS deployed with the new article schema?); retrying without them"
+    );
+    return fetchAPI<StrapiCollectionResponse<Article>>("/articles", legacy);
+  }
+}
+
 const authorPopulate = {
   sameAs: { populate: "*" },
   profileImage: { populate: "*" },
@@ -314,7 +461,7 @@ const authorPopulate = {
 export async function getArticles(
   params?: FetchAPIParams
 ): Promise<StrapiCollectionResponse<Article>> {
-  return fetchAPI<StrapiCollectionResponse<Article>>("/articles", {
+  return fetchArticles({
     populate: articlePopulate,
     ...params,
   });
@@ -323,12 +470,43 @@ export async function getArticles(
 export async function getArticleBySlug(
   slug: string
 ): Promise<StrapiCollectionResponse<Article>> {
-  return fetchAPI<StrapiCollectionResponse<Article>>("/articles", {
-    populate: articlePopulate,
+  return fetchArticles({
+    populate: articlePostPopulate,
     filters: {
       slug: { $eq: slug },
     },
   });
+}
+
+/** The fields a series navigation needs, nothing else. */
+const SERIES_ARTICLE_FIELDS = ["title", "slug", "seriesPart", "publishedDate", "publishedAt"] as const;
+
+/** Upper bound on parts listed; a series is a handful of posts, not a catalog. */
+export const SERIES_PART_LIMIT = 50;
+
+/**
+ * Every published part of `series`, ordered by part, with only the fields the
+ * series navigation renders. The name is trimmed and matched
+ * case-insensitively (`$eqi`), so "Agents" and "agents" are one series. Not
+ * retried without the v2 keys on `400 Invalid key`: `series` is the filter,
+ * and a CMS without the field cannot have a post in a series, so that
+ * rejection means "no siblings". Any other error propagates.
+ */
+export async function getArticlesInSeries(series: string): Promise<Article[]> {
+  const name = series.trim();
+  if (!name) return [];
+  try {
+    const response = await fetchAPI<StrapiCollectionResponse<Article>>("/articles", {
+      fields: SERIES_ARTICLE_FIELDS,
+      filters: { series: { $eqi: name } },
+      sort: ["seriesPart:asc", "publishedDate:asc"],
+      pagination: { page: 1, pageSize: SERIES_PART_LIMIT },
+    });
+    return Array.isArray(response.data) ? response.data : [];
+  } catch (error) {
+    if (isInvalidKeyError(error)) return [];
+    throw error;
+  }
 }
 
 export async function getAuthors(

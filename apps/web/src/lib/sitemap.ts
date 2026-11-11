@@ -2,12 +2,15 @@ import type { MetadataRoute } from "next";
 import type { Article, Author, Category, Tag, SEO } from "@/types/strapi";
 import {
   fetchAllPages,
+  fetchAllPagesResult,
   getArticles,
   getAuthors,
   getCategories,
   getTags,
 } from "@/lib/strapi";
 import { isBinaPrintEnabled } from "@/lib/feature-flags";
+import { ARTICLE_LISTING_SORT, resolveArticleLastModified } from "@/lib/article-dates";
+import { isArticleIndexable } from "@/lib/article-content";
 import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 import {
   getSiteUrl,
@@ -20,27 +23,17 @@ import taxonomy from "../../../../data/taxonomy.json";
 const SITE_URL = getSiteUrl();
 
 /**
- * Bounded ISR, not `force-dynamic`.
- *
- * `revalidate = 3600` was what let a published post sit out of the sitemap for
- * up to an hour (#110). Five minutes closes that without making the route
- * uncacheable: a metadata route hardcodes `cache-control: public, max-age=0,
- * must-revalidate`, so a dynamic sitemap means one uncached, four-way paginated
- * Strapi walk per crawler hit, with no CDN shielding and no stale copy to serve
- * if Strapi is slow. Under ISR a degraded regeneration never reaches a crawler,
- * because the previous good copy is served while the new one builds (#118).
- *
- * Invalidation still works on publish, and both paths are real -- read off a
- * build, `.next/server/app/sitemap.xml.meta` carries
- * `x-next-cache-tags: ...,_N_T_/sitemap.xml/route,_N_T_/sitemap.xml,strapi`.
- * The webhook's `revalidatePath("/sitemap.xml")` matches the second tag and its
- * `revalidateTag("strapi")` matches the third.
+ * Sitemap entries for every indexable page. Served as XML by
+ * `app/sitemap-main.xml/route.ts`, which `/sitemap.xml` rewrites to; that file
+ * explains why this is not an `app/sitemap.ts` metadata route, and holds the
+ * route's `revalidate` and `maxDuration`.
  */
-export const revalidate = 300;
-/** Isolate budget: must exceed SITEMAP_DEADLINE_MS so a slow CMS walk can still return the fallback. */
-export const maxDuration = 20;
 
-/** Must stay below maxDuration * 1000 so buildDegradedSitemap can return before the isolate is killed. Does not abort in-flight CMS fetches. */
+/**
+ * Must stay below the route's `maxDuration` (20 s) * 1000 so
+ * buildDegradedSitemap can return before the isolate is killed. Does not abort
+ * in-flight CMS fetches.
+ */
 export const SITEMAP_DEADLINE_MS = 16_000;
 
 /**
@@ -90,25 +83,34 @@ export function maxValidDate<T extends Date | undefined>(
 }
 
 /**
- * Fetch only the slug, modification dates, image URL and indexability metadata.
- * This overrides the full articlePopulate, including author credentials and
- * seo.metaImage.
+ * Fetch only the slug, the system and editorial dates, image URL, indexability
+ * metadata, and the category and tag slugs that decide which taxonomy pages
+ * have posts. This overrides the full articlePopulate, including author
+ * credentials and seo.metaImage.
+ *
+ * New fields are appended rather than inserted so earlier ones keep their
+ * positions. Strapi 5 answers an unknown field with a 400, which would drop
+ * every article from the sitemap; `contentUpdatedAt` (lastmod, CM-02) and
+ * `noindex` (CM-11) are content-model v2, so `getArticles` strips them and
+ * retries once when the CMS has not been deployed with them yet.
  */
 const SITEMAP_ARTICLE_FIELDS = {
-  fields: ["slug", "updatedAt", "publishedAt"],
+  fields: ["slug", "updatedAt", "publishedAt", "publishedDate", "contentUpdatedAt", "noindex"],
   populate: {
     featuredImage: { fields: ["url"] },
     seo: { fields: ["metaRobots", "canonicalURL"] },
+    category: { fields: ["slug"] },
+    tags: { fields: ["slug"] },
   },
 } as const;
 
-function getAllArticlesForSitemap(deadlineMs?: number): Promise<Article[]> {
-  return fetchAllPages(
+function getAllArticlesForSitemap(deadlineMs?: number) {
+  return fetchAllPagesResult(
     getArticles,
     "articles",
     {
       ...SITEMAP_ARTICLE_FIELDS,
-      sort: "publishedAt:desc",
+      sort: ARTICLE_LISTING_SORT,
     },
     { deadlineMs }
   );
@@ -320,7 +322,8 @@ function mapArticlePages(articles: Article[]): MetadataRoute.Sitemap {
   const pages: MetadataRoute.Sitemap = [];
   for (const article of articles) {
     const slug = normalizeSlug(article.slug);
-    if (!slug || !isSitemapCandidate(`/blog/${slug}`, article.seo)) continue;
+    // `noindex` posts render `noindex, follow`, so the sitemap must not submit them.
+    if (!slug || !isArticleIndexable(article) || !isSitemapCandidate(`/blog/${slug}`, article.seo)) continue;
     let imageUrl: string | undefined;
     try {
       imageUrl = toAbsoluteMediaUrl(article.featuredImage?.url);
@@ -329,13 +332,69 @@ function mapArticlePages(articles: Article[]): MetadataRoute.Sitemap {
     }
     pages.push({
       url: `${SITE_URL}/blog/${slug}`,
-      lastModified: maxValidDate([article.updatedAt, article.publishedAt], undefined),
+      lastModified: resolveArticleLastModified(article),
       changeFrequency: "weekly",
       priority: 0.7,
       images: imageUrl ? [imageUrl] : undefined,
     });
   }
   return pages;
+}
+
+/** Slug -> newest article lastmod among the term's posts. A key means "has posts". */
+type TermPostDates = Map<string, Date | undefined>;
+
+function recordTermPost(terms: TermPostDates, slug: unknown, lastModified: Date | undefined): void {
+  const key = normalizeSlug(slug);
+  if (!key) return;
+  const current = terms.get(key);
+  terms.set(key, current && (!lastModified || current > lastModified) ? current : lastModified);
+}
+
+/**
+ * Which categories and tags have at least one published post, and when the
+ * newest of them last changed (TS-02 / CM-09 / GEO-14). Empty terms render a
+ * "No posts yet" page that is `noindex, follow`, so the sitemap must not
+ * submit them; a term's lastmod comes from its newest post rather than from
+ * the term row's own `updatedAt`.
+ */
+function collectTermPostDates(articles: Article[]): {
+  categories: TermPostDates;
+  tags: TermPostDates;
+} {
+  const categories: TermPostDates = new Map();
+  const tags: TermPostDates = new Map();
+  for (const article of articles) {
+    const lastModified = resolveArticleLastModified(article);
+    recordTermPost(categories, article.category?.slug, lastModified);
+    for (const tag of article.tags ?? []) {
+      recordTermPost(tags, tag?.slug, lastModified);
+    }
+  }
+  return { categories, tags };
+}
+
+/**
+ * A category listing also shows its direct children's posts, so a parent with
+ * no posts of its own is still non-empty when a child has some. Returns
+ * `null` for an empty category, else its newest post date (possibly
+ * undefined).
+ */
+function categoryPostDate(
+  category: Category,
+  slug: string,
+  terms: TermPostDates
+): { lastModified: Date | undefined } | null {
+  const slugs = [slug, ...(category.children ?? []).map((child) => normalizeSlug(child?.slug))];
+  let found = false;
+  let newest: Date | undefined;
+  for (const candidate of slugs) {
+    if (!candidate || !terms.has(candidate)) continue;
+    found = true;
+    const date = terms.get(candidate);
+    if (date && (!newest || date > newest)) newest = date;
+  }
+  return found ? { lastModified: newest } : null;
 }
 
 function mapAuthorPages(authors: Author[]): MetadataRoute.Sitemap {
@@ -386,12 +445,20 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     ]);
 
   let articlePages: MetadataRoute.Sitemap = [];
+  // null when the article walk failed or stopped early: post counts are
+  // unknown, so the taxonomy is listed unfiltered rather than dropped.
+  // A fulfilled partial walk (later-page error, deadline, or the page cap)
+  // is the same situation — `fetchAllPagesResult` reports it as incomplete.
+  let termPostDates: ReturnType<typeof collectTermPostDates> | null = null;
   if (articlesResult.status === "fulfilled") {
-    const articles = articlesResult.value;
+    const articles = articlesResult.value.items;
     pageTimestamps.blog = maxValidDate(
-      articles.flatMap((article) => [article.updatedAt, article.publishedAt]),
+      articles.map((article) => resolveArticleLastModified(article)?.toISOString()),
       pageTimestamps.blog
     );
+    if (articlesResult.value.complete) {
+      termPostDates = collectTermPostDates(articles);
+    }
     articlePages = mapArticlePages(articles);
     if (articles.length > 0 && !articles.some(article => normalizeSlug(article.slug))) {
       // Rows came back but mapArticlePages emitted nothing — a fields/populate
@@ -420,10 +487,12 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     categoryPages = categoriesResult.value.flatMap((category) => {
       const slug = normalizeSlug(category.slug);
       if (!slug || !isSitemapCandidate(`/blog/category/${slug}`, category.seo)) return [];
+      const posts = termPostDates ? categoryPostDate(category, slug, termPostDates.categories) : undefined;
+      if (posts === null) return [];
       return [
         {
           url: `${SITE_URL}/blog/category/${slug}`,
-          lastModified: safeDate(category.updatedAt),
+          lastModified: posts?.lastModified ?? safeDate(category.updatedAt),
           changeFrequency: "weekly" as const,
           priority: 0.7,
         },
@@ -441,10 +510,11 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     tagPages = tagsResult.value.flatMap((tag) => {
       const slug = normalizeSlug(tag.slug);
       if (!slug || !isSitemapCandidate(`/blog/tag/${slug}`, tag.seo)) return [];
+      if (termPostDates && !termPostDates.tags.has(slug)) return [];
       return [
         {
           url: `${SITE_URL}/blog/tag/${slug}`,
-          lastModified: safeDate(tag.updatedAt),
+          lastModified: termPostDates?.tags.get(slug) ?? safeDate(tag.updatedAt),
           changeFrequency: "weekly" as const,
           priority: 0.6,
         },
@@ -474,6 +544,11 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
   ];
 }
 
+/**
+ * Builds the sitemap from Strapi, racing SITEMAP_DEADLINE_MS. When the CMS is
+ * down, slow or partial it still returns a sitemap: static pages plus the
+ * data/taxonomy.json fallback, possibly without articles (see the route).
+ */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const showBinaPrint = isBinaPrintEnabled();

@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_article_comparison_tables",
+  "info": {
+    "displayName": "Comparison Table",
+    "icon": "grid",
+    "description": "Tabular comparison: columns is a JSON string array, rows a JSON array of string arrays"
+  },
+  "attributes": {
+    "caption": {
+      "type": "string"
+    },
+    "columns": {
+      "type": "json"
+    },
+    "rows": {
+      "type": "json"
+    },
+    "notes": {
+      "type": "text"
+    }
+  }
+}

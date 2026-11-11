@@ -5,6 +5,13 @@ import { buildCsp, buildReportingEndpoints } from "./src/lib/csp";
 const DEFAULT_SITE_URL = "https://www.mehdi-zare.com";
 const DEFAULT_STRAPI_URL = "http://localhost:1337";
 const DEFAULT_POSTHOG_HOST = "https://t.mehdi-zare.com";
+/**
+ * Public host of the CMS media bucket (R2_PUBLIC_URL in apps/cms). Strapi's R2
+ * provider returns absolute URLs on this host, and `toAbsoluteStrapiMediaUrl`
+ * leaves them absolute, so next/image and img-src must always allow it rather
+ * than depend on NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS being set.
+ */
+const CMS_MEDIA_HOST = "media.mehdi-zare.com";
 const CSP_REPORT_PATH = "/api/csp-report";
 
 function parseOrigin(value: string | undefined, fallback: string): URL {
@@ -32,7 +39,7 @@ const posthogUrl = parseOrigin(process.env.NEXT_PUBLIC_POSTHOG_HOST, DEFAULT_POS
 
 const additionalImageHosts = parseHostList(process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS);
 const imageHosts = Array.from(
-  new Set([strapiUrl.hostname, siteUrl.hostname, ...additionalImageHosts])
+  new Set([strapiUrl.hostname, siteUrl.hostname, CMS_MEDIA_HOST, ...additionalImageHosts])
 ).filter(Boolean);
 
 const imageRemotePatterns = imageHosts.flatMap((hostname) => {
@@ -110,6 +117,11 @@ const buildTime = new Date().toISOString();
 const nextConfig: NextConfig = {
   env: {
     BUILD_TIME: buildTime,
+    // Origin only, never the token. `toAbsoluteStrapiMediaUrl` also runs in
+    // client components, where server-only STRAPI_URL is undefined; without
+    // this the server render and hydration disagree on which media URLs belong
+    // to Strapi.
+    CMS_MEDIA_ORIGIN: strapiUrl.origin,
   },
   poweredByHeader: false,
   images: {
@@ -117,6 +129,13 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     root: path.resolve(__dirname, "../.."),
+  },
+  async rewrites() {
+    return [
+      // The sitemap is a route handler at /sitemap-main.xml so it stays an ISR
+      // prerender on Vercel; see src/app/sitemap-main.xml/route.ts.
+      { source: "/sitemap.xml", destination: "/sitemap-main.xml" },
+    ];
   },
   async headers() {
     return [

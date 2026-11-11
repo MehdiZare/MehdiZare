@@ -1,6 +1,8 @@
 import { revalidatePath, revalidateTag } from "next/cache";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { serverEnv } from "@/lib/server-env";
+import { buildIndexNowUrls, isIndexNowEnabled, submitToIndexNow } from "@/lib/indexnow";
+import { isArticleIndexable } from "@/lib/article-content";
 
 type RevalidatePayload = {
   secret?: string;
@@ -8,9 +10,29 @@ type RevalidatePayload = {
   model?: string;
   entry?: {
     slug?: string;
+    noindex?: unknown;
+    seo?: { metaRobots?: unknown } | null;
   };
   paths?: string[];
 };
+
+/**
+ * False when the webhook entry renders noindex (the `noindex` box, or a
+ * `seo.metaRobots` with `noindex`/`none`), by the same rule as the page's
+ * robots meta. The body is untrusted JSON, so only a real boolean and a real
+ * string are read; anything else counts as unset.
+ */
+function isEntryIndexable(entry: RevalidatePayload["entry"]): boolean {
+  if (!entry || typeof entry !== "object") return true;
+  const metaRobots =
+    entry.seo && typeof entry.seo === "object" && typeof entry.seo.metaRobots === "string"
+      ? entry.seo.metaRobots
+      : undefined;
+  return isArticleIndexable({
+    noindex: entry.noindex === true,
+    seo: metaRobots === undefined ? undefined : { id: 0, metaRobots },
+  });
+}
 
 function extractSecret(
   request: Request,
@@ -42,8 +64,12 @@ function collectPaths(payload: RevalidatePayload): string[] {
   const paths = new Set<string>([
     "/",
     "/blog",
-    "/sitemap.xml",
+    // The sitemap route handler; /sitemap.xml rewrites to it (see that route).
+    "/sitemap-main.xml",
     "/robots.txt",
+    "/feed.xml",
+    "/llms.txt",
+    "/.well-known/llms.txt",
     "/author/[slug]",
     "/blog/[slug]",
     "/blog/page/[page]",
@@ -77,6 +103,32 @@ function collectPaths(payload: RevalidatePayload): string[] {
   return [...paths];
 }
 
+/**
+ * Tell IndexNow about a changed post once the response is out. `after` keeps
+ * the function alive for it on Vercel without delaying the webhook. Outside a
+ * request scope (direct calls in tests) `after` throws, so the task runs
+ * detached instead. `submitToIndexNow` never rejects and has its own short
+ * timeout, so neither path can fail or hang the webhook.
+ */
+function scheduleIndexNow(payload: RevalidatePayload): void {
+  if (!isIndexNowEnabled()) return;
+  // A noindex post is kept out of the sitemap and feed; do not ping it either.
+  if (!isEntryIndexable(payload.entry)) return;
+  const urls = buildIndexNowUrls({
+    event: payload.event,
+    model: payload.model,
+    encodedSlug: payload.entry?.slug ? sanitizeSlug(payload.entry.slug) : null,
+  });
+  if (urls.length === 0) return;
+
+  const task = () => submitToIndexNow(urls);
+  try {
+    after(task);
+  } catch {
+    void task();
+  }
+}
+
 export async function POST(request: Request): Promise<Response> {
   if (!serverEnv.revalidateSecret) {
     return NextResponse.json(
@@ -103,22 +155,24 @@ export async function POST(request: Request): Promise<Response> {
 
   for (const path of paths) {
     // `"page"` is for dynamic *page* routes, whose implicit tag set includes
-    // `_N_T_<route>/page`. `/sitemap.xml` is a metadata route: its tags are
-    // `_N_T_/sitemap.xml/route` and `_N_T_/sitemap.xml`, never `/page`. Read
-    // straight off a build: `.next/server/app/sitemap.xml.meta` carries
-    // `x-next-cache-tags: ...,_N_T_/sitemap.xml/route,_N_T_/sitemap.xml,strapi`.
+    // `_N_T_<route>/page`. `/sitemap-main.xml` (like `/feed.xml`) is a route
+    // handler: its tags are `_N_T_/sitemap-main.xml/route` and
+    // `_N_T_/sitemap-main.xml`, never `/page`. A build's
+    // `.next/server/app/sitemap-main.xml.meta` lists them in x-next-cache-tags.
     //
-    // So a typeless `revalidatePath("/sitemap.xml")` emits exactly the tag the
-    // route registers and has always worked. Passing `"page"` emits
-    // `_N_T_/sitemap.xml/page`, which nothing registers -- it would quietly
-    // never invalidate. There is no `"route"` type to pass instead; typeless is
-    // the correct call, so `/sitemap.xml` takes the branch below.
+    // So a typeless `revalidatePath("/sitemap-main.xml")` emits exactly the tag
+    // the route registers. Passing `"page"` emits `_N_T_/sitemap-main.xml/page`,
+    // which nothing registers -- it would quietly never invalidate. There is no
+    // `"route"` type to pass instead; typeless is the correct call, so the
+    // sitemap takes the branch below.
     if (path.includes("[") && path.includes("]")) {
       revalidatePath(path, "page");
     } else {
       revalidatePath(path);
     }
   }
+
+  scheduleIndexNow(payload);
 
   return NextResponse.json({
     ok: true,

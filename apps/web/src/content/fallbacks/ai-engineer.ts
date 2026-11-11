@@ -81,13 +81,13 @@ export const aiEngineerFaqs: FAQType[] = [
     id: 3,
     question: "Who do you work with?",
     answer:
-      "Founder-led startups and small and mid-size businesses, fully remote.",
+      "Founders and CTOs building or scaling AI products, fully remote.",
   },
   {
     id: 4,
     question: "How do I start working with an AI engineer?",
     answer:
-      "Book a free 20-minute call. We talk about one workflow and whether I can help. If I can, you get a short written proposal with scope and dates.",
+      "Book a free 20-minute call. We talk about your product, where it is stuck, and whether I can help. If I can, you get a short written proposal with scope and dates.",
   },
 ];
 
@@ -107,8 +107,8 @@ export function buildAiEngineerFallback(
   return {
     title: aiEngineerMetadataTitle,
     headline: aiEngineerMetadataTitle,
-    subtitle: `${siteProfile.authorName} is a founder and AI consultant. He builds and runs small products with AI agents, and helps founders and small teams do the same, remotely.`,
-    description: `AI engineer ${siteProfile.siteName} helps founders and small teams set up AI agent workflows. Remote.`,
+    subtitle: `${siteProfile.authorName} is an AI and cloud architect. He builds and runs his own products with AI coding agents, and helps founders and CTOs take theirs from prototype to production, remotely.`,
+    description: `AI engineer ${siteProfile.siteName} helps founders and CTOs turn AI prototypes into reliable products. Remote.`,
     capabilities: aiEngineerCapabilities,
     proofPoints: aiEngineerProofPoints,
     faq: aiEngineerFaqs,

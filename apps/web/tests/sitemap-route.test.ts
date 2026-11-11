@@ -5,9 +5,8 @@ process.env.DISABLE_STRAPI_CMS = "true";
 delete process.env.ENABLE_BINA_PRINT;
 delete process.env.NEXT_PUBLIC_ENABLE_BINA_PRINT;
 
-const { default: sitemap, maxDuration, maxValidDate, revalidate } = await import(
-  "../src/app/sitemap.ts"
-);
+const { default: sitemap, maxValidDate } = await import("../src/lib/sitemap.ts");
+const { maxDuration, revalidate } = await import("../src/app/sitemap-main.xml/route.ts");
 
 test("sitemap includes fallback category/tag entries when CMS is disabled", async () => {
   const entries = await sitemap();
@@ -28,8 +27,8 @@ test("sitemap includes fallback category/tag entries when CMS is disabled", asyn
   assert.equal(maxDuration, 20);
   // #110 was a published post missing for up to an hour; #118 is the cost of
   // fixing that with `force-dynamic`. Five minutes closes the window while
-  // keeping the route cacheable, so a slow Strapi cannot put an article-less
-  // sitemap in front of a crawler.
+  // keeping the route cacheable. During a CMS outage a regeneration still
+  // caches the fallback (accepted on #152); see the route's comment.
   assert.equal(revalidate, 300);
 });
 

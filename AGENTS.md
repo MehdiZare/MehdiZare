@@ -35,4 +35,16 @@ identity change there does need a CMS write — that is what
 CMS-off fixture catalog is gated on `DISABLE_STRAPI_CMS` and is not a
 production fallback.
 
+The identity source is the primary author in `data/taxonomy.json`. The sync
+script pushes its address, `worksForName`/`worksForUrl` (sent as null, so the
+CMS value is cleared, when the taxonomy leaves them empty), `headline`,
+`jobTitle`, `bioShort`, `websiteUrl`, `knowsAbout`, and the `credentials` and
+`sameAs` lists (each replaced whole). Edit the taxonomy, then run
+`pnpm --filter=cms sync:identity` with `STRAPI_URL` and `STRAPI_API_TOKEN` set.
+It defaults to a dry run that prints a field-by-field diff; only `--apply`
+writes and publishes. It refuses when the draft has unrelated unpublished
+edits (unless `--allow-draft-publish` is passed) and when the matched author
+is not the one the site renders. After any repositioning, run it and then
+`pnpm check:media`.
+
 Before reaching for a production CMS write, check which side owns the value.

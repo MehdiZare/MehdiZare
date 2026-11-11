@@ -18,23 +18,23 @@ interface ServicesGridProps {
 const services: ServiceCard[] = [
   {
     number: "01",
-    title: "Agent workflow audit",
+    title: "AI product architecture review",
     description:
-      "About 1 to 2 weeks. I review one workflow and give you a written plan: what to automate, what to keep human, which tools, the review rules, and what can go wrong.",
+      "About 1 to 2 weeks. I review how your AI product is built and give you a written plan: what to fix first, where jobs can fail, which steps need retries or approval, and where the cost goes.",
     href: "/consulting",
   },
   {
     number: "02",
-    title: "Build sprint",
+    title: "Prototype-to-production sprint",
     description:
-      "2 to 4 weeks. I set up one agent workflow end to end in your stack. Your team owns it, with a short runbook.",
+      "2 to 4 weeks. I take one critical path from prototype to production in your stack. Your team owns it, with a short runbook.",
     href: "/consulting",
   },
   {
     number: "03",
-    title: "Fractional AI-ops lead or CTO",
+    title: "Fractional AI and cloud architect",
     description:
-      "A monthly engagement. I run the agent setup, review what the agents ship, pick tools, and keep costs in check. Weekly check-in and async help.",
+      "A monthly engagement. I review designs and what your team and its agents ship, make the model and build-versus-buy calls with you, and keep reliability and cost in check. Weekly check-in and async help.",
     href: "/consulting",
   },
 ];

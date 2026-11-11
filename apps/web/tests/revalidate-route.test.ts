@@ -8,16 +8,13 @@ import { resolve } from "node:path";
 //
 // The type is not guessable, and getting it wrong fails silently -- the webhook
 // still returns 200, nothing throws, and the content just never refreshes.
-// Read off a real build, `.next/server/app/sitemap.xml.meta` carries:
-//
-//   x-next-cache-tags: _N_T_/layout,_N_T_/sitemap.xml/layout,
-//                      _N_T_/sitemap.xml/route,_N_T_/sitemap.xml,strapi
-//
-// So `/sitemap.xml` registers `_N_T_/sitemap.xml` -- exactly what a *typeless*
-// `revalidatePath` emits -- and `_N_T_/sitemap.xml/route`, but never
-// `_N_T_/sitemap.xml/page`. Passing `"page"` for it emits a tag nothing
-// registers. A dynamic *page* route is the opposite case: `/blog/[slug]`
-// registers `_N_T_/blog/[slug]/page`, so it does need the type.
+// The sitemap is a route handler at /sitemap-main.xml (/sitemap.xml rewrites to
+// it; see that route for why). Like /feed.xml it registers
+// `_N_T_/sitemap-main.xml` -- exactly what a *typeless* `revalidatePath` emits --
+// and `_N_T_/sitemap-main.xml/route`, but never `_N_T_/sitemap-main.xml/page`.
+// Passing `"page"` for it emits a tag nothing registers. A dynamic *page* route
+// is the opposite case: `/blog/[slug]` registers `_N_T_/blog/[slug]/page`, so
+// it does need the type.
 //
 // Source contract for the silent-type bug. Behavioural coverage of POST
 // (auth, collectPaths, the two revalidatePath types) is in
@@ -42,20 +39,20 @@ test("the page type is reserved for bracketed dynamic routes", () => {
   );
 });
 
-test("/sitemap.xml is never revalidated with the page type", () => {
-  // The exact regression this pins: `|| path === "/sitemap.xml"` added to the
+test("the sitemap is never revalidated with the page type", () => {
+  // The exact regression this pins: `|| path === "/sitemap-main.xml"` added to the
   // page-typed branch. It reads as a fix and is the opposite of one.
   assert.doesNotMatch(
     pageTypedGuard(),
     /sitemap/,
-    'A metadata route registers `_N_T_/sitemap.xml`, never `_N_T_/sitemap.xml/page`. Routing /sitemap.xml through the "page" branch emits a tag nothing registers, so a publish would silently never refresh the sitemap.'
+    'A route handler registers `_N_T_/sitemap-main.xml`, never `_N_T_/sitemap-main.xml/page`. Routing the sitemap through the "page" branch emits a tag nothing registers, so a publish would silently never refresh the sitemap.'
   );
 });
 
 test("the webhook still revalidates the sitemap and the shared strapi tag", () => {
   // Without these, the assertions above would be satisfied by dropping sitemap
   // revalidation altogether.
-  assert.match(source, /"\/sitemap\.xml"/, "the default path set must include the sitemap");
+  assert.match(source, /"\/sitemap-main\.xml"/, "the default path set must include the sitemap route");
   assert.match(
     source,
     /revalidateTag\("strapi", "max"\)/,
@@ -64,7 +61,7 @@ test("the webhook still revalidates the sitemap and the shared strapi tag", () =
   assert.match(
     source,
     /\} else \{\s*revalidatePath\(path\);/,
-    "non-bracketed paths, including /sitemap.xml, must take the typeless call"
+    "non-bracketed paths, including /sitemap-main.xml, must take the typeless call"
   );
 });
 

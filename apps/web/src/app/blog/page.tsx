@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { BlogListPageContent } from "@/components/blog/BlogListPageContent";
 import { BLOG_PAGE_DESCRIPTION, getBlogListingData } from "@/lib/blog-listing";
-import { getSiteProfile } from "@/lib/site-profile";
 import { buildPageMetadata, toPersonId } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,7 +21,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function BlogPage() {
   const currentPage = 1;
-  const siteProfile = await getSiteProfile();
   const { articles, pagination, categories } = await getBlogListingData(currentPage);
 
   return (
@@ -34,7 +32,7 @@ export default async function BlogPage() {
       pageTitle="Blog"
       pageDescription={BLOG_PAGE_DESCRIPTION}
       canonicalPath="/blog"
-      canonicalAuthorId={toPersonId(siteProfile.author.profilePath)}
+      canonicalAuthorId={toPersonId()}
     />
   );
 }
