@@ -2,12 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import {
   DEFAULT_SITE_PROFILE,
   DEFAULT_SOCIAL_LINKS,
 } from "../src/lib/site-profile-defaults.ts";
 import { fallbackExperiences } from "../src/content/fallbacks/about.ts";
+import { CareerTimeline } from "../src/components/about/CareerTimeline.tsx";
+import { TrackRecord } from "../src/components/home/TrackRecord.tsx";
 
 // Site identity copy that the live site actually reads lives in two places:
 //
@@ -201,17 +205,28 @@ test("structured data names no employer, while the visible timeline lists the ro
   assert.equal(DEFAULT_SITE_PROFILE.authorWorksForName, "");
   assert.equal(DEFAULT_SITE_PROFILE.authorWorksForUrl, "");
 
-  const trackRecordSource = readFileSync(
-    resolve(repoRoot, "apps/web/src/components/home/TrackRecord.tsx"),
-    "utf8"
+  // Render both surfaces. Reading `org: "..."` out of the component source
+  // fails when only the quotes or indentation change.
+  const trackRecordHtml = renderToStaticMarkup(createElement(TrackRecord));
+  const aboutHtml = renderToStaticMarkup(
+    createElement(CareerTimeline, { experiences: fallbackExperiences })
   );
-  const trackRecordOrgs = [...trackRecordSource.matchAll(/^\s{4}org: "([^"]+)",$/gm)].map(
+  const trackRecordOrgs = [...trackRecordHtml.matchAll(/<h3[^>]*>([^<]+)<\/h3>/g)].map(
     (match) => match[1]
   );
+  const aboutCompanies = [
+    ...aboutHtml.matchAll(/<h3[^>]*>[^<]*<\/h3><p[^>]*>([^<]+)<\/p>/g),
+  ].map((match) => match[1]);
+
   assert.deepEqual(
     trackRecordOrgs,
-    fallbackExperiences.map((experience) => experience.company),
+    aboutCompanies,
     "the home track record and the About timeline must list the same organisations in the same order"
+  );
+  assert.deepEqual(
+    aboutCompanies,
+    fallbackExperiences.map((experience) => experience.company),
+    "the About timeline must render fallbackExperiences in order"
   );
   for (const company of ["Bina Capital", "RoboWrite", "Rewardopedia", "Entarian", "Booz Allen"]) {
     assert.ok(trackRecordOrgs.includes(company), `track record is missing ${company}`);
