@@ -10,6 +10,7 @@ import {
 } from "@/lib/strapi";
 import { isBinaPrintEnabled } from "@/lib/feature-flags";
 import { ARTICLE_LISTING_SORT, resolveArticleLastModified } from "@/lib/article-dates";
+import { isArticleIndexable } from "@/lib/article-content";
 import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 import {
   getSiteUrl,
@@ -97,13 +98,14 @@ export function maxValidDate<T extends Date | undefined>(
  * have posts. This overrides the full articlePopulate, including author
  * credentials and seo.metaImage.
  *
- * `publishedDate` is appended rather than inserted so the first three fields
- * keep their positions. Only fields that exist in the article schema may be
- * listed: Strapi 5 answers an unknown field with a 400, which would drop every
- * article from the sitemap.
+ * New fields are appended rather than inserted so earlier ones keep their
+ * positions. Strapi 5 answers an unknown field with a 400, which would drop
+ * every article from the sitemap; `contentUpdatedAt` (lastmod, CM-02) and
+ * `noindex` (CM-11) are content-model v2, so `getArticles` strips them and
+ * retries once when the CMS has not been deployed with them yet.
  */
 const SITEMAP_ARTICLE_FIELDS = {
-  fields: ["slug", "updatedAt", "publishedAt", "publishedDate"],
+  fields: ["slug", "updatedAt", "publishedAt", "publishedDate", "contentUpdatedAt", "noindex"],
   populate: {
     featuredImage: { fields: ["url"] },
     seo: { fields: ["metaRobots", "canonicalURL"] },
@@ -330,7 +332,8 @@ function mapArticlePages(articles: Article[]): MetadataRoute.Sitemap {
   const pages: MetadataRoute.Sitemap = [];
   for (const article of articles) {
     const slug = normalizeSlug(article.slug);
-    if (!slug || !isSitemapCandidate(`/blog/${slug}`, article.seo)) continue;
+    // `noindex` posts render `noindex, follow`, so the sitemap must not submit them.
+    if (!slug || !isArticleIndexable(article) || !isSitemapCandidate(`/blog/${slug}`, article.seo)) continue;
     let imageUrl: string | undefined;
     try {
       imageUrl = toAbsoluteMediaUrl(article.featuredImage?.url);

@@ -1,6 +1,6 @@
 import type { Article } from "@/types/strapi";
 import { getArticles } from "@/lib/strapi";
-import { normalizeRobotsValue } from "@/lib/seo";
+import { isArticleIndexable } from "@/lib/article-content";
 import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 import { BLOG_PAGE_DESCRIPTION } from "@/lib/blog-listing";
 import {
@@ -16,16 +16,30 @@ export { FEED_ALTERNATE_TYPES, FEED_PATH, FEED_TITLE } from "@/lib/feed-constant
 export const FEED_ITEM_LIMIT = 20;
 
 /**
- * Only what the feed renders. Every field here exists in the article schema;
- * Strapi 5 rejects unknown `fields` with a 400.
+ * Only what the feed and llms.txt render. `contentUpdatedAt`, `noindex` and
+ * `keyTakeaways` are content-model v2 (CM-02/06/11): `getArticles` drops them
+ * and retries once if Strapi answers 400 because the CMS has not been
+ * deployed with them yet, so the feed degrades to the old fields rather than
+ * going empty.
  */
-const FEED_ARTICLE_QUERY = {
-  fields: ["title", "slug", "excerpt", "publishedDate", "publishedAt", "updatedAt"],
+export const FEED_ARTICLE_QUERY = {
+  fields: [
+    "title",
+    "slug",
+    "excerpt",
+    "publishedDate",
+    "publishedAt",
+    "updatedAt",
+    "contentUpdatedAt",
+    "noindex",
+  ],
   populate: {
     category: { fields: ["name", "slug"] },
     tags: { fields: ["name", "slug"] },
     author: { fields: ["name"] },
     seo: { fields: ["metaRobots"] },
+    // llms.txt describes a post by its takeaways; the feed itself ignores them.
+    keyTakeaways: true,
   },
 };
 
@@ -38,11 +52,6 @@ export function escapeXml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
-}
-
-function isIndexable(article: Article): boolean {
-  const directives = normalizeRobotsValue(article.seo?.metaRobots)?.split(", ") ?? [];
-  return !directives.some((directive) => directive === "noindex" || directive === "none");
 }
 
 function trimmed(value: string | null | undefined): string | undefined {
@@ -86,7 +95,7 @@ function buildItem(article: Article, siteUrl: string): string | null {
 export function buildRssFeed(articles: Article[], siteUrl: string): string {
   // Rows that cannot render (no slug or title) are dropped before the cap, so
   // they never cost a slot.
-  const entries = sortArticlesByPublishedDesc(articles.filter(isIndexable))
+  const entries = sortArticlesByPublishedDesc(articles.filter(isArticleIndexable))
     .map((article) => ({ article, item: buildItem(article, siteUrl) }))
     .filter((entry): entry is { article: Article; item: string } => entry.item !== null)
     .slice(0, FEED_ITEM_LIMIT);
@@ -131,6 +140,6 @@ export async function getRecentArticlesForFeed(limit = FEED_ITEM_LIMIT): Promise
     pagination: { page: 1, pageSize: limit + 5 },
   });
   return sortArticlesByPublishedDesc(
-    Array.isArray(response.data) ? response.data.filter(isIndexable) : []
+    Array.isArray(response.data) ? response.data.filter(isArticleIndexable) : []
   ).slice(0, limit);
 }
