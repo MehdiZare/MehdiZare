@@ -27,8 +27,8 @@ test("sitemap includes fallback category/tag entries when CMS is disabled", asyn
   assert.equal(maxDuration, 20);
   // #110 was a published post missing for up to an hour; #118 is the cost of
   // fixing that with `force-dynamic`. Five minutes closes the window while
-  // keeping the route cacheable, so a slow Strapi cannot put an article-less
-  // sitemap in front of a crawler.
+  // keeping the route cacheable. During a CMS outage a regeneration still
+  // caches the fallback (accepted on #152); see the route's comment.
   assert.equal(revalidate, 300);
 });
 

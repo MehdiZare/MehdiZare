@@ -18,7 +18,6 @@ const { resolveSitemap } = require("next/dist/build/webpack/loaders/metadata/res
 const { serializeSitemap } = await import("../src/lib/sitemap-xml.ts");
 const { default: buildSitemap } = await import("../src/lib/sitemap.ts");
 const { GET } = await import("../src/app/sitemap-main.xml/route.ts");
-const { PHASE_PRODUCTION_BUILD } = await import("next/constants.js");
 
 const FIXTURE: MetadataRoute.Sitemap = [
   {
@@ -75,14 +74,7 @@ test("refuses video entries instead of dropping them", () => {
   );
 });
 
-test("the route serves the sitemap as XML", async (t) => {
-  // CMS-off is a degraded build (taxonomy fallback). It is served at build
-  // time; a runtime regeneration would throw to keep the cached copy, which
-  // tests/sitemap-cms-on.test.ts covers.
-  process.env.NEXT_PHASE = PHASE_PRODUCTION_BUILD;
-  t.after(() => {
-    delete process.env.NEXT_PHASE;
-  });
+test("the route serves the sitemap as XML", async () => {
   const response = await GET();
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-type"), "application/xml; charset=utf-8");

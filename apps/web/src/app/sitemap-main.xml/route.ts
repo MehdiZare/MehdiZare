@@ -1,8 +1,4 @@
-// `.js`: next/constants has no package exports map, so plain Node ESM (the
-// test runner) needs the file path; the bundler resolves it the same way.
-// `next build` sets NEXT_PHASE to PHASE_PRODUCTION_BUILD.
-import { PHASE_PRODUCTION_BUILD } from "next/constants.js";
-import { buildSitemap } from "@/lib/sitemap";
+import buildSitemap from "@/lib/sitemap";
 import { serializeSitemap } from "@/lib/sitemap-xml";
 
 /**
@@ -23,41 +19,27 @@ import { serializeSitemap } from "@/lib/sitemap-xml";
  * while keeping the response cacheable. A dynamic sitemap would be one
  * uncached, four-way paginated Strapi walk per crawler hit (#118).
  *
+ * CMS outages: a regeneration while Strapi is down, slow or partial returns
+ * the fallback (static pages plus data/taxonomy.json, possibly without
+ * articles) as a normal 200, and ISR caches it until the next regeneration
+ * after Strapi recovers. That is accepted (owner decision on #152): a sitemap
+ * missing posts for a while does not deindex them, while failing the
+ * regeneration to keep the previous copy turned into 500s after a publish
+ * (revalidatePath expires the entry, so the regeneration blocks) and depends on
+ * Vercel keeping the stale copy.
+ *
  * On publish, the webhook's typeless `revalidatePath("/sitemap-main.xml")` and
  * `revalidateTag("strapi")` both reach this route.
  *
- * Once a Next release ships #99056 this can go back to `app/sitemap.ts`, keeping
- * the degraded-regeneration rule below.
+ * Once a Next release ships #99056 this can go back to `app/sitemap.ts`.
  */
 export const revalidate = 300;
 /** Isolate budget: must exceed SITEMAP_DEADLINE_MS so a slow CMS walk can still return the fallback. */
 export const maxDuration = 20;
 
-
-/**
- * A degraded result (CMS down, slow or partial) is served only when there is
- * no earlier copy to keep: the build. At runtime a successful 200 would become
- * the cached sitemap and drop every article URL until the next good
- * regeneration, so a degraded regeneration throws instead and ISR keeps
- * serving the last complete sitemap (owner decision on #152).
- */
-class DegradedSitemapError extends Error {
-  readonly degradedSources: string[];
-
-  constructor(degradedSources: string[]) {
-    super(`[sitemap] degraded regeneration (${degradedSources.join(", ")}); keeping the cached sitemap`);
-    this.name = "DegradedSitemapError";
-    this.degradedSources = degradedSources;
-  }
-}
-
-/** Renders the sitemap XML; throws on a degraded runtime regeneration (see DegradedSitemapError). */
+/** Renders the sitemap XML; always 200, with the fallback when the CMS is unavailable. */
 export async function GET(): Promise<Response> {
-  const { entries, degradedSources } = await buildSitemap();
-  if (degradedSources.length > 0 && process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) {
-    throw new DegradedSitemapError(degradedSources);
-  }
-  return new Response(serializeSitemap(entries), {
+  return new Response(serializeSitemap(await buildSitemap()), {
     headers: { "content-type": "application/xml; charset=utf-8" },
   });
 }
