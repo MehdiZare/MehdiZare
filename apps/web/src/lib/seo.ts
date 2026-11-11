@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { SEO, StrapiImage } from "../types/strapi";
 import { publicEnv, toAbsoluteStrapiMediaUrl } from "./public-env";
 import { DEFAULT_SITE_PROFILE } from "./site-profile-defaults";
+import { blankToUndefined } from "./strings";
 
 const DEFAULT_SITE_URL = "https://www.mehdi-zare.com";
 
@@ -10,12 +11,23 @@ export const PERSON_NAME = DEFAULT_SITE_PROFILE.siteName;
 export const PERSON_TITLE = DEFAULT_SITE_PROFILE.credentialLine;
 export const DEFAULT_SITE_DESCRIPTION = DEFAULT_SITE_PROFILE.siteDescription;
 
+/**
+ * The site owner's X account. Every post ships an X version, so shares are
+ * attributed through `twitter:site` / `twitter:creator`, and the profile is in
+ * Person `sameAs` (and `DEFAULT_SOCIAL_LINKS`) so the account ties back to the
+ * site entity.
+ */
+export const X_HANDLE = "@mehdizare";
+export const X_PROFILE_URL = "https://x.com/mehdizare";
+
+// The site's own URL is deliberately absent: it is the Person's `url`, and
+// `sameAs` is for *other* pages that identify the same person.
 export const PERSON_SAME_AS = [
-  "https://www.mehdi-zare.com",
   "https://linkedin.com/in/mehdizare",
   "https://github.com/mehdizare",
   "https://medium.com/@mehdi-zare",
   "https://seekingalpha.com/author/mehdi-zare",
+  X_PROFILE_URL,
 ];
 
 // Q141251494 is the Wikidata item for the *site* ("personal website of Mehdi
@@ -33,6 +45,29 @@ export const DEFAULT_KNOWS_ABOUT = [
   "AI Engineering",
 ];
 
+/**
+ * Snippet and preview opt-ins for indexable pages. Google Discover shows large
+ * image cards only with `max-image-preview:large`, and `max-snippet:-1` opts
+ * out of the default snippet-length cap that AI features quote from.
+ */
+export const ROBOTS_PREVIEW_DIRECTIVES = {
+  "max-image-preview": "large",
+  "max-snippet": -1,
+  "max-video-preview": -1,
+} as const;
+
+/** Root-layout robots: indexable, with the preview opt-ins for Google too. */
+export const DEFAULT_ROBOTS = {
+  index: true,
+  follow: true,
+  ...ROBOTS_PREVIEW_DIRECTIVES,
+  googleBot: {
+    index: true,
+    follow: true,
+    ...ROBOTS_PREVIEW_DIRECTIVES,
+  },
+} satisfies Metadata["robots"];
+
 export interface BreadcrumbItem {
   name: string;
   path: string;
@@ -40,15 +75,36 @@ export interface BreadcrumbItem {
 
 export type JsonLdData = Record<string, unknown>;
 
+export interface MetadataImageInput {
+  url: string;
+  width?: number;
+  height?: number;
+  type?: string;
+  alt?: string;
+}
+
 interface BuildPageMetadataOptions {
   pathname: string;
   title: string;
   description: string;
   seo?: SEO;
   image?: StrapiImage;
+  /**
+   * Share image used ahead of `image` but behind an explicit `seo.metaImage`.
+   * Posts pass their own `/blog/<slug>/opengraph-image` card here, so a post
+   * with no cover no longer shares as the generic site card, and a post with a
+   * 1920x1080 WebP cover shares a 1200x630 PNG every unfurler handles.
+   */
+  defaultImage?: MetadataImageInput;
   type?: "website" | "article";
   publishedTime?: string;
   modifiedTime?: string;
+  /** `article:author` URLs (type `article` only). */
+  authors?: string[];
+  /** `article:section` (type `article` only). */
+  section?: string;
+  /** `article:tag` values (type `article` only). */
+  tags?: string[];
   keywords?: string | string[];
 }
 
@@ -59,17 +115,35 @@ interface WebPageJsonLdOptions {
   type?: string;
 }
 
+/**
+ * The author as inlined on a BlogPosting. Google does not follow an `@id` to a
+ * node on another page, so a bare reference left every post's author with no
+ * name and no url.
+ */
+export interface BlogPostingAuthor {
+  id: string;
+  name: string;
+  url?: string;
+  sameAs?: string[];
+  jobTitle?: string;
+  imageUrl?: string;
+}
+
 interface BlogPostingJsonLdOptions {
   pathname: string;
   headline: string;
   description: string;
   imageUrl?: string;
+  /** Further crops/ratios of the post image; merged after `imageUrl`, deduped. */
+  imageUrls?: string[];
   datePublished?: string;
   dateModified?: string;
   keywords?: string[];
   articleSection?: string;
   readingTimeMinutes?: number;
   authorId?: string;
+  /** Inline author Person. Its `id` wins over `authorId`. */
+  author?: BlogPostingAuthor;
   publisherId?: string;
 }
 
@@ -102,9 +176,9 @@ interface WebsiteJsonLdOptions {
 
 interface PersonCredential {
   name: string;
-  issuer?: string;
-  url?: string;
-  description?: string;
+  issuer?: string | null;
+  url?: string | null;
+  description?: string | null;
 }
 
 interface PersonJsonLdOptions {
@@ -132,6 +206,20 @@ interface ProfilePageJsonLdOptions {
   title: string;
   description: string;
   personId: string;
+}
+
+/** Compares two absolute URLs ignoring a trailing slash and host case. */
+function isSameUrl(left: string, right: string): boolean {
+  const normalize = (value: string) => {
+    try {
+      const url = new URL(value);
+      return `${url.protocol}//${url.host.toLowerCase()}${url.pathname.replace(/\/+$/, "")}${url.search}`;
+    } catch {
+      return value.trim().replace(/\/+$/, "");
+    }
+  };
+
+  return normalize(left) === normalize(right);
 }
 
 function normalizeOrigin(value: string, fallback: string): string {
@@ -256,6 +344,31 @@ export function normalizeRobotsValue(value?: string): string | undefined {
   return directives.length > 0 ? directives.join(", ") : undefined;
 }
 
+/**
+ * A CMS `metaRobots` string replaces the root layout's robots object wholesale
+ * (Next merges `robots` per segment, not per key), so an editor typing
+ * `index, follow` would silently drop the preview opt-ins. Re-append the ones
+ * the value does not already set, unless the page is not indexable at all.
+ */
+export function withRobotsPreviewDirectives(value: string): string {
+  const directives = value
+    .split(",")
+    .map((directive) => directive.trim())
+    .filter(Boolean);
+  const notIndexable = directives.some(
+    (directive) => directive === "noindex" || directive === "none"
+  );
+  if (notIndexable) {
+    return value;
+  }
+
+  const additions = Object.entries(ROBOTS_PREVIEW_DIRECTIVES)
+    .filter(([key]) => !directives.some((directive) => directive.startsWith(`${key}:`)))
+    .map(([key, setting]) => `${key}:${setting}`);
+
+  return [...directives, ...additions].join(", ");
+}
+
 export function splitKeywords(keywords?: string): string[] {
   if (!keywords) {
     return [];
@@ -301,10 +414,18 @@ export function normalizeStructuredData(input: unknown): JsonLdData[] {
   return [];
 }
 
+interface MetadataImage {
+  url: string;
+  width?: number;
+  height?: number;
+  type?: string;
+  alt?: string;
+}
+
 function toMetadataImages(
   image: StrapiImage | null | undefined,
   fallbackAlt: string
-): Array<{ url: string; width?: number; height?: number; alt?: string }> | undefined {
+): MetadataImage[] | undefined {
   if (!image?.url) {
     return undefined;
   }
@@ -319,7 +440,27 @@ function toMetadataImages(
       url: imageUrl,
       width: image.width || undefined,
       height: image.height || undefined,
-      alt: image.alternativeText ?? fallbackAlt,
+      type: blankToUndefined(image.mime),
+      alt: blankToUndefined(image.alternativeText) ?? fallbackAlt,
+    },
+  ];
+}
+
+function toDefaultMetadataImages(
+  image: MetadataImageInput | undefined,
+  fallbackAlt: string
+): MetadataImage[] | undefined {
+  if (!image?.url.trim()) {
+    return undefined;
+  }
+
+  return [
+    {
+      url: toAbsoluteUrl(image.url, getSiteUrl()),
+      width: image.width,
+      height: image.height,
+      type: image.type,
+      alt: blankToUndefined(image.alt) ?? fallbackAlt,
     },
   ];
 }
@@ -330,9 +471,13 @@ export function buildPageMetadata({
   description,
   seo,
   image,
+  defaultImage,
   type = "website",
   publishedTime,
   modifiedTime,
+  authors,
+  section,
+  tags,
   keywords,
 }: BuildPageMetadataOptions): Metadata {
   const resolvedTitle = seo?.metaTitle?.trim() || title;
@@ -340,17 +485,25 @@ export function buildPageMetadata({
   const resolvedDescription = seo?.metaDescription?.trim() || description;
   const canonical = resolveCanonicalUrl(pathname, seo?.canonicalURL);
   const robots = normalizeRobotsValue(seo?.metaRobots);
-  const resolvedImage = seo?.metaImage ?? image;
+  // seo.metaImage is the deliberate social override; then the caller's
+  // generated card; then the page image; then the site-wide card.
   const images =
-    toMetadataImages(resolvedImage, documentTitle) ??
+    toMetadataImages(seo?.metaImage, documentTitle) ??
+    toDefaultMetadataImages(defaultImage, documentTitle) ??
+    toMetadataImages(image, documentTitle) ??
     [
       {
         url: toAbsoluteUrl("/opengraph-image", getSiteUrl()),
         width: 1200,
         height: 630,
+        type: "image/png",
         alt: documentTitle,
       },
     ];
+  const isArticle = type === "article";
+  const articleAuthors = authors?.map((author) => author.trim()).filter(Boolean) ?? [];
+  const articleTags = tags?.map((tag) => tag.trim()).filter(Boolean) ?? [];
+  const articleSection = blankToUndefined(section);
 
   const metadata: Metadata = {
     title: { absolute: documentTitle },
@@ -366,11 +519,18 @@ export function buildPageMetadata({
       description: resolvedDescription,
       siteName: SITE_NAME,
       images,
-      ...(type === "article" && publishedTime ? { publishedTime } : {}),
-      ...(type === "article" && modifiedTime ? { modifiedTime } : {}),
+      ...(isArticle && publishedTime ? { publishedTime } : {}),
+      ...(isArticle && modifiedTime ? { modifiedTime } : {}),
+      ...(isArticle && articleAuthors.length > 0 ? { authors: articleAuthors } : {}),
+      ...(isArticle && articleSection ? { section: articleSection } : {}),
+      ...(isArticle && articleTags.length > 0 ? { tags: articleTags } : {}),
     },
+    // Next replaces `twitter` per segment rather than merging it with the
+    // layout's, so site/creator have to be set here as well.
     twitter: {
       card: "summary_large_image",
+      site: X_HANDLE,
+      creator: X_HANDLE,
       title: documentTitle,
       description: resolvedDescription,
       images,
@@ -378,7 +538,7 @@ export function buildPageMetadata({
   };
 
   if (robots) {
-    metadata.robots = robots;
+    metadata.robots = withRobotsPreviewDirectives(robots);
   }
 
   return metadata;
@@ -458,12 +618,18 @@ export function buildPersonJsonLd(options: PersonJsonLdOptions = {}): Record<str
         return null;
       }
 
+      // `JSON.stringify` keeps `null`, and a CMS credential with no
+      // description or url arrives as `null`, which validators flag (GEO-15).
+      const issuer = blankToUndefined(credential.issuer);
+      const description = blankToUndefined(credential.description);
+      const url = blankToUndefined(credential.url);
+
       return {
         "@type": "EducationalOccupationalCredential",
         name: credential.name,
-        credentialCategory: credential.issuer,
-        description: credential.description,
-        url: credential.url,
+        ...(issuer ? { credentialCategory: issuer } : {}),
+        ...(description ? { description } : {}),
+        ...(url ? { url } : {}),
       };
     })
     .filter(Boolean) as Array<Record<string, unknown>>;
@@ -505,7 +671,8 @@ export function buildPersonJsonLd(options: PersonJsonLdOptions = {}): Record<str
           "@id": toWebPageId(options.mainEntityOfPagePath),
         }
       : undefined,
-    sameAs,
+    // The Person's own `url` is not a `sameAs` of itself (GEO-11).
+    sameAs: sameAs.filter((link) => !isSameUrl(link, profileUrl)),
     knowsAbout,
   };
 }
@@ -572,23 +739,49 @@ export function buildBreadcrumbJsonLd(items: BreadcrumbItem[]): Record<string, u
   };
 }
 
+function buildInlineAuthor(author: BlogPostingAuthor): Record<string, unknown> {
+  const url = blankToUndefined(author.url);
+  const jobTitle = blankToUndefined(author.jobTitle);
+  const imageUrl = blankToUndefined(author.imageUrl);
+  const sameAs = (author.sameAs ?? []).filter(
+    (link) => Boolean(link.trim()) && (!url || !isSameUrl(link, url))
+  );
+
+  return {
+    "@type": "Person",
+    "@id": author.id,
+    name: author.name,
+    ...(url ? { url } : {}),
+    ...(jobTitle ? { jobTitle } : {}),
+    ...(imageUrl ? { image: imageUrl } : {}),
+    ...(sameAs.length > 0 ? { sameAs } : {}),
+  };
+}
+
 export function buildBlogPostingJsonLd({
   pathname,
   headline,
   description,
   imageUrl,
+  imageUrls,
   datePublished,
   dateModified,
   keywords,
   articleSection,
   readingTimeMinutes,
   authorId,
+  author,
   publisherId,
 }: BlogPostingJsonLdOptions): Record<string, unknown> {
   const siteUrl = getSiteUrl();
   const canonical = toAbsoluteUrl(pathname, siteUrl);
-  const resolvedAuthorId = authorId ?? toPersonId();
+  const resolvedAuthorId = author?.id ?? authorId ?? toPersonId();
   const resolvedPublisherId = publisherId ?? resolvedAuthorId;
+  const images = [
+    ...new Set(
+      [imageUrl, ...(imageUrls ?? [])].filter((url): url is string => Boolean(url?.trim()))
+    ),
+  ];
 
   return {
     "@context": "https://schema.org",
@@ -600,12 +793,14 @@ export function buildBlogPostingJsonLd({
     },
     headline,
     description,
-    image: imageUrl ? [imageUrl] : undefined,
+    image: images.length > 0 ? images : undefined,
     datePublished,
     dateModified,
-    author: {
-      "@id": resolvedAuthorId,
-    },
+    author: author
+      ? buildInlineAuthor(author)
+      : {
+          "@id": resolvedAuthorId,
+        },
     publisher: {
       "@id": resolvedPublisherId,
     },

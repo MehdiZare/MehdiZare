@@ -19,15 +19,16 @@ import {
   buildPersonJsonLd,
   buildProfilePageJsonLd,
   toAbsoluteMediaUrl,
-  toPersonId,
 } from "@/lib/seo";
-import { identityUrlKey, normalizeIdentityUrl } from "@/lib/url-normalization";
 import {
   CANONICAL_IDENTITY_ORIGIN,
   authorIdentityFallbacks,
+  isSiteOwnerAuthor,
   resolveAuthorAddress,
   resolveAuthorAlumniOf,
   resolveAuthorPageIdentity,
+  resolveAuthorPersonId,
+  resolveAuthorSameAs,
   resolveAuthorWorksFor,
 } from "@/lib/author-identity";
 
@@ -95,28 +96,6 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
   }
 }
 
-function dedupeUrls(urls: Array<string | null | undefined>): string[] {
-  const seen = new Set<string>();
-  const deduped: string[] = [];
-
-  urls.forEach((url) => {
-    const normalized = normalizeIdentityUrl(url, CANONICAL_IDENTITY_ORIGIN);
-    if (!normalized) {
-      return;
-    }
-
-    const key = identityUrlKey(normalized, CANONICAL_IDENTITY_ORIGIN);
-    if (!key || seen.has(key)) {
-      return;
-    }
-
-    seen.add(key);
-    deduped.push(normalized);
-  });
-
-  return deduped;
-}
-
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString("en-US", {
     year: "numeric",
@@ -163,7 +142,11 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
     .catch(() => []);
 
   const authorPath = `/author/${author.slug}`;
-  const personId = toPersonId(authorPath);
+  // One Person @id per human (GEO-01 / TS-04). For the site owner this page
+  // is a ProfilePage *about* the layout's `/#person` rather than a second,
+  // unrelated Person node; only a guest author gets a Person of their own.
+  const authorIsSiteOwner = isSiteOwnerAuthor(author, siteProfile.author.slug);
+  const personId = resolveAuthorPersonId(author, siteProfile.author.slug);
   const identity = resolveAuthorPageIdentity(
     author,
     authorIdentityFallbacks(siteProfile),
@@ -177,11 +160,42 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
   const address = resolveAuthorAddress(author, siteProfile.author);
   const worksFor = resolveAuthorWorksFor(author, siteProfile.author);
   const { alumniOf } = resolveAuthorAlumniOf(author, siteProfile.author);
-  const sameAs = dedupeUrls([
-    websiteUrl,
-    linkedinUrl,
-    ...(author.sameAs?.map((link) => link.url) ?? []),
-  ]);
+  const sameAs = resolveAuthorSameAs(
+    { websiteUrl, linkedinUrl },
+    author.sameAs,
+    CANONICAL_IDENTITY_ORIGIN
+  );
+
+  const personJsonLd = authorIsSiteOwner
+    ? null
+    : buildPersonJsonLd({
+        id: personId,
+        path: authorPath,
+        name: authorName,
+        title: role,
+        description,
+        url: websiteUrl,
+        imageUrl: toAbsoluteMediaUrl(author.profileImage?.url),
+        worksForName: worksFor.worksForName,
+        worksForUrl: worksFor.worksForUrl,
+        alumniOf,
+        credentials:
+          author.credentials?.map((credential) => ({
+            name: credential.title,
+            issuer: credential.issuer,
+            url: credential.url,
+            description: credential.description,
+          })) ?? [],
+        addressLocality: address.addressLocality,
+        addressRegion: address.addressRegion,
+        addressCountry: address.addressCountry,
+        mainEntityOfPagePath: authorPath,
+        sameAs,
+        knowsAbout:
+          author.knowsAbout && author.knowsAbout.length > 0
+            ? author.knowsAbout
+            : siteProfile.knowsAbout,
+      });
 
   return (
     <section className="bg-paper py-16 sm:py-24">
@@ -194,37 +208,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
           personId,
         })}
       />
-      <JsonLd
-        id="author-person-jsonld"
-        data={buildPersonJsonLd({
-          id: personId,
-          path: authorPath,
-          name: authorName,
-          title: role,
-          description,
-          url: websiteUrl,
-          imageUrl: toAbsoluteMediaUrl(author.profileImage?.url),
-          worksForName: worksFor.worksForName,
-          worksForUrl: worksFor.worksForUrl,
-          alumniOf,
-          credentials:
-            author.credentials?.map((credential) => ({
-              name: credential.title,
-              issuer: credential.issuer,
-              url: credential.url,
-              description: credential.description,
-            })) ?? [],
-          addressLocality: address.addressLocality,
-          addressRegion: address.addressRegion,
-          addressCountry: address.addressCountry,
-          mainEntityOfPagePath: authorPath,
-          sameAs,
-          knowsAbout:
-            author.knowsAbout && author.knowsAbout.length > 0
-              ? author.knowsAbout
-              : siteProfile.knowsAbout,
-        })}
-      />
+      {personJsonLd ? <JsonLd id="author-person-jsonld" data={personJsonLd} /> : null}
       <JsonLd
         id="author-breadcrumb-jsonld"
         data={buildBreadcrumbJsonLd([
@@ -240,6 +224,8 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
               <StrapiImage
                 image={author.profileImage}
                 fill
+                sizes="(min-width: 768px) 180px, 100vw"
+                fallbackAlt={authorName}
                 className="object-cover"
                 priority
                 fallback={

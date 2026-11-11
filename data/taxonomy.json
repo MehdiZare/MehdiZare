@@ -18,7 +18,8 @@
         { "platform": "LinkedIn", "url": "https://linkedin.com/in/mehdizare" },
         { "platform": "GitHub", "url": "https://github.com/mehdizare" },
         { "platform": "Medium", "url": "https://medium.com/@mehdi-zare" },
-        { "platform": "Seeking Alpha", "url": "https://seekingalpha.com/author/mehdi-zare" }
+        { "platform": "Seeking Alpha", "url": "https://seekingalpha.com/author/mehdi-zare" },
+        { "platform": "X", "url": "https://x.com/mehdizare" }
       ],
       "jobTitle": "Founder and AI consultant",
       "worksForName": "",

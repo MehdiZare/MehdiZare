@@ -3,6 +3,7 @@ import type { StrapiImage as StrapiImageType } from "@/types/strapi";
 import { CmsImage } from "@/components/shared/CmsImage";
 import { cn } from "@/lib/utils";
 import { toAbsoluteStrapiMediaUrl } from "@/lib/public-env";
+import { blankToUndefined } from "@/lib/strings";
 
 interface StrapiImageProps {
   image: StrapiImageType | null | undefined;
@@ -11,6 +12,16 @@ interface StrapiImageProps {
   width?: number;
   height?: number;
   priority?: boolean;
+  /**
+   * `next/image` sizes. Without it a `fill` image is served at 100vw, so a hero
+   * in an 8/12 column downloads roughly twice the pixels it shows.
+   */
+  sizes?: string;
+  /**
+   * Alt text when the CMS media has no `alternativeText`. A blank alt marks the
+   * image decorative, which hides covers from Google Images and screen readers.
+   */
+  fallbackAlt?: string;
   /** Rendered when the image is missing or fails to load; defaults to a muted monogram tile. */
   fallback?: ReactNode;
 }
@@ -45,6 +56,8 @@ export function StrapiImage({
   width,
   height,
   priority = false,
+  sizes,
+  fallbackAlt,
   fallback,
 }: StrapiImageProps) {
   const resolvedWidth = width ?? image?.width;
@@ -59,7 +72,7 @@ export function StrapiImage({
   }
 
   const src = getStrapiImageUrl(image.url);
-  const alt = image.alternativeText ?? "";
+  const alt = blankToUndefined(image.alternativeText) ?? blankToUndefined(fallbackAlt) ?? "";
 
   return (
     <CmsImage
@@ -69,6 +82,7 @@ export function StrapiImage({
       width={resolvedWidth}
       height={resolvedHeight}
       priority={priority}
+      sizes={sizes}
       className={fill ? cn("object-cover", className) : className}
       fallback={resolvedFallback}
     />
