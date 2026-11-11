@@ -14,7 +14,8 @@
     "typecheck": "turbo typecheck",
     "test": "pnpm --filter=web test && pnpm --filter=cms test && node --test 'scripts/*.test.mjs'",
     "prepare": "[ -d .git ] && husky || true",
-    "audit:security": "node scripts/audit-dependencies.mjs"
+    "audit:security": "node scripts/audit-dependencies.mjs",
+    "check:media": "node scripts/check-media-urls.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",
