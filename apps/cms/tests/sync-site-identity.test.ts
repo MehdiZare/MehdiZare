@@ -130,13 +130,11 @@ function fakeStrapi(initial: { published: StrapiEntity; draft?: StrapiEntity | n
 
 const quiet = { log: () => {}, warn: () => {} };
 
-test('the repo taxonomy builds a valid identity that clears the employer', () => {
+test('the repo taxonomy builds an identity the script will send', () => {
+  // Values are the taxonomy's business; this only guards against an edit the
+  // script would refuse. The fixtures below cover the clear and the lists.
   const desired = buildDesiredAuthor(primaryTaxonomyAuthor(loadTaxonomyAuthors()));
-  assert.equal(desired.worksForName, null);
-  assert.equal(desired.worksForUrl, null);
-  for (const key of ['headline', 'jobTitle', 'bioShort', 'websiteUrl', 'knowsAbout', 'credentials', 'sameAs']) {
-    assert.ok(key in desired, `${key} is synced`);
-  }
+  assert.ok('worksForName' in desired && 'worksForUrl' in desired);
 });
 
 test('buildDesiredAuthor normalizes components and sends a cleared employer as null', () => {

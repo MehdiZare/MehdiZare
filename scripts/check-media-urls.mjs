@@ -87,6 +87,16 @@ export function isPostUrl(url) {
   }
 }
 
+/** `url` moved onto the origin of `siteUrl`, keeping path, query and hash. */
+export function rebase(url, siteUrl) {
+  try {
+    const source = new URL(url, siteUrl);
+    return new URL(`${source.pathname}${source.search}${source.hash}`, new URL(siteUrl).origin).href;
+  } catch {
+    return url;
+  }
+}
+
 function attributes(tag) {
   const attrs = {};
   for (const match of tag.matchAll(/([a-z][\w:-]*)\s*=\s*("([^"]*)"|'([^']*)')/gi)) {
@@ -231,7 +241,7 @@ export async function checkSiteMedia(siteUrl, { fetchImpl = fetch, log = console
     const parsed = parseSitemap(xml);
     pages.push(...parsed.pages);
     // Child sitemaps one level deep; an index nested in an index is not a thing Next emits.
-    if (current === sitemapUrl) queue.push(...parsed.sitemaps);
+    if (current === sitemapUrl) queue.push(...parsed.sitemaps.map((child) => rebase(child, siteUrl)));
     for (const image of parsed.images) {
       if (!images.has(image)) images.set(image, `sitemap ${current}`);
     }
@@ -242,7 +252,11 @@ export async function checkSiteMedia(siteUrl, { fetchImpl = fetch, log = console
   }
 
   // --- post pages -----------------------------------------------------------
-  const posts = [...new Set(pages.filter(isPostUrl))];
+  // The sitemap writes every <loc> on the configured canonical origin, so on a
+  // preview deploy it names production pages. Read the posts from the origin
+  // being checked; the media URLs those pages emit are checked as emitted,
+  // since that is what crawlers and card scrapers will fetch.
+  const posts = [...new Set(pages.filter(isPostUrl).map((page) => rebase(page, siteUrl)))];
   log(`Sitemap: ${pages.length} page(s), ${images.size} image(s), ${posts.length} post(s).`);
 
   await mapPool(posts, CONCURRENCY, async (postUrl) => {

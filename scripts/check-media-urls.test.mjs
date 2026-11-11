@@ -9,6 +9,7 @@ import {
   isImageContentType,
   isPostUrl,
   parseSitemap,
+  rebase,
 } from './check-media-urls.mjs';
 
 const SITE = 'https://www.example.com';
@@ -178,6 +179,24 @@ test('checkSiteMedia fails closed when the sitemap is unreachable or empty', asy
   const emptyFailures = await checkSiteMedia(SITE, { fetchImpl: empty.fetchImpl, log: quiet });
   assert.equal(emptyFailures.length, 1);
   assert.match(emptyFailures[0].reason, /no <loc> entries/);
+});
+
+test('rebase moves a URL onto another origin, keeping path and query', () => {
+  assert.equal(rebase(`${SITE}/blog/a?x=1`, 'https://preview.example.dev/'), 'https://preview.example.dev/blog/a?x=1');
+  assert.equal(rebase('::bad', 'not a url'), '::bad');
+});
+
+test('checkSiteMedia reads post pages from the checked origin, not the canonical one', async () => {
+  const PREVIEW = 'https://preview.example.dev';
+  const { fetchImpl, requested } = fakeSite({
+    [`${PREVIEW}/sitemap.xml`]: () =>
+      response(200, 'application/xml', `<urlset><url><loc>${SITE}/blog/first-post</loc></url></urlset>`),
+    [`${PREVIEW}/blog/first-post`]: () =>
+      response(200, 'text/html', `<meta property="og:image" content="${SITE}/opengraph-image"/>`),
+    [`${SITE}/opengraph-image`]: () => response(200, 'image/png'),
+  });
+  assert.deepEqual(await checkSiteMedia(PREVIEW, { fetchImpl, log: quiet }), []);
+  assert.ok(!requested.includes(`${SITE}/blog/first-post`));
 });
 
 test('checkSiteMedia fails a post page that has no social image', async () => {
