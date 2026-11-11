@@ -8,6 +8,7 @@ import {
   getTags,
 } from "@/lib/strapi";
 import { isBinaPrintEnabled } from "@/lib/feature-flags";
+import { ARTICLE_LISTING_SORT, resolveArticleLastModified } from "@/lib/article-dates";
 import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 import {
   getSiteUrl,
@@ -90,15 +91,23 @@ export function maxValidDate<T extends Date | undefined>(
 }
 
 /**
- * Fetch only the slug, modification dates, image URL and indexability metadata.
- * This overrides the full articlePopulate, including author credentials and
- * seo.metaImage.
+ * Fetch only the slug, the system and editorial dates, image URL, indexability
+ * metadata, and the category and tag slugs that decide which taxonomy pages
+ * have posts. This overrides the full articlePopulate, including author
+ * credentials and seo.metaImage.
+ *
+ * `publishedDate` is appended rather than inserted so the first three fields
+ * keep their positions. Only fields that exist in the article schema may be
+ * listed: Strapi 5 answers an unknown field with a 400, which would drop every
+ * article from the sitemap.
  */
 const SITEMAP_ARTICLE_FIELDS = {
-  fields: ["slug", "updatedAt", "publishedAt"],
+  fields: ["slug", "updatedAt", "publishedAt", "publishedDate"],
   populate: {
     featuredImage: { fields: ["url"] },
     seo: { fields: ["metaRobots", "canonicalURL"] },
+    category: { fields: ["slug"] },
+    tags: { fields: ["slug"] },
   },
 } as const;
 
@@ -108,7 +117,7 @@ function getAllArticlesForSitemap(deadlineMs?: number): Promise<Article[]> {
     "articles",
     {
       ...SITEMAP_ARTICLE_FIELDS,
-      sort: "publishedAt:desc",
+      sort: ARTICLE_LISTING_SORT,
     },
     { deadlineMs }
   );
@@ -329,13 +338,69 @@ function mapArticlePages(articles: Article[]): MetadataRoute.Sitemap {
     }
     pages.push({
       url: `${SITE_URL}/blog/${slug}`,
-      lastModified: maxValidDate([article.updatedAt, article.publishedAt], undefined),
+      lastModified: resolveArticleLastModified(article),
       changeFrequency: "weekly",
       priority: 0.7,
       images: imageUrl ? [imageUrl] : undefined,
     });
   }
   return pages;
+}
+
+/** Slug -> newest article lastmod among the term's posts. A key means "has posts". */
+type TermPostDates = Map<string, Date | undefined>;
+
+function recordTermPost(terms: TermPostDates, slug: unknown, lastModified: Date | undefined): void {
+  const key = normalizeSlug(slug);
+  if (!key) return;
+  const current = terms.get(key);
+  terms.set(key, current && (!lastModified || current > lastModified) ? current : lastModified);
+}
+
+/**
+ * Which categories and tags have at least one published post, and when the
+ * newest of them last changed (TS-02 / CM-09 / GEO-14). Empty terms render a
+ * "No posts yet" page that is `noindex, follow`, so the sitemap must not
+ * submit them; a term's lastmod comes from its newest post rather than from
+ * the term row's own `updatedAt`.
+ */
+function collectTermPostDates(articles: Article[]): {
+  categories: TermPostDates;
+  tags: TermPostDates;
+} {
+  const categories: TermPostDates = new Map();
+  const tags: TermPostDates = new Map();
+  for (const article of articles) {
+    const lastModified = resolveArticleLastModified(article);
+    recordTermPost(categories, article.category?.slug, lastModified);
+    for (const tag of article.tags ?? []) {
+      recordTermPost(tags, tag?.slug, lastModified);
+    }
+  }
+  return { categories, tags };
+}
+
+/**
+ * A category listing also shows its direct children's posts, so a parent with
+ * no posts of its own is still non-empty when a child has some. Returns
+ * `null` for an empty category, else its newest post date (possibly
+ * undefined).
+ */
+function categoryPostDate(
+  category: Category,
+  slug: string,
+  terms: TermPostDates
+): { lastModified: Date | undefined } | null {
+  const slugs = [slug, ...(category.children ?? []).map((child) => normalizeSlug(child?.slug))];
+  let found = false;
+  let newest: Date | undefined;
+  for (const candidate of slugs) {
+    if (!candidate || !terms.has(candidate)) continue;
+    found = true;
+    const date = terms.get(candidate);
+    if (date && (!newest || date > newest)) newest = date;
+  }
+  return found ? { lastModified: newest } : null;
 }
 
 function mapAuthorPages(authors: Author[]): MetadataRoute.Sitemap {
@@ -386,12 +451,16 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     ]);
 
   let articlePages: MetadataRoute.Sitemap = [];
+  // null when the article walk failed: post counts are unknown, so the
+  // taxonomy is listed unfiltered rather than dropped.
+  let termPostDates: ReturnType<typeof collectTermPostDates> | null = null;
   if (articlesResult.status === "fulfilled") {
     const articles = articlesResult.value;
     pageTimestamps.blog = maxValidDate(
-      articles.flatMap((article) => [article.updatedAt, article.publishedAt]),
+      articles.map((article) => resolveArticleLastModified(article)?.toISOString()),
       pageTimestamps.blog
     );
+    termPostDates = collectTermPostDates(articles);
     articlePages = mapArticlePages(articles);
     if (articles.length > 0 && !articles.some(article => normalizeSlug(article.slug))) {
       // Rows came back but mapArticlePages emitted nothing — a fields/populate
@@ -420,10 +489,12 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     categoryPages = categoriesResult.value.flatMap((category) => {
       const slug = normalizeSlug(category.slug);
       if (!slug || !isSitemapCandidate(`/blog/category/${slug}`, category.seo)) return [];
+      const posts = termPostDates ? categoryPostDate(category, slug, termPostDates.categories) : undefined;
+      if (posts === null) return [];
       return [
         {
           url: `${SITE_URL}/blog/category/${slug}`,
-          lastModified: safeDate(category.updatedAt),
+          lastModified: posts?.lastModified ?? safeDate(category.updatedAt),
           changeFrequency: "weekly" as const,
           priority: 0.7,
         },
@@ -441,10 +512,11 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     tagPages = tagsResult.value.flatMap((tag) => {
       const slug = normalizeSlug(tag.slug);
       if (!slug || !isSitemapCandidate(`/blog/tag/${slug}`, tag.seo)) return [];
+      if (termPostDates && !termPostDates.tags.has(slug)) return [];
       return [
         {
           url: `${SITE_URL}/blog/tag/${slug}`,
-          lastModified: safeDate(tag.updatedAt),
+          lastModified: termPostDates?.tags.get(slug) ?? safeDate(tag.updatedAt),
           changeFrequency: "weekly" as const,
           priority: 0.6,
         },

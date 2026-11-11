@@ -224,6 +224,14 @@ test("a later article page failure keeps page-1 URLs instead of dropping the cat
 
 test("CMS categories and tags replace the taxonomy fallback", async () => {
   const { urls } = await runSitemap({
+    articles: [
+      {
+        slug: "tagged-post",
+        publishedAt: "2026-02-01T00:00:00.000Z",
+        category: { slug: "cms-cat" },
+        tags: [{ slug: "cms-tag" }],
+      },
+    ],
     categories: [{ slug: "cms-cat", updatedAt: "2026-02-01T00:00:00.000Z" }, { slug: "  " }],
     tags: [{ slug: "cms-tag", updatedAt: "2026-02-01T00:00:00.000Z" }, { slug: null }],
   });
@@ -267,9 +275,22 @@ test("the article query asks only for what the sitemap renders", async () => {
 
   const params = articleRequest.searchParams;
   assert.deepEqual(
-    [params.get("fields[0]"), params.get("fields[1]"), params.get("fields[2]")],
-    ["slug", "updatedAt", "publishedAt"],
+    [
+      params.get("fields[0]"),
+      params.get("fields[1]"),
+      params.get("fields[2]"),
+      params.get("fields[3]"),
+      params.get("fields[4]"),
+    ],
+    ["slug", "updatedAt", "publishedAt", "publishedDate", null],
     "narrowing the query is what keeps the full article populate out of the sitemap read"
+  );
+  assert.equal(params.get("populate[category][fields][0]"), "slug");
+  assert.equal(params.get("populate[tags][fields][0]"), "slug");
+  assert.deepEqual(
+    [params.get("sort[0]"), params.get("sort[1]")],
+    ["publishedDate:desc", "publishedAt:desc"],
+    "editorial date first, system publish time as the tiebreak (CM-02)"
   );
   assert.equal(params.get("populate[featuredImage][fields][0]"), "url");
   assert.equal(
@@ -491,4 +512,144 @@ test("missing CMS dates never turn a sitemap refresh into a content update", asy
   } finally {
     delete process.env.BUILD_TIME;
   }
+});
+
+function lastmodOf(entries: Array<{ url: string; lastModified?: string | Date }>, url: string) {
+  const entry = entries.find((candidate) => candidate.url === url);
+  assert.ok(entry, `${url} must be in the sitemap`);
+  return entry.lastModified instanceof Date
+    ? entry.lastModified.toISOString()
+    : entry.lastModified;
+}
+
+test("empty categories and tags are left out of the sitemap (TS-02 / CM-09 / GEO-14)", async () => {
+  const { urls } = await runSitemap({
+    articles: [
+      {
+        slug: "post",
+        publishedAt: "2026-08-01T10:00:00.000Z",
+        category: { slug: "llms-in-production" },
+        tags: [{ slug: "llms" }, { slug: "mcp" }],
+      },
+    ],
+    categories: [
+      { slug: "robowrite" },
+      {
+        slug: "ai-engineering",
+        children: [{ slug: "llms-in-production" }, { slug: "empty-child" }],
+      },
+      { slug: "llms-in-production" },
+      { slug: "empty-child" },
+    ],
+    tags: [{ slug: "llms" }, { slug: "mcp" }, { slug: "fastapi" }],
+  });
+
+  assert.deepEqual(
+    urls.filter((url) => url.includes("/blog/category/")).sort(),
+    [
+      `${SITE_URL}/blog/category/ai-engineering`,
+      `${SITE_URL}/blog/category/llms-in-production`,
+    ],
+    "a parent is kept when a child has posts; categories with none are dropped"
+  );
+  assert.deepEqual(
+    urls.filter((url) => url.includes("/blog/tag/")).sort(),
+    [`${SITE_URL}/blog/tag/llms`, `${SITE_URL}/blog/tag/mcp`]
+  );
+});
+
+test("a CMS whose terms all have no posts emits no taxonomy URLs instead of the seed list", async () => {
+  const { urls } = await runSitemap({
+    articles: [{ slug: "untagged", publishedAt: "2026-08-01T10:00:00.000Z" }],
+    categories: [{ slug: "robowrite" }],
+    tags: [{ slug: "fastapi" }],
+  });
+  assert.ok(!urls.some((url) => url.includes("/blog/category/")));
+  assert.ok(!urls.some((url) => url.includes("/blog/tag/")));
+});
+
+test("a failed article walk lists the taxonomy unfiltered rather than dropping it", async () => {
+  const { urls } = await runSitemap({
+    failArticlePage: 1,
+    categories: [{ slug: "robowrite" }],
+    tags: [{ slug: "fastapi" }],
+  });
+  assert.ok(urls.includes(`${SITE_URL}/blog/category/robowrite`));
+  assert.ok(urls.includes(`${SITE_URL}/blog/tag/fastapi`));
+});
+
+test("a taxonomy lastmod is its newest post, not the term row's updatedAt", async () => {
+  const { entries } = await runSitemap({
+    articles: [
+      {
+        slug: "older",
+        publishedAt: "2026-07-01T10:00:00.000Z",
+        updatedAt: "2026-07-01T10:00:00.000Z",
+        category: { slug: "child" },
+        tags: [{ slug: "llms" }],
+      },
+      {
+        slug: "newer",
+        publishedAt: "2026-08-15T10:00:00.000Z",
+        updatedAt: "2026-08-15T10:00:00.000Z",
+        category: { slug: "child" },
+        tags: [{ slug: "llms" }],
+      },
+    ],
+    categories: [
+      { slug: "parent", updatedAt: "2026-01-01T00:00:00.000Z", children: [{ slug: "child" }] },
+      { slug: "child", updatedAt: "2026-11-01T00:00:00.000Z" },
+    ],
+    tags: [{ slug: "llms", updatedAt: "2026-11-01T00:00:00.000Z" }],
+  });
+
+  assert.equal(lastmodOf(entries, `${SITE_URL}/blog/category/parent`), "2026-08-15T10:00:00.000Z");
+  assert.equal(lastmodOf(entries, `${SITE_URL}/blog/category/child`), "2026-08-15T10:00:00.000Z");
+  assert.equal(lastmodOf(entries, `${SITE_URL}/blog/tag/llms`), "2026-08-15T10:00:00.000Z");
+});
+
+test("article lastmod follows the editorial publishedDate, not a later system edit (CM-02)", async () => {
+  const { entries } = await runSitemap({
+    articles: [
+      {
+        slug: "edited-later",
+        publishedDate: "2026-08-30",
+        publishedAt: "2026-08-30T14:00:00.000Z",
+        updatedAt: "2026-10-02T09:00:00.000Z",
+      },
+      {
+        slug: "republished",
+        publishedDate: "2026-02-25",
+        publishedAt: "2026-09-10T12:00:00.000Z",
+        updatedAt: "2026-09-10T12:00:00.000Z",
+      },
+      {
+        slug: "future-dated",
+        publishedDate: "2099-01-01",
+        publishedAt: "2026-08-01T10:00:00.000Z",
+        updatedAt: "2026-08-02T10:00:00.000Z",
+      },
+    ],
+  });
+
+  assert.equal(
+    lastmodOf(entries, `${SITE_URL}/blog/edited-later`),
+    "2026-08-30T14:00:00.000Z",
+    "a same-day system publish time supplies the time; a later updatedAt does not move lastmod"
+  );
+  assert.equal(
+    lastmodOf(entries, `${SITE_URL}/blog/republished`),
+    "2026-02-25T00:00:00.000Z",
+    "a re-publish moves the system publishedAt but not the editorial date"
+  );
+  assert.equal(
+    lastmodOf(entries, `${SITE_URL}/blog/future-dated`),
+    "2026-08-02T10:00:00.000Z",
+    "an editorial date after every system change is clamped to the newest system timestamp"
+  );
+  assert.equal(
+    lastmodOf(entries, `${SITE_URL}/blog`),
+    "2026-08-30T14:00:00.000Z",
+    "/blog tracks the newest article lastmod"
+  );
 });
