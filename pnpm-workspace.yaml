@@ -23,9 +23,9 @@ overrides:
   fast-uri: "3.1.9"
   fast-xml-parser: "5.12.0"
   flatted: "3.4.4"
-  follow-redirects: "1.16.2"
+  follow-redirects: "1.16.3"
   handlebars: "4.7.10"
-  hono: "4.13.16"
+  hono: "4.13.17"
   ip-address: "10.7.6"
   js-yaml: "4.3.2"
   linkify-it: "5.0.2"
@@ -38,13 +38,13 @@ overrides:
   "picomatch@<3": "2.3.2"
   "picomatch@>=4 <4.0.7": "4.0.7"
   postcss: "8.5.32"
-  rollup: "4.67.5"
+  rollup: "4.68.2"
   sharp: "0.35.5"
   shell-quote: "1.12.0"
   tar: "7.5.22"
   tmp: "0.2.7"
   "undici@>=6.23.0 <6.29.1": "6.29.1"
-  vite: "6.4.5"
+  vite: "6.4.6"
   webpack: "5.112.2"
   webpack-dev-middleware: "8.6.0"
   "yaml@1": "1.10.3"
@@ -79,32 +79,6 @@ minimumReleaseAgeExclude:
   - yaml@1.10.3
   - '@types/react-dom@19.3.0'
   - 'fast-uri@3.1.9'
-  - '@rollup/rollup-android-arm-eabi@4.64.12'
-  - '@rollup/rollup-android-arm64@4.64.12'
-  - '@rollup/rollup-darwin-arm64@4.64.12'
-  - '@rollup/rollup-darwin-x64@4.64.12'
-  - '@rollup/rollup-freebsd-arm64@4.64.12'
-  - '@rollup/rollup-freebsd-x64@4.64.12'
-  - '@rollup/rollup-linux-arm-gnueabihf@4.64.12'
-  - '@rollup/rollup-linux-arm-musleabihf@4.64.12'
-  - '@rollup/rollup-linux-arm64-gnu@4.64.12'
-  - '@rollup/rollup-linux-arm64-musl@4.64.12'
-  - '@rollup/rollup-linux-loong64-gnu@4.64.12'
-  - '@rollup/rollup-linux-loong64-musl@4.64.12'
-  - '@rollup/rollup-linux-ppc64-gnu@4.64.12'
-  - '@rollup/rollup-linux-ppc64-musl@4.64.12'
-  - '@rollup/rollup-linux-riscv64-gnu@4.64.12'
-  - '@rollup/rollup-linux-riscv64-musl@4.64.12'
-  - '@rollup/rollup-linux-s390x-gnu@4.64.12'
-  - '@rollup/rollup-linux-x64-gnu@4.64.12'
-  - '@rollup/rollup-linux-x64-musl@4.64.12'
-  - '@rollup/rollup-openbsd-x64@4.64.12'
-  - '@rollup/rollup-openharmony-arm64@4.64.12'
-  - '@rollup/rollup-win32-arm64-msvc@4.64.12'
-  - '@rollup/rollup-win32-ia32-msvc@4.64.12'
-  - '@rollup/rollup-win32-x64-gnu@4.64.12'
-  - '@rollup/rollup-win32-x64-msvc@4.64.12'
-  - 'rollup@4.64.12'
 
 patchedDependencies:
   braces@3.0.3: patches/braces@3.0.3.patch
