@@ -1,3 +1,7 @@
+// `.js`: next/constants has no package exports map, so plain Node ESM (the
+// test runner) needs the file path; the bundler resolves it the same way.
+// `next build` sets NEXT_PHASE to PHASE_PRODUCTION_BUILD.
+import { PHASE_PRODUCTION_BUILD } from "next/constants.js";
 import { buildSitemap } from "@/lib/sitemap";
 import { serializeSitemap } from "@/lib/sitemap-xml";
 
@@ -29,8 +33,6 @@ export const revalidate = 300;
 /** Isolate budget: must exceed SITEMAP_DEADLINE_MS so a slow CMS walk can still return the fallback. */
 export const maxDuration = 20;
 
-/** `PHASE_PRODUCTION_BUILD` from next/constants; `next build` sets NEXT_PHASE to it. */
-const PHASE_PRODUCTION_BUILD = "phase-production-build";
 
 /**
  * A degraded result (CMS down, slow or partial) is served only when there is

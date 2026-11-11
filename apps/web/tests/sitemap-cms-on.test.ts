@@ -114,6 +114,7 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
 
 const { default: sitemap, SITEMAP_DEADLINE_MS } = await import("../src/lib/sitemap.ts");
 const { GET, maxDuration } = await import("../src/app/sitemap-main.xml/route.ts");
+const { PHASE_PRODUCTION_BUILD } = await import("next/constants.js");
 const { resolveArticleDates } = await import("../src/lib/article-dates.ts");
 const { buildBlogPostingJsonLd } = await import("../src/lib/seo.ts");
 
@@ -838,7 +839,7 @@ function useScenario(next: Partial<Scenario>) {
 
 function inBuildPhase(t: { after: (fn: () => void) => void }) {
   const previous = process.env.NEXT_PHASE;
-  process.env.NEXT_PHASE = "phase-production-build";
+  process.env.NEXT_PHASE = PHASE_PRODUCTION_BUILD;
   t.after(() => {
     if (previous === undefined) delete process.env.NEXT_PHASE;
     else process.env.NEXT_PHASE = previous;
