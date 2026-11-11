@@ -3,75 +3,74 @@
  * still overrides it at runtime.
  *
  * Why this exists (#91, #100): the author record is CMS-backed and the CMS wins.
+ * `/author/[slug]` reads it raw, with no repo-side fallback at all, and the
+ * Person JSON-LD on /, /contact, /consulting and /author/[slug] is built from
+ * it. These are the fields this script owns on author(<primary slug>):
  *
- *   author(mehdi-zare).address*      -> Person JSON-LD on /, /contact,
- *                                       /consulting and /author/[slug]
- *   author(mehdi-zare).worksFor*     -> Person `worksFor` in the same markup
+ *   addressLocality, addressRegion, addressCountry   -> Person `address`
+ *   worksForName, worksForUrl                        -> Person `worksFor`
+ *   headline, jobTitle, bioShort, websiteUrl         -> author page + Person
+ *   knowsAbout                                       -> Person `knowsAbout`
+ *   credentials (list, replaced whole)               -> Person `hasCredential`
+ *   sameAs (list, replaced whole)                    -> Person `sameAs`
+ *
+ * Each is sent only when `data/taxonomy.json` has the key; a key the taxonomy
+ * omits is left alone. An empty `worksForName`/`worksForUrl` pair in the
+ * taxonomy is sent as `null`, which CLEARS the employer in the CMS -- leaving
+ * it out instead is how "Entarian" outlived two repositionings (GEO-03).
+ * Empty optional strings (headline, jobTitle) clear the same way; the
+ * schema-required ones (bioShort, websiteUrl) and the address refuse to go
+ * out empty or partial.
  *
  * It used to write `site-setting.locationLine` for the footer as well. The site
- * stopped reading `site-setting` when page copy became repo-owned, so that half
- * wrote a row nothing consumes -- and, worse, told the next person that fixing
- * footer copy needs a production CMS write. Editing the repo constant is now
- * the whole job. The author record is genuinely different: `/author/[slug]`
- * reads it raw, with no repo-side fallback at all.
+ * stopped reading `site-setting` when page copy became repo-owned, so editing
+ * the repo constant is now the whole job for footer copy.
  *
- * Started life as `sync-site-location.ts` for the address alone. The employer
- * fields turned out to need exactly the same treatment for exactly the same
- * reason -- #100's Sev1Tech -> Entarian rename was invisible in production
- * until the CMS author record was written, because `/author/[slug]` reads that
- * record raw with no repo-side fallback at all. Renamed rather than duplicated.
+ * Started life as `sync-site-location.ts` for the address alone, then grew the
+ * employer for #100's Sev1Tech -> Entarian rename, then the rest of the public
+ * identity for the founder/consultant repositioning (#147). Extended rather
+ * than duplicated, so there is still exactly one way to push identity.
  *
  * `seed.ts` would also fix them, but it is a full upsert of author, categories
  * and tags, so any hand-edit made in the Strapi admin since the last seed is
- * lost. This sends exactly the fields above and nothing else.
+ * lost. This sends only the fields above that differ, and nothing else.
  *
  * *Sends* -- not "changes". `author` has Draft & Publish enabled, and Strapi 5's
  * REST update writes the payload onto the DRAFT; `?status=published` then
- * publishes the whole draft row, not just the fields in the payload. So an
- * unrelated, deliberately-unpublished admin edit would go live with the identity
- * change. The script therefore reads the draft first and refuses to write when
- * it diverges from the published record outside the fields below (override with
- * `--allow-draft-publish`).
+ * publishes the whole draft row, not just the fields in the payload. So:
+ *
+ *   - an owned field is sent when EITHER the draft or the published value
+ *     differs from the taxonomy, so a half-written draft of e.g. `bioShort`
+ *     cannot ride along unsent;
+ *   - for every other field, the script reads the draft and refuses to write
+ *     when it diverges from the published record (override with
+ *     `--allow-draft-publish`);
+ *   - it refuses unless the slug-matched author is the one apps/web renders.
  *
  * The desired values come from `data/taxonomy.json` -- the same record the seed
  * writes -- so this script cannot disagree with the repo.
  *
- * Usage (dry run -- prints the diff, writes nothing):
+ * Usage (dry run is the default -- prints a field-by-field diff, writes nothing):
  *
  *   STRAPI_URL=https://cms.example.com STRAPI_API_TOKEN=<token> \
- *     npx tsx scripts/sync-site-identity.ts
+ *     npx tsx scripts/sync-site-identity.ts [--dry-run]
  *
- * Add `--apply` to write. Fields already correct are never sent.
+ * Add `--apply` to write and publish. Fields already correct are never sent.
  */
 
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
-// Read at runtime rather than `import … from "…/taxonomy.json"`, matching
-// seed.ts. `data/` sits outside this package, so a static import would make a
-// file the CMS build context never copies into a compile-time dependency.
-const taxonomy = JSON.parse(
-  readFileSync(resolve(__dirname, "../../../data/taxonomy.json"), "utf-8")
-) as { authors?: TaxonomyAuthor[] };
-
-const STRAPI_URL = process.env.STRAPI_URL?.trim();
-const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN?.trim();
-const APPLY = process.argv.includes("--apply");
-const ALLOW_DRAFT_PUBLISH = process.argv.includes("--allow-draft-publish");
-
-if (!STRAPI_URL) {
-  console.error("Missing STRAPI_URL environment variable.");
-  process.exit(1);
-}
-
-if (!STRAPI_API_TOKEN) {
-  console.error("Missing STRAPI_API_TOKEN environment variable.");
-  process.exit(1);
-}
-
-interface TaxonomyAuthor {
+export interface TaxonomyAuthor {
   slug?: string;
   isPrimary?: boolean;
+  headline?: string;
+  jobTitle?: string;
+  bioShort?: string;
+  websiteUrl?: string;
+  knowsAbout?: unknown;
+  credentials?: unknown;
+  sameAs?: unknown;
   addressLocality?: string;
   addressRegion?: string;
   addressCountry?: string;
@@ -79,48 +78,238 @@ interface TaxonomyAuthor {
   worksForUrl?: string;
 }
 
-interface StrapiEntity {
+export interface StrapiEntity {
   documentId: string;
   [key: string]: unknown;
 }
 
-async function strapiFetch<T>(
+export type StrapiFetch = <T>(
   path: string,
-  init: RequestInit = {},
-  query: Record<string, string> = {}
-): Promise<T> {
-  const url = new URL(`/api/${path}`, STRAPI_URL);
-  for (const [key, value] of Object.entries(query)) {
-    url.searchParams.set(key, value);
-  }
+  init?: RequestInit,
+  query?: Record<string, string>
+) => Promise<T>;
 
-  const response = await fetch(url, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${STRAPI_API_TOKEN}`,
-      ...init.headers,
-    },
-  });
-
-  const body = await response.text();
-  if (!response.ok) {
-    throw new Error(
-      `${init.method ?? "GET"} /api/${path} -> ${response.status} ${response.statusText}\n${body.slice(0, 500)}`
-    );
-  }
-
-  return body ? (JSON.parse(body) as T) : ({} as T);
+export interface SyncOptions {
+  apply: boolean;
+  allowDraftPublish: boolean;
+  strapiFetch: StrapiFetch;
+  log?: (message: string) => void;
+  warn?: (message: string) => void;
 }
 
-/** Fields whose current value differs from the desired one. */
-function diffFields(
-  current: Record<string, unknown>,
-  desired: Record<string, string>
-): Record<string, string> {
-  const changes: Record<string, string> = {};
+export interface SyncResult {
+  /** Fields that differ (dry run) or were written (`--apply`). */
+  changes: Record<string, unknown>;
+  written: boolean;
+}
+
+/** A refusal: the script stops without writing and exits non-zero. */
+export class SyncRefusal extends Error {}
+
+/** `shared.credential` attributes, so a missing one compares as null. */
+const CREDENTIAL_KEYS = ["title", "issuer", "description", "url"] as const;
+
+/** Populate exactly the two component lists this script owns. */
+const AUTHOR_POPULATE = {
+  "populate[0]": "sameAs",
+  "populate[1]": "credentials",
+} as const;
+
+// Read at runtime rather than `import … from "…/taxonomy.json"`, matching
+// seed.ts. `data/` sits outside this package, so a static import would make a
+// file the CMS build context never copies into a compile-time dependency.
+export function loadTaxonomyAuthors(): unknown {
+  const taxonomy = JSON.parse(
+    readFileSync(resolve(__dirname, "../../../data/taxonomy.json"), "utf-8")
+  ) as { authors?: unknown };
+  return taxonomy.authors;
+}
+
+export function parseFlags(argv: string[]): { apply: boolean; allowDraftPublish: boolean } {
+  const apply = argv.includes("--apply");
+  if (apply && argv.includes("--dry-run")) {
+    throw new SyncRefusal("Pass either --apply or --dry-run, not both.");
+  }
+  return { apply, allowDraftPublish: argv.includes("--allow-draft-publish") };
+}
+
+export function createStrapiFetch(
+  baseUrl: string,
+  token: string,
+  fetchImpl: typeof fetch = fetch
+): StrapiFetch {
+  return async <T>(
+    path: string,
+    init: RequestInit = {},
+    query: Record<string, string> = {}
+  ): Promise<T> => {
+    const url = new URL(`/api/${path}`, baseUrl);
+    for (const [key, value] of Object.entries(query)) {
+      url.searchParams.set(key, value);
+    }
+
+    const response = await fetchImpl(url, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        ...init.headers,
+      },
+    });
+
+    const body = await response.text();
+    if (!response.ok) {
+      throw new Error(
+        `${init.method ?? "GET"} /api/${path} -> ${response.status} ${response.statusText}\n${body.slice(0, 500)}`
+      );
+    }
+
+    return body ? (JSON.parse(body) as T) : ({} as T);
+  };
+}
+
+/** Mirrors the primary-author rule in seed.ts. */
+export function primaryTaxonomyAuthor(authors: unknown): TaxonomyAuthor {
+  if (!Array.isArray(authors)) {
+    throw new SyncRefusal("data/taxonomy.json: expected 'authors' to be an array.");
+  }
+  const list = authors as TaxonomyAuthor[];
+  const primary = list.find((author) => author.isPrimary) ?? list[0];
+  if (!primary?.slug) {
+    throw new SyncRefusal("data/taxonomy.json: no primary author with a slug.");
+  }
+  return primary;
+}
+
+function blankToNull(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function hasKey(author: TaxonomyAuthor, key: keyof TaxonomyAuthor): boolean {
+  return Object.prototype.hasOwnProperty.call(author, key);
+}
+
+/**
+ * The owned fields and the values they should have, from the taxonomy author.
+ * Throws a SyncRefusal rather than build a partial or invalid identity.
+ */
+export function buildDesiredAuthor(author: TaxonomyAuthor): Record<string, unknown> {
+  const slug = author.slug;
+  const refuse = (message: string): never => {
+    throw new SyncRefusal(`data/taxonomy.json: author ${slug} ${message}`);
+  };
+
+  const addressLocality = blankToNull(author.addressLocality);
+  const addressRegion = blankToNull(author.addressRegion);
+  const addressCountry = blankToNull(author.addressCountry);
+  if (!addressLocality || !addressRegion || !addressCountry) {
+    refuse("is missing part of its address; refusing to write a partial one.");
+  }
+
+  // Same all-or-nothing rule as the address, for the same reason: `worksFor` is
+  // one Organization node, and half of one is worse than none. Both empty means
+  // "no employer" and is sent as null, so the CMS value is cleared.
+  const worksForName = blankToNull(author.worksForName);
+  const worksForUrl = blankToNull(author.worksForUrl);
+  if (!worksForName !== !worksForUrl) {
+    refuse("has only one of worksForName/worksForUrl; refusing to write a partial employer.");
+  }
+
+  const desired: Record<string, unknown> = {
+    addressLocality,
+    addressRegion,
+    addressCountry,
+    worksForName,
+    worksForUrl,
+  };
+
+  // Optional in the schema: an empty value clears.
+  for (const key of ["headline", "jobTitle"] as const) {
+    if (hasKey(author, key)) desired[key] = blankToNull(author[key]);
+  }
+
+  // Required in the schema: refuse rather than send an empty value Strapi
+  // would reject halfway through (or, worse, accept).
+  for (const key of ["bioShort", "websiteUrl"] as const) {
+    if (!hasKey(author, key)) continue;
+    const value = blankToNull(author[key]);
+    if (!value) refuse(`has an empty ${key}, which the CMS requires.`);
+    desired[key] = value;
+  }
+
+  if (hasKey(author, "knowsAbout")) {
+    const topics = author.knowsAbout;
+    if (!Array.isArray(topics) || !topics.every((topic) => typeof topic === "string" && topic.trim())) {
+      refuse("has a knowsAbout that is not a list of non-empty strings.");
+    }
+    desired.knowsAbout = (topics as string[]).map((topic) => topic.trim());
+  }
+
+  if (hasKey(author, "sameAs")) {
+    const links = author.sameAs;
+    if (!Array.isArray(links)) refuse("has a sameAs that is not a list.");
+    desired.sameAs = (links as Array<Record<string, unknown>>).map((link) => {
+      const platform = blankToNull(link?.platform);
+      const url = blankToNull(link?.url);
+      if (!platform || !url) refuse("has a sameAs entry without both platform and url.");
+      return { platform, url };
+    });
+  }
+
+  if (hasKey(author, "credentials")) {
+    const credentials = author.credentials;
+    if (!Array.isArray(credentials)) refuse("has credentials that are not a list.");
+    desired.credentials = (credentials as Array<Record<string, unknown>>).map((credential) => {
+      const entry: Record<string, string | null> = {};
+      for (const key of CREDENTIAL_KEYS) entry[key] = blankToNull(credential?.[key]);
+      if (!entry.title) refuse("has a credential without a title.");
+      return entry;
+    });
+  }
+
+  return desired;
+}
+
+/**
+ * Canonical form for comparison: blank strings and undefined are null,
+ * component bookkeeping (`id`, `__component`) is dropped, object keys sorted.
+ * Strapi returns a fresh `id` per component row, and an unset string field as
+ * null, so neither may count as a difference or a cleared field would never
+ * settle.
+ */
+export function canonical(value: unknown): unknown {
+  if (value === undefined || value === null) return null;
+  if (typeof value === "string") return value === "" ? null : value;
+  if (Array.isArray(value)) return value.map(canonical);
+  if (typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const key of Object.keys(value as Record<string, unknown>).sort()) {
+      if (key === "id" || key === "__component") continue;
+      out[key] = canonical((value as Record<string, unknown>)[key]);
+    }
+    return out;
+  }
+  return value;
+}
+
+export function sameValue(a: unknown, b: unknown): boolean {
+  return JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+}
+
+/**
+ * Owned fields to send: those where the published record or the draft differs
+ * from the desired value. The draft matters because the write publishes it.
+ */
+export function diffFields(
+  published: Record<string, unknown>,
+  draft: Record<string, unknown> | null,
+  desired: Record<string, unknown>
+): Record<string, unknown> {
+  const changes: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(desired)) {
-    if (current[key] !== value) {
+    const publishedDiffers = !sameValue(published[key], value);
+    const draftDiffers = draft !== null && !sameValue(draft[key], value);
+    if (publishedDiffers || draftDiffers) {
       changes[key] = value;
     }
   }
@@ -147,9 +336,9 @@ const DOCUMENT_METADATA = new Set([
  *
  * Publishing is all-or-nothing: `?status=published` promotes the entire draft
  * row. Anything listed here is an edit somebody chose not to publish, and it
- * would go live as a side effect of the address change.
+ * would go live as a side effect of the identity change.
  */
-function divergentFields(
+export function divergentFields(
   draft: Record<string, unknown>,
   published: Record<string, unknown>,
   owned: Iterable<string>
@@ -159,28 +348,32 @@ function divergentFields(
 
   return [...keys]
     .filter((key) => !ignored.has(key))
-    .filter(
-      (key) => JSON.stringify(draft[key]) !== JSON.stringify(published[key])
-    )
+    .filter((key) => !sameValue(draft[key], published[key]))
     .sort();
 }
 
+function show(value: unknown): string {
+  return JSON.stringify(canonical(value));
+}
+
 function report(
+  log: (message: string) => void,
   label: string,
-  current: Record<string, unknown>,
-  desired: Record<string, string>,
-  changes: Record<string, string>
+  published: Record<string, unknown>,
+  draft: Record<string, unknown> | null,
+  desired: Record<string, unknown>,
+  changes: Record<string, unknown>
 ): void {
-  console.log(`\n${label}`);
+  log(`\n${label}`);
   for (const key of Object.keys(desired)) {
-    const marker = key in changes ? "~" : " ";
-    const from = JSON.stringify(current[key]);
-    const to = JSON.stringify(desired[key]);
-    console.log(
-      key in changes
-        ? `  ${marker} ${key}: ${from} -> ${to}`
-        : `  ${marker} ${key}: ${to} (already correct)`
-    );
+    if (!(key in changes)) {
+      log(`    ${key}: ${show(desired[key])} (already correct)`);
+      continue;
+    }
+    log(`  ~ ${key}: ${show(published[key])} -> ${show(desired[key])}`);
+    if (draft && !sameValue(draft[key], published[key])) {
+      log(`      (unpublished draft value: ${show(draft[key])})`);
+    }
   }
 }
 
@@ -196,14 +389,14 @@ function report(
  * rendering the other one. Mirror the runtime query and compare document ids.
  */
 async function assertIsTheAuthorTheSiteRenders(
+  strapiFetch: StrapiFetch,
   author: StrapiEntity,
   slug: string
 ): Promise<void> {
   if (author.isPrimary !== true) {
-    console.error(
-      `\nStrapi: author "${slug}" is not flagged isPrimary, so apps/web will not read it. Fix the isPrimary flags in Strapi before syncing.`
+    throw new SyncRefusal(
+      `Strapi: author "${slug}" is not flagged isPrimary, so apps/web will not read it. Fix the isPrimary flags in Strapi before syncing.`
     );
-    process.exit(1);
   }
 
   const response = await strapiFetch<{ data: StrapiEntity[] }>(
@@ -220,17 +413,15 @@ async function assertIsTheAuthorTheSiteRenders(
   const rendered = primaries[0];
 
   if (!rendered) {
-    console.error(
-      `\nStrapi: no author is flagged isPrimary, so apps/web falls back to the most recently updated author. Flag "${slug}" before syncing.`
+    throw new SyncRefusal(
+      `Strapi: no author is flagged isPrimary, so apps/web falls back to the most recently updated author. Flag "${slug}" before syncing.`
     );
-    process.exit(1);
   }
 
   if (rendered.documentId !== author.documentId) {
-    console.error(
-      `\nStrapi: apps/web renders author "${rendered.slug}" (${rendered.documentId}), not "${slug}" (${author.documentId}). ${primaries.length} author(s) are flagged isPrimary and the most recently updated one wins. Fix the flags before syncing.`
+    throw new SyncRefusal(
+      `Strapi: apps/web renders author "${rendered.slug}" (${rendered.documentId}), not "${slug}" (${author.documentId}). ${primaries.length} author(s) are flagged isPrimary and the most recently updated one wins. Fix the flags before syncing.`
     );
-    process.exit(1);
   }
 }
 
@@ -240,28 +431,21 @@ async function assertIsTheAuthorTheSiteRenders(
  *
  * `PUT /api/authors/:documentId?status=published` patches the draft row and
  * then publishes that whole row -- Strapi replaces the published version with
- * the draft wholesale, so this is not a four-field write in the way the rest of
- * the script is. An editor who saved a half-written bio without publishing it
- * would find it on the site as a side effect of a location fix.
+ * the draft wholesale, so this is not a field-scoped write in the way the rest
+ * of the script is. An editor who saved a half-written bio without publishing
+ * it would find it on the site as a side effect of a location fix.
  */
-async function assertAuthorDraftIsSafeToPublish(
+function assertAuthorDraftIsSafeToPublish(
+  options: SyncOptions,
   published: StrapiEntity,
+  draft: StrapiEntity | null,
   slug: string,
   owned: Iterable<string>
-): Promise<void> {
-  const draftResponse = await strapiFetch<{ data: StrapiEntity[] }>(
-    "authors",
-    {},
-    {
-      "filters[slug][$eq]": slug,
-      "pagination[pageSize]": "1",
-      status: "draft",
-    }
-  );
+): void {
+  const warn = options.warn ?? console.warn;
 
-  const draft = draftResponse.data[0];
   if (!draft) {
-    console.warn(
+    warn(
       `\n  ! Could not read the draft version of author "${slug}"; publishing without the divergence check.`
     );
     return;
@@ -275,131 +459,120 @@ async function assertAuthorDraftIsSafeToPublish(
   const message = [
     "",
     `  ! The draft of author "${slug}" differs from the published record in: ${divergent.join(", ")}.`,
-    "    Publishing the address change promotes the entire draft, so those edits would go live too.",
+    "    Publishing the identity change promotes the entire draft, so those edits would go live too.",
   ].join("\n");
 
-  if (ALLOW_DRAFT_PUBLISH) {
-    console.warn(`${message}\n    --allow-draft-publish given; continuing.`);
+  if (options.allowDraftPublish) {
+    warn(`${message}\n    --allow-draft-publish given; continuing.`);
     return;
   }
 
-  if (!APPLY) {
-    console.warn(
+  if (!options.apply) {
+    warn(
       `${message}\n    --apply would refuse this write. Publish or revert them in the Strapi admin first, or pass --allow-draft-publish.`
     );
     return;
   }
 
-  console.error(
+  throw new SyncRefusal(
     `${message}\n    Publish or revert them in the Strapi admin first, or re-run with --allow-draft-publish.`
   );
-  process.exit(1);
 }
 
-async function main(): Promise<void> {
-  const authors = (taxonomy as { authors?: TaxonomyAuthor[] }).authors;
-  if (!Array.isArray(authors)) {
-    console.error("data/taxonomy.json: expected 'authors' to be an array.");
-    process.exit(1);
-  }
+export async function syncSiteIdentity(
+  taxonomyAuthors: unknown,
+  options: SyncOptions
+): Promise<SyncResult> {
+  const log = options.log ?? console.log;
+  const { strapiFetch } = options;
 
-  // Mirrors the primary-author rule in seed.ts.
-  const primaryAuthor = authors.find((author) => author.isPrimary) ?? authors[0];
-  if (!primaryAuthor?.slug) {
-    console.error("data/taxonomy.json: no primary author with a slug.");
-    process.exit(1);
-  }
+  const primaryAuthor = primaryTaxonomyAuthor(taxonomyAuthors);
+  const slug = primaryAuthor.slug as string;
+  const desiredAuthor = buildDesiredAuthor(primaryAuthor);
 
-  const {
-    addressLocality,
-    addressRegion,
-    addressCountry,
-    worksForName,
-    worksForUrl,
-  } = primaryAuthor;
-
-  if (!addressLocality || !addressRegion || !addressCountry) {
-    console.error(
-      `data/taxonomy.json: author ${primaryAuthor.slug} is missing part of its address; refusing to write a partial one.`
-    );
-    process.exit(1);
-  }
-
-  // Same all-or-nothing rule as the address, for the same reason: `worksFor` is
-  // one Organization node, and half of one is worse than none.
-  if (!worksForName !== !worksForUrl) {
-    console.error(
-      `data/taxonomy.json: author ${primaryAuthor.slug} has only one of worksForName/worksForUrl; refusing to write a partial employer.`
-    );
-    process.exit(1);
-  }
-
-  const desiredAuthor: Record<string, string> = {
-    addressLocality,
-    addressRegion,
-    addressCountry,
-    ...(worksForName && worksForUrl ? { worksForName, worksForUrl } : {}),
-  };
-  console.log(`Strapi: ${STRAPI_URL}`);
-  console.log(`Mode:   ${APPLY ? "APPLY (will write)" : "dry run (no writes)"}`);
+  log(`Mode:   ${options.apply ? "APPLY (will write and publish)" : "dry run (no writes; pass --apply to write)"}`);
 
   // --- author -------------------------------------------------------------
   const authorResponse = await strapiFetch<{ data: StrapiEntity[] }>(
     "authors",
     {},
-    { "filters[slug][$eq]": primaryAuthor.slug, "pagination[pageSize]": "1" }
+    { "filters[slug][$eq]": slug, "pagination[pageSize]": "1", ...AUTHOR_POPULATE }
   );
-  const author = authorResponse.data[0];
+  const author = authorResponse.data?.[0];
   if (!author) {
-    console.error(`Strapi: no author with slug "${primaryAuthor.slug}".`);
-    process.exit(1);
+    throw new SyncRefusal(`Strapi: no author with slug "${slug}".`);
   }
 
-  await assertIsTheAuthorTheSiteRenders(author, primaryAuthor.slug);
+  await assertIsTheAuthorTheSiteRenders(strapiFetch, author, slug);
 
-  const authorChanges = diffFields(author, desiredAuthor);
-  report(`author ${primaryAuthor.slug} (${author.documentId})`, author, desiredAuthor, authorChanges);
+  const draftResponse = await strapiFetch<{ data: StrapiEntity[] }>(
+    "authors",
+    {},
+    {
+      "filters[slug][$eq]": slug,
+      "pagination[pageSize]": "1",
+      status: "draft",
+      ...AUTHOR_POPULATE,
+    }
+  );
+  const draft = draftResponse.data?.[0] ?? null;
 
-  const pending = Object.keys(authorChanges).length;
+  const changes = diffFields(author, draft, desiredAuthor);
+  report(log, `author ${slug} (${author.documentId})`, author, draft, desiredAuthor, changes);
 
+  const pending = Object.keys(changes).length;
   if (pending === 0) {
-    console.log("\nNothing to do -- Strapi already matches the repo.");
-    return;
+    log("\nNothing to do -- Strapi already matches the repo.");
+    return { changes, written: false };
   }
 
   // Runs on a dry run too, so an unsafe draft is known before committing to
   // --apply rather than discovered mid-write.
-  if (Object.keys(authorChanges).length > 0) {
-    await assertAuthorDraftIsSafeToPublish(
-      author,
-      primaryAuthor.slug,
-      Object.keys(desiredAuthor)
-    );
+  assertAuthorDraftIsSafeToPublish(options, author, draft, slug, Object.keys(desiredAuthor));
+
+  if (!options.apply) {
+    log(`\n${pending} field(s) would change. Re-run with --apply to write and publish them.`);
+    return { changes, written: false };
   }
 
-  if (!APPLY) {
-    console.log(
-      `\n${pending} field(s) would change. Re-run with --apply to write them.`
-    );
-    return;
-  }
-
-  if (Object.keys(authorChanges).length > 0) {
-    await strapiFetch(
-      `authors/${author.documentId}`,
-      {
-        method: "PUT",
-        body: JSON.stringify({ data: authorChanges }),
-      },
-      { status: "published" }
-    );
-    console.log(`  ✓ author updated: ${Object.keys(authorChanges).join(", ")}`);
-  }
-
-  console.log("\nDone. Re-run without --apply to confirm.");
+  // Repeatable components are sent whole and without ids, so Strapi replaces
+  // the list rather than merging into it.
+  await strapiFetch(
+    `authors/${author.documentId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ data: changes }),
+    },
+    { status: "published" }
+  );
+  log(`  ✓ author updated and published: ${Object.keys(changes).join(", ")}`);
+  log("\nDone. Re-run without --apply to confirm.");
+  return { changes, written: true };
 }
 
-main().catch((error) => {
-  console.error(`\nFailed: ${error instanceof Error ? error.message : String(error)}`);
-  process.exit(1);
-});
+async function main(): Promise<void> {
+  const { apply, allowDraftPublish } = parseFlags(process.argv.slice(2));
+
+  const strapiUrl = process.env.STRAPI_URL?.trim();
+  const strapiApiToken = process.env.STRAPI_API_TOKEN?.trim();
+  if (!strapiUrl) throw new SyncRefusal("Missing STRAPI_URL environment variable.");
+  if (!strapiApiToken) throw new SyncRefusal("Missing STRAPI_API_TOKEN environment variable.");
+
+  console.log(`Strapi: ${strapiUrl}`);
+  await syncSiteIdentity(loadTaxonomyAuthors(), {
+    apply,
+    allowDraftPublish,
+    strapiFetch: createStrapiFetch(strapiUrl, strapiApiToken),
+  });
+}
+
+if (require.main === module) {
+  main().catch((error) => {
+    if (error instanceof SyncRefusal) {
+      console.error(`\n${error.message}`);
+    } else {
+      console.error(`\nFailed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    process.exit(1);
+  });
+}

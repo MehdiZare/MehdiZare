@@ -54,13 +54,50 @@ export const publicEnv = {
   allowedImageHosts: parseCsvList(process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS),
 } as const;
 
-export function toAbsoluteStrapiMediaUrl(url: string): string {
+const DEFAULT_STRAPI_URL = "http://localhost:1337";
+
+/**
+ * Origin of the Strapi server, i.e. the only origin `/cms-uploads` proxies to
+ * (see `proxy.ts`).
+ *
+ * `STRAPI_URL` is server-only, but this module also runs in client components
+ * (`BlocksRenderer`), so `next.config.ts` inlines the origin as
+ * `CMS_MEDIA_ORIGIN`. Reading the inlined name first keeps the server render
+ * and hydration agreeing on which URLs get rewritten.
+ */
+function strapiOrigin(): string {
+  const candidate =
+    process.env.CMS_MEDIA_ORIGIN?.trim() || process.env.STRAPI_URL?.trim() || DEFAULT_STRAPI_URL;
+  try {
+    return new URL(candidate).origin;
+  } catch {
+    return new URL(DEFAULT_STRAPI_URL).origin;
+  }
+}
+
+/**
+ * Maps a Strapi media URL onto the `/cms-uploads` proxy when -- and only when --
+ * the file is served by Strapi itself.
+ *
+ * Relative `/uploads/...` paths (Strapi's local upload provider) and absolute
+ * URLs on the Strapi origin are rewritten. Absolute URLs on any other origin
+ * stay as they are: the R2 provider returns `https://media.mehdi-zare.com/
+ * uploads/...` (R2_ROOT_PATH=uploads), and rewriting that onto the Strapi proxy
+ * points og:image, JSON-LD and the sitemap at a file Strapi does not have
+ * (TS-01).
+ *
+ * `cmsOrigin` defaults to the configured Strapi origin; tests pass it directly.
+ */
+export function toAbsoluteStrapiMediaUrl(url: string, cmsOrigin: string = strapiOrigin()): string {
   if (!url) {
     return "";
   }
 
   try {
     const parsed = new URL(url);
+    if (parsed.origin !== cmsOrigin) {
+      return url;
+    }
     if (parsed.pathname === "/uploads" || parsed.pathname.startsWith("/uploads/")) {
       return `/cms-uploads${parsed.pathname.slice("/uploads".length)}${parsed.search}${parsed.hash}`;
     }
