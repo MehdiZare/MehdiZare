@@ -8,6 +8,7 @@ import { StrapiImage } from "@/components/shared/StrapiImage";
 import { getSiteProfile } from "@/lib/site-profile";
 import { fetchAllPages, getArticles, getAuthorBySlug, getAuthors } from "@/lib/strapi";
 import { serverEnv } from "@/lib/server-env";
+import { ARTICLE_LISTING_SORT, LISTING_OVERFETCH, sortArticlesByPublishedDesc } from "@/lib/article-dates";
 import {
   CMS_PRERENDER_AUTHOR_SLUG,
   findCmsPrerenderAuthor,
@@ -19,21 +20,24 @@ import {
   buildPersonJsonLd,
   buildProfilePageJsonLd,
   toAbsoluteMediaUrl,
-  toPersonId,
 } from "@/lib/seo";
-import { identityUrlKey, normalizeIdentityUrl } from "@/lib/url-normalization";
 import {
   CANONICAL_IDENTITY_ORIGIN,
   authorIdentityFallbacks,
+  isSiteOwnerAuthor,
   resolveAuthorAddress,
   resolveAuthorAlumniOf,
-  resolveAuthorPageIdentity,
+  resolveArticleAuthorIdentity,
+  resolveAuthorPersonId,
+  resolveAuthorSameAs,
   resolveAuthorWorksFor,
 } from "@/lib/author-identity";
 
 interface AuthorPageProps {
   params: Promise<{ slug: string }>;
 }
+
+const AUTHOR_ARTICLE_LIMIT = 24;
 
 type AuthorList = Awaited<ReturnType<typeof getAuthors>>["data"];
 
@@ -70,10 +74,11 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
       return buildNoIndexMetadata("Author Not Found");
     }
 
-    const identity = resolveAuthorPageIdentity(
+    const identity = resolveArticleAuthorIdentity(
       author,
       authorIdentityFallbacks(siteProfile),
-      CANONICAL_IDENTITY_ORIGIN
+      CANONICAL_IDENTITY_ORIGIN,
+      siteProfile.author.slug
     );
 
     return buildPageMetadata({
@@ -93,28 +98,6 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
   } catch {
     return buildNoIndexMetadata("Author Not Found");
   }
-}
-
-function dedupeUrls(urls: Array<string | null | undefined>): string[] {
-  const seen = new Set<string>();
-  const deduped: string[] = [];
-
-  urls.forEach((url) => {
-    const normalized = normalizeIdentityUrl(url, CANONICAL_IDENTITY_ORIGIN);
-    if (!normalized) {
-      return;
-    }
-
-    const key = identityUrlKey(normalized, CANONICAL_IDENTITY_ORIGIN);
-    if (!key || seen.has(key)) {
-      return;
-    }
-
-    seen.add(key);
-    deduped.push(normalized);
-  });
-
-  return deduped;
 }
 
 function formatDate(dateString: string): string {
@@ -153,21 +136,28 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
         },
       },
     },
-    sort: "publishedAt:desc",
+    sort: ARTICLE_LISTING_SORT,
+    // Over-fetch: Postgres puts NULL publishedDate rows first under DESC, so
+    // undated posts would otherwise take slots from the newest dated ones.
     pagination: {
       page: 1,
-      pageSize: 24,
+      pageSize: AUTHOR_ARTICLE_LIMIT + LISTING_OVERFETCH,
     },
   })
-    .then((response) => response.data)
+    .then((response) => sortArticlesByPublishedDesc(response.data).slice(0, AUTHOR_ARTICLE_LIMIT))
     .catch(() => []);
 
   const authorPath = `/author/${author.slug}`;
-  const personId = toPersonId(authorPath);
-  const identity = resolveAuthorPageIdentity(
+  // One Person @id per human (GEO-01 / TS-04). For the site owner this page
+  // is a ProfilePage *about* the layout's `/#person` rather than a second,
+  // unrelated Person node; only a guest author gets a Person of their own.
+  const authorIsSiteOwner = isSiteOwnerAuthor(author, siteProfile.author.slug);
+  const personId = resolveAuthorPersonId(author, siteProfile.author.slug);
+  const identity = resolveArticleAuthorIdentity(
     author,
     authorIdentityFallbacks(siteProfile),
-    CANONICAL_IDENTITY_ORIGIN
+    CANONICAL_IDENTITY_ORIGIN,
+    siteProfile.author.slug
   );
   const { name: authorName, role, description, websiteUrl, linkedinUrl } = identity;
   // #92. The other three PostalAddress surfaces fall back to the Site Profile;
@@ -177,11 +167,42 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
   const address = resolveAuthorAddress(author, siteProfile.author);
   const worksFor = resolveAuthorWorksFor(author, siteProfile.author);
   const { alumniOf } = resolveAuthorAlumniOf(author, siteProfile.author);
-  const sameAs = dedupeUrls([
-    websiteUrl,
-    linkedinUrl,
-    ...(author.sameAs?.map((link) => link.url) ?? []),
-  ]);
+  const sameAs = resolveAuthorSameAs(
+    { websiteUrl, linkedinUrl },
+    author.sameAs,
+    CANONICAL_IDENTITY_ORIGIN
+  );
+
+  const personJsonLd = authorIsSiteOwner
+    ? null
+    : buildPersonJsonLd({
+        id: personId,
+        path: authorPath,
+        name: authorName,
+        title: role,
+        description,
+        url: websiteUrl,
+        imageUrl: toAbsoluteMediaUrl(author.profileImage?.url),
+        worksForName: worksFor.worksForName,
+        worksForUrl: worksFor.worksForUrl,
+        alumniOf,
+        credentials:
+          author.credentials?.map((credential) => ({
+            name: credential.title,
+            issuer: credential.issuer,
+            url: credential.url,
+            description: credential.description,
+          })) ?? [],
+        addressLocality: address.addressLocality,
+        addressRegion: address.addressRegion,
+        addressCountry: address.addressCountry,
+        mainEntityOfPagePath: authorPath,
+        sameAs,
+        knowsAbout:
+          author.knowsAbout && author.knowsAbout.length > 0
+            ? author.knowsAbout
+            : siteProfile.knowsAbout,
+      });
 
   return (
     <section className="bg-paper py-16 sm:py-24">
@@ -194,37 +215,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
           personId,
         })}
       />
-      <JsonLd
-        id="author-person-jsonld"
-        data={buildPersonJsonLd({
-          id: personId,
-          path: authorPath,
-          name: authorName,
-          title: role,
-          description,
-          url: websiteUrl,
-          imageUrl: toAbsoluteMediaUrl(author.profileImage?.url),
-          worksForName: worksFor.worksForName,
-          worksForUrl: worksFor.worksForUrl,
-          alumniOf,
-          credentials:
-            author.credentials?.map((credential) => ({
-              name: credential.title,
-              issuer: credential.issuer,
-              url: credential.url,
-              description: credential.description,
-            })) ?? [],
-          addressLocality: address.addressLocality,
-          addressRegion: address.addressRegion,
-          addressCountry: address.addressCountry,
-          mainEntityOfPagePath: authorPath,
-          sameAs,
-          knowsAbout:
-            author.knowsAbout && author.knowsAbout.length > 0
-              ? author.knowsAbout
-              : siteProfile.knowsAbout,
-        })}
-      />
+      {personJsonLd ? <JsonLd id="author-person-jsonld" data={personJsonLd} /> : null}
       <JsonLd
         id="author-breadcrumb-jsonld"
         data={buildBreadcrumbJsonLd([
@@ -240,8 +231,10 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
               <StrapiImage
                 image={author.profileImage}
                 fill
+                sizes="(min-width: 768px) 180px, 100vw"
+                fallbackAlt={authorName}
                 className="object-cover"
-                priority
+                preload
                 fallback={
                   <div className="flex h-full items-center justify-center font-serif text-4xl text-ink">
                     {authorName
@@ -263,22 +256,26 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
               <p className="mt-5 max-w-3xl text-lg leading-relaxed text-mid-gray">{description}</p>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <a
-                  href={websiteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
-                >
-                  Website
-                </a>
-                <a
-                  href={linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
-                >
-                  LinkedIn
-                </a>
+                {websiteUrl ? (
+                  <a
+                    href={websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
+                  >
+                    Website
+                  </a>
+                ) : null}
+                {linkedinUrl ? (
+                  <a
+                    href={linkedinUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
+                  >
+                    LinkedIn
+                  </a>
+                ) : null}
                 <TrackedLink
                   href="/contact"
                   eventName="funnel_contact_intent"

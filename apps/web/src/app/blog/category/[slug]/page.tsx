@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { PostCard } from "@/components/blog/PostCard";
 import {
+  applyEmptyTaxonomyRobots,
+  getCategoryListingArticles,
   resolveCategoryListingCopy,
   resolveSubcategoryCards,
   resolveTaxonomyDisplayName,
@@ -11,6 +13,7 @@ import {
 } from "@/lib/blog-listing";
 import { getCategorySeedBySlug } from "@/lib/taxonomy-seed";
 import { getCategories, getCategoryBySlug, getArticles } from "@/lib/strapi";
+import type { Category } from "@/types/strapi";
 import { serverEnv } from "@/lib/server-env";
 import { CMS_PRERENDER_CATEGORY_SLUG } from "@/content/fixtures/cms-prerender";
 import {
@@ -46,6 +49,21 @@ function buildWhatYouWillFindPoints(
   }
 
   return [...new Set(points)];
+}
+
+/**
+ * The subcategories a listing shows and pulls posts from: the CMS children
+ * when the category has any, else the seed's.
+ */
+function resolveSubcategories(
+  category: Category | undefined,
+  seed: ReturnType<typeof getCategorySeedBySlug>
+): SubcategoryCard[] {
+  return resolveSubcategoryCards(
+    category?.children && category.children.length > 0
+      ? category.children
+      : (seed?.children ?? [])
+  );
 }
 
 export async function generateStaticParams() {
@@ -99,14 +117,25 @@ export async function generateMetadata({
       seedDescription: seed?.description,
     });
 
+    let articleCount: number | undefined;
+    try {
+      const childSlugs = resolveSubcategories(category, seed).map((child) => child.slug);
+      articleCount = (await getCategoryListingArticles(slug, childSlugs)).length;
+    } catch {
+      // Unknown, not empty: keep the page indexable through a CMS outage.
+    }
+
     // buildPageMetadata already prefers a filled seo.metaTitle over this title.
-    return buildPageMetadata({
-      pathname: `/blog/category/${slug}`,
-      title: categoryTitle,
-      description: pageDescription,
-      seo: category?.seo,
-      type: "website",
-    });
+    return applyEmptyTaxonomyRobots(
+      buildPageMetadata({
+        pathname: `/blog/category/${slug}`,
+        title: categoryTitle,
+        description: pageDescription,
+        seo: category?.seo,
+        type: "website",
+      }),
+      articleCount
+    );
   } catch {
     if (!seed) {
       return buildNoIndexMetadata("Category Not Found");
@@ -182,11 +211,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         }
       : null;
 
-  const subcategories: SubcategoryCard[] = resolveSubcategoryCards(
-    category?.children && category.children.length > 0
-      ? category.children
-      : (seed?.children ?? [])
-  );
+  const subcategories: SubcategoryCard[] = resolveSubcategories(category, seed);
 
   const childSlugs = subcategories.map((subcategory) => subcategory.slug);
   const isParent = subcategories.length > 0;
@@ -195,54 +220,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   let articles: ArticleList = [];
 
   try {
-    const res = await getArticles({
-      filters: {
-        category: { slug: { $eq: slug } },
-      },
-      sort: "publishedAt:desc",
-      pagination: {
-        page: 1,
-        pageSize: 12,
-      },
-    });
-    articles = res.data;
-
-    if (childSlugs.length > 0) {
-      const childResults = await Promise.all(
-        childSlugs.map((childSlug) =>
-          getArticles({
-            filters: {
-              category: { slug: { $eq: childSlug } },
-            },
-            sort: "publishedAt:desc",
-            pagination: {
-              page: 1,
-              pageSize: 12,
-            },
-          })
-        )
-      );
-
-      for (const childRes of childResults) {
-        articles = [...articles, ...childRes.data];
-      }
-
-      const seenIds = new Set<number>();
-      articles = articles.filter((article) => {
-        if (seenIds.has(article.id)) {
-          return false;
-        }
-
-        seenIds.add(article.id);
-        return true;
-      });
-
-      articles.sort((a, b) => {
-        const dateA = a.publishedDate ?? a.publishedAt;
-        const dateB = b.publishedDate ?? b.publishedAt;
-        return new Date(dateB).getTime() - new Date(dateA).getTime();
-      });
-    }
+    articles = await getCategoryListingArticles(slug, childSlugs);
   } catch {
     // CMS unavailable -- render evergreen copy with empty-state articles.
   }

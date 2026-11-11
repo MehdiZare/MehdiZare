@@ -9,7 +9,11 @@ interface CmsImageProps {
   fill?: boolean;
   width?: number;
   height?: number;
-  priority?: boolean;
+  /**
+   * `next/image` `preload` (Next 16's replacement for the deprecated
+   * `priority`; same eager load). Use for the LCP image only.
+   */
+  preload?: boolean;
   sizes?: string;
   className?: string;
   /**
@@ -29,7 +33,7 @@ function CmsImageInner({
   fill = false,
   width,
   height,
-  priority = false,
+  preload = false,
   sizes,
   className,
   fallback,
@@ -64,7 +68,7 @@ function CmsImageInner({
       src={src}
       alt={alt}
       {...(fill ? { fill: true } : { width: width ?? 1, height: height ?? 1 })}
-      priority={priority}
+      preload={preload}
       sizes={sizes}
       onError={() => setFailed(true)}
       className={className}

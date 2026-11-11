@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 process.env.DISABLE_STRAPI_CMS = "false";
 process.env.STRAPI_URL = "http://localhost:1337";
 
-const { fetchAllPages, STRAPI_MAX_PAGES, STRAPI_TIMEOUT_MS } = await import(
+const { fetchAllPages, fetchAllPagesResult, STRAPI_MAX_PAGES, STRAPI_TIMEOUT_MS } = await import(
   "../src/lib/strapi.ts"
 );
 
@@ -119,6 +119,44 @@ test("fetchAllPages does not start another page that cannot finish before deadli
   assert.deepEqual(pages, [1], "page 2 would need a full STRAPI_TIMEOUT_MS and must not start");
   assert.deepEqual(items, [{ id: 1 }]);
   assert.match(warnings.join("\n"), /stopping pagination to honor caller deadline/);
+});
+
+test("fetchAllPagesResult marks a finished walk complete and a stopped walk incomplete", async () => {
+  const finished = await fetchAllPagesResult(
+    async (params) => {
+      const page = params.pagination?.page ?? 1;
+      return {
+        data: [{ id: page }],
+        meta: { pagination: { page, pageSize: 100, pageCount: 1, total: 1 } },
+      };
+    },
+    "articles"
+  );
+  assert.equal(finished.complete, true);
+
+  const capped = await fetchAllPagesResult(
+    async (params) => {
+      const page = params.pagination?.page ?? 1;
+      return {
+        data: [{ id: page }],
+        meta: { pagination: { page, pageSize: 100, pageCount: 99, total: 99 } },
+      };
+    },
+    "articles"
+  );
+  assert.equal(capped.complete, false);
+  assert.equal(capped.items.length, STRAPI_MAX_PAGES);
+
+  const partial = await fetchAllPagesResult(async (params) => {
+    const page = params.pagination?.page ?? 1;
+    if (page >= 2) throw new Error("page 2 timed out");
+    return {
+      data: [{ id: page }],
+      meta: { pagination: { page, pageSize: 100, pageCount: 3, total: 3 } },
+    };
+  }, "articles");
+  assert.equal(partial.complete, false);
+  assert.deepEqual(partial.items, [{ id: 1 }]);
 });
 
 test("fetchAllPages rejects non-array collection data", async () => {

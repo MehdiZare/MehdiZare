@@ -133,6 +133,9 @@ test("collectPaths maps a Strapi article publish payload to the expected path se
     "/blog",
     "/sitemap.xml",
     "/robots.txt",
+    "/feed.xml",
+    "/llms.txt",
+    "/.well-known/llms.txt",
     "/author/[slug]",
     "/blog/[slug]",
     "/blog/page/[page]",
@@ -189,6 +192,10 @@ test("bracketed dynamic paths take the page type; everything else is typeless", 
   ]);
 
   assert.ok(typeless.includes("/sitemap.xml"));
+  // Route handlers, like the sitemap, register `_N_T_<path>`, never `/page`.
+  assert.ok(typeless.includes("/feed.xml"));
+  assert.ok(typeless.includes("/llms.txt"));
+  assert.ok(typeless.includes("/.well-known/llms.txt"));
   assert.ok(typeless.includes("/"));
   assert.ok(typeless.includes("/blog"));
   assert.ok(!typeless.some((path) => path.includes("[") && path.includes("]")));

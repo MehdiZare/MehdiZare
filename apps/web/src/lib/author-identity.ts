@@ -1,5 +1,6 @@
+import { toPersonId } from "@/lib/seo";
 import { blankToUndefined, firstFilled, formatSlugName } from "@/lib/strings";
-import { normalizeIdentityUrl } from "@/lib/url-normalization";
+import { identityUrlKey, normalizeIdentityUrl } from "@/lib/url-normalization";
 
 /**
  * Author identity resolution shared by `/author/[slug]` and `/blog/[slug]`.
@@ -185,20 +186,117 @@ export function resolveAuthorPageIdentity(
  * name above a profile link to another, and points `BlogPosting.author.@id` at
  * a `Person` node the visible byline contradicts.
  *
- * So a present relation is resolved by exactly the rule `/author/[slug]` uses.
- * Delegating rather than repeating it is the point: this module exists because
- * the two routes drifted while each spelled the same rule for itself.
+ * So a present relation is resolved by exactly the rule `/author/[slug]` uses
+ * for its name. Role, bio, and identity URLs are not: those fallbacks are the
+ * site owner's, and stamping them onto a guest is the same misattribution
+ * {@link resolveAuthorAddress} refuses for address. A guest with a blank field
+ * gets nothing there, which the byline and `sameAs` both omit. Only the site
+ * owner (including an article with no author relation) inherits the profile.
+ *
+ * `siteOwnerSlug` is the slug `isSiteOwnerAuthor` compares. Callers that have
+ * one must pass it, or a present owner record with a cleared field looks like
+ * a guest and loses the profile fallback.
  */
+const GUEST_IDENTITY_FALLBACKS: AuthorIdentityFallbacks = {
+  authorName: "",
+  authorRole: "",
+  authorBioShort: "",
+  websiteUrl: "",
+  linkedinUrl: "",
+};
+
 export function resolveArticleAuthorIdentity(
   source: AuthorIdentitySource | null | undefined,
   fallbacks: AuthorIdentityFallbacks,
-  canonicalOrigin: string
+  canonicalOrigin: string,
+  siteOwnerSlug = ""
 ): AuthorIdentity {
-  return resolveAuthorPageIdentity(
-    source ?? { name: fallbacks.authorName },
-    fallbacks,
-    canonicalOrigin
+  if (isSiteOwnerAuthor(source, siteOwnerSlug)) {
+    return resolveAuthorPageIdentity(
+      source ?? { name: fallbacks.authorName },
+      fallbacks,
+      canonicalOrigin
+    );
+  }
+
+  return resolveAuthorPageIdentity(source ?? {}, GUEST_IDENTITY_FALLBACKS, canonicalOrigin);
+}
+
+/**
+ * Whether a CMS author record is the site owner.
+ *
+ * `isPrimary` is optional on the CMS record, so a slug match against the
+ * resolved site owner is accepted as the same signal. A missing record (an
+ * article with no author relation) is the site owner's article, the same rule
+ * {@link resolveArticleAuthorIdentity} applies.
+ */
+export function isSiteOwnerAuthor(
+  source: { slug?: string | null; isPrimary?: boolean } | null | undefined,
+  siteOwnerSlug: string
+): boolean {
+  if (!source) {
+    return true;
+  }
+
+  return (
+    source.isPrimary === true ||
+    blankToUndefined(source.slug) === blankToUndefined(siteOwnerSlug)
   );
+}
+
+/**
+ * The one Person `@id` for an author, on every surface.
+ *
+ * The site owner is `/#person`: the node the root layout emits on every page
+ * and the `publisher` of every post. Posts used to point `author` at
+ * `/author/<slug>#person`, which exists only on the author page, and the
+ * author page minted it as a second full Person beside `/#person` -- one human,
+ * two unrelated entities (GEO-01 / TS-04). A guest author is a different human
+ * and keeps a profile-scoped id.
+ */
+export function resolveAuthorPersonId(
+  source: { slug?: string | null; isPrimary?: boolean } | null | undefined,
+  siteOwnerSlug: string
+): string {
+  if (isSiteOwnerAuthor(source, siteOwnerSlug)) {
+    return toPersonId();
+  }
+
+  const slug = blankToUndefined(source?.slug);
+  return slug ? toPersonId(`/author/${slug}`) : toPersonId();
+}
+
+/**
+ * Person `sameAs` for an author: website, LinkedIn, then the record's own
+ * links, normalized against the canonical origin and deduped (apex/www and
+ * trailing-slash variants of one URL count once).
+ */
+export function resolveAuthorSameAs(
+  identity: { websiteUrl?: string | null; linkedinUrl?: string | null },
+  links: ReadonlyArray<{ url?: string | null }> | null | undefined,
+  canonicalOrigin: string
+): string[] {
+  const seen = new Set<string>();
+  const deduped: string[] = [];
+
+  [identity.websiteUrl, identity.linkedinUrl, ...(links?.map((link) => link.url) ?? [])].forEach(
+    (url) => {
+      const normalized = normalizeIdentityUrl(url, canonicalOrigin);
+      if (!normalized) {
+        return;
+      }
+
+      const key = identityUrlKey(normalized, canonicalOrigin);
+      if (!key || seen.has(key)) {
+        return;
+      }
+
+      seen.add(key);
+      deduped.push(normalized);
+    }
+  );
+
+  return deduped;
 }
 
 /** The three PostalAddress fields the Person JSON-LD carries. */
@@ -253,9 +351,7 @@ export function resolveAuthorAddress(
     addressCountry?: string;
   }
 ): AuthorAddress {
-  const isSiteOwner =
-    source.isPrimary === true ||
-    blankToUndefined(source.slug) === blankToUndefined(siteOwner.slug);
+  const isSiteOwner = isSiteOwnerAuthor(source, siteOwner.slug);
 
   const own: AuthorAddress = {
     addressLocality: blankToUndefined(source.addressLocality),
@@ -310,9 +406,7 @@ export function resolveAuthorWorksFor(
     worksForUrl?: string;
   }
 ): AuthorWorksFor {
-  const isSiteOwner =
-    source.isPrimary === true ||
-    blankToUndefined(source.slug) === blankToUndefined(siteOwner.slug);
+  const isSiteOwner = isSiteOwnerAuthor(source, siteOwner.slug);
 
   const own: AuthorWorksFor = {
     worksForName: blankToUndefined(source.worksForName),
@@ -361,9 +455,7 @@ export function resolveAuthorAlumniOf(
     alumniOf: readonly string[];
   }
 ): { alumniOf: string[] } {
-  const isSiteOwner =
-    source.isPrimary === true ||
-    blankToUndefined(source.slug) === blankToUndefined(siteOwner.slug);
+  const isSiteOwner = isSiteOwnerAuthor(source, siteOwner.slug);
 
   const own = normalizeStringArray(source.alumniOf);
 

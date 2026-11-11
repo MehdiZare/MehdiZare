@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { PostCard } from "@/components/blog/PostCard";
-import { resolveTagListingCopy } from "@/lib/blog-listing";
+import {
+  applyEmptyTaxonomyRobots,
+  getTagListingArticles,
+  resolveTagListingCopy,
+} from "@/lib/blog-listing";
 import { getTagSeedBySlug } from "@/lib/taxonomy-seed";
 import { getTags, getTagBySlug, getArticles } from "@/lib/strapi";
 import { serverEnv } from "@/lib/server-env";
@@ -58,13 +62,23 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
       seedDescription: seed?.description,
     });
 
+    let articleCount: number | undefined;
+    try {
+      articleCount = (await getTagListingArticles(slug)).length;
+    } catch {
+      // Unknown, not empty: keep the page indexable through a CMS outage.
+    }
+
     // buildPageMetadata already prefers a filled seo.metaTitle over this title.
-    return buildPageMetadata({
-      pathname: `/blog/tag/${slug}`,
-      title: tagTitle,
-      description: pageDescription,
-      seo: tag?.seo,
-    });
+    return applyEmptyTaxonomyRobots(
+      buildPageMetadata({
+        pathname: `/blog/tag/${slug}`,
+        title: tagTitle,
+        description: pageDescription,
+        seo: tag?.seo,
+      }),
+      articleCount
+    );
   } catch {
     if (!seed) {
       return buildNoIndexMetadata("Tag Not Found");
@@ -105,19 +119,7 @@ export default async function TagPage({ params }: TagPageProps) {
   let articles: Awaited<ReturnType<typeof getArticles>>["data"] = [];
 
   try {
-    const articlesRes = await getArticles({
-      filters: {
-        tags: { slug: { $eq: slug } },
-      },
-      sort: "publishedAt:desc",
-      pagination: {
-        page: 1,
-        pageSize: 12,
-        withCount: true,
-      },
-    });
-
-    articles = articlesRes.data;
+    articles = await getTagListingArticles(slug);
   } catch {
     // CMS unavailable -- render evergreen copy with empty-state articles.
   }

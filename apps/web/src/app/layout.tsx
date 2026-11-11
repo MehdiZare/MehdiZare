@@ -5,13 +5,17 @@ import { PostHogScripts } from "@/components/analytics/PostHogScripts";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { MotionProvider } from "@/components/shared/MotionProvider";
 import {
+  DEFAULT_ROBOTS,
+  X_HANDLE,
   buildPersonJsonLd,
   buildWebsiteJsonLd,
   getSiteUrl,
+  resolveSiteOwnerSameAs,
   toAbsoluteMediaUrl,
   toPersonId,
 } from "@/lib/seo";
 import { getSiteProfile } from "@/lib/site-profile";
+import { FEED_ALTERNATE_TYPES } from "@/lib/feed-constants";
 import "./globals.css";
 
 const siteUrl = getSiteUrl();
@@ -36,11 +40,11 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     alternates: {
       canonical: "/",
+      types: { ...FEED_ALTERNATE_TYPES },
     },
-    robots: {
-      index: true,
-      follow: true,
-    },
+    // Indexable with max-image-preview:large / max-snippet:-1. A page's own
+    // robots (buildNoIndexMetadata, CMS metaRobots) replaces this whole value.
+    robots: DEFAULT_ROBOTS,
     authors: [{ name: siteProfile.siteName, url: siteUrl }],
     creator: siteProfile.siteName,
     publisher: siteProfile.siteName,
@@ -55,12 +59,15 @@ export async function generateMetadata(): Promise<Metadata> {
           url: "/opengraph-image",
           width: 1200,
           height: 630,
+          type: "image/png",
           alt: `${siteProfile.siteName} - ${siteProfile.credentialLine}`,
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
+      site: X_HANDLE,
+      creator: X_HANDLE,
       title: titleDefault,
       description: siteProfile.siteDescription,
       images: ["/twitter-image"],
@@ -115,9 +122,7 @@ export default async function RootLayout({
               addressLocality: siteProfile.author.addressLocality,
               addressRegion: siteProfile.author.addressRegion,
               addressCountry: siteProfile.author.addressCountry,
-              sameAs: siteProfile.author.sameAs.length > 0
-                ? siteProfile.author.sameAs.map((socialLink) => socialLink.url)
-                : undefined,
+              sameAs: resolveSiteOwnerSameAs(siteProfile.author),
               knowsAbout: siteProfile.knowsAbout,
             })}
           />

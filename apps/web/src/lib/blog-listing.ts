@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { getArticles, getCategories } from "@/lib/strapi";
 import { firstFilled, formatSlugName } from "@/lib/strings";
+import {
+  ARTICLE_LISTING_SORT,
+  LISTING_OVERFETCH,
+  sortArticlesByPublishedDesc,
+} from "@/lib/article-dates";
 
 // Deliberately not re-exported. This module imports `@/lib/strapi`, which
 // reaches `server-only`, so a client component that reached `formatSlugName`
@@ -211,7 +217,7 @@ export type BlogListingData = {
 export async function getBlogListingData(currentPage: number): Promise<BlogListingData> {
   const [articlesResult, categoriesResult] = await Promise.allSettled([
     getArticles({
-      sort: "publishedAt:desc",
+      sort: ARTICLE_LISTING_SORT,
       pagination: {
         page: currentPage,
         pageSize: BLOG_PAGE_SIZE,
@@ -222,8 +228,90 @@ export async function getBlogListingData(currentPage: number): Promise<BlogListi
   ]);
 
   return {
-    articles: articlesResult.status === "fulfilled" ? articlesResult.value.data : [],
+    articles:
+      articlesResult.status === "fulfilled"
+        ? sortArticlesByPublishedDesc(articlesResult.value.data)
+        : [],
     pagination: articlesResult.status === "fulfilled" ? articlesResult.value.meta.pagination : undefined,
     categories: categoriesResult.status === "fulfilled" ? categoriesResult.value.data : [],
   };
+}
+
+type ListingArticles = Awaited<ReturnType<typeof getArticles>>["data"];
+
+/** How many posts a taxonomy listing shows per source slug. */
+export const TAXONOMY_LISTING_PAGE_SIZE = 12;
+
+async function getTaxonomyArticles(filters: Record<string, unknown>) {
+  const result = await getArticles({
+    filters,
+    sort: ARTICLE_LISTING_SORT,
+    pagination: {
+      page: 1,
+      pageSize: TAXONOMY_LISTING_PAGE_SIZE + LISTING_OVERFETCH,
+    },
+  });
+
+  return {
+    ...result,
+    data: sortArticlesByPublishedDesc(result.data).slice(0, TAXONOMY_LISTING_PAGE_SIZE),
+  };
+}
+
+/**
+ * The posts a category listing renders: its own articles plus its direct
+ * children's, deduplicated and newest first. Throws when the CMS is
+ * unavailable, so a caller can tell "no posts" from "unknown".
+ *
+ * The page body and `generateMetadata` both call this with the same slugs, so
+ * the robots decision is made on the same query the page shows. The reads are
+ * not request-memoized -- `fetchStrapi` passes an abort `signal`, and Next does
+ * not memoize signalled fetches -- but identical requests are still served
+ * from the data cache (`revalidate` + the `strapi` tag), so the duplicate costs
+ * a cache lookup, not a second CMS round trip.
+ */
+export async function getCategoryListingArticles(
+  slug: string,
+  childSlugs: string[] = []
+): Promise<ListingArticles> {
+  const results = await Promise.all(
+    [slug, ...childSlugs].map((categorySlug) =>
+      getTaxonomyArticles({ category: { slug: { $eq: categorySlug } } })
+    )
+  );
+
+  const seenIds = new Set<number>();
+  const articles = results
+    .flatMap((result) => result.data)
+    .filter((article) => {
+      if (seenIds.has(article.id)) return false;
+      seenIds.add(article.id);
+      return true;
+    });
+
+  return sortArticlesByPublishedDesc(articles);
+}
+
+/** The posts a tag listing renders, newest first. Throws when the CMS is unavailable. */
+export async function getTagListingArticles(slug: string): Promise<ListingArticles> {
+  const result = await getTaxonomyArticles({ tags: { slug: { $eq: slug } } });
+  return sortArticlesByPublishedDesc(result.data);
+}
+
+/**
+ * Category and tag listings with no posts render a "No posts yet" page. Those
+ * are thin, near-identical pages, so they are `noindex, follow` and left out
+ * of the sitemap (TS-02 / CM-09 / GEO-14). `follow` keeps the nav links
+ * crawlable.
+ *
+ * `articleCount` is `undefined` when the CMS read failed. That is not the same
+ * as empty: a transient outage must not noindex the whole taxonomy, so the
+ * metadata is returned unchanged.
+ */
+export function applyEmptyTaxonomyRobots(
+  metadata: Metadata,
+  articleCount: number | undefined
+): Metadata {
+  if (articleCount !== 0) return metadata;
+  return { ...metadata, robots: { index: false, follow: true } };
 }

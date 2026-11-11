@@ -7,8 +7,8 @@ import {
   getBlogListingData,
   parsePositivePageNumber,
 } from "@/lib/blog-listing";
-import { getSiteProfile } from "@/lib/site-profile";
 import { getArticles } from "@/lib/strapi";
+import { ARTICLE_LISTING_SORT } from "@/lib/article-dates";
 import { serverEnv } from "@/lib/server-env";
 import { CMS_PRERENDER_BLOG_PAGE } from "@/content/fixtures/cms-prerender";
 import { buildNoIndexMetadata, buildPageMetadata, toPersonId } from "@/lib/seo";
@@ -29,7 +29,7 @@ export async function generateStaticParams(): Promise<Array<{ page: string }>> {
         pageSize: BLOG_PAGE_SIZE,
         withCount: true,
       },
-      sort: "publishedAt:desc",
+      sort: ARTICLE_LISTING_SORT,
     });
 
     const pageCount = firstPage.meta.pagination?.pageCount ?? 1;
@@ -91,7 +91,6 @@ export default async function BlogArchivePage({ params }: BlogArchivePageProps) 
     redirect("/blog");
   }
 
-  const siteProfile = await getSiteProfile();
   const { articles, pagination, categories } = await getBlogListingData(currentPage);
 
   if (pagination && currentPage > pagination.pageCount) {
@@ -107,7 +106,7 @@ export default async function BlogArchivePage({ params }: BlogArchivePageProps) 
       pageTitle="Blog"
       pageDescription={BLOG_PAGE_DESCRIPTION}
       canonicalPath="/blog"
-      canonicalAuthorId={toPersonId(siteProfile.author.profilePath)}
+      canonicalAuthorId={toPersonId()}
     />
   );
 }
