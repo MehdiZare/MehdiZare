@@ -1,5 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { register } from "node:module";
+
+// The page modules import `next/navigation` and `next/link`.
+register("./next-entrypoints-hook.mjs", import.meta.url);
 
 // TS-02 / CM-09 / GEO-14: a category or tag listing with no posts renders a
 // "No posts yet" page. It must be `noindex, follow`. A CMS outage is "unknown",

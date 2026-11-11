@@ -33,10 +33,8 @@ async function tryResolveAlias(specifier, context, nextResolve) {
 }
 
 export async function resolve(specifier, context, nextResolve) {
-  // `next` ships its entry points as `next/<name>.js` with no exports map, so
-  // bare `next/server`, `next/navigation`, `next/link`... need the extension.
-  if (/^next\/[a-z-]+$/.test(specifier) && specifier !== "next/cache") {
-    return nextResolve(`${specifier}.js`, context);
+  if (specifier === "next/server") {
+    return nextResolve("next/server.js", context);
   }
 
   if (specifier === "server-only") {
