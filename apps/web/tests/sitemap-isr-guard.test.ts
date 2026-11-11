@@ -19,7 +19,13 @@ const { isStaticMetadataFile } = require("next/dist/lib/metadata/is-metadata-rou
 
 const APP_DIR = resolve(process.cwd(), "src/app");
 const ROUTE_FILE = /^(route|sitemap|robots|manifest)\.(ts|tsx|js|mjs)$/;
+/**
+ * A numeric `revalidate` segment config, typed or not (`= 300`,
+ * `: number = 300`): Next extracts the initializer either way.
+ */
+const SETS_NUMERIC_REVALIDATE = /export\s+const\s+revalidate\s*(?::\s*[^=]+?)?=\s*\d/;
 
+/** Every route handler and metadata route file under `dir`, recursively. */
 function routeFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = join(dir, entry.name);
@@ -46,10 +52,24 @@ test("the adapter check still matches /sitemap.xml (so the workaround is still n
   assert.equal(isStaticMetadataFile("/sitemap-main.xml"), false);
 });
 
+test("the revalidate detector sees typed and untyped numeric declarations", () => {
+  for (const declaration of [
+    "export const revalidate = 300;",
+    "export const revalidate: number = 300;",
+    "export const revalidate : number=60",
+    "export  const  revalidate = 0",
+  ]) {
+    assert.ok(SETS_NUMERIC_REVALIDATE.test(declaration), declaration);
+  }
+  for (const declaration of ["export const revalidate = false;", "const revalidate = 300;", "export const revalidateSeconds = 300;"]) {
+    assert.ok(!SETS_NUMERIC_REVALIDATE.test(declaration), declaration);
+  }
+});
+
 test("no route that sets revalidate sits at a path the adapter emits as a static file", () => {
   const offenders = routeFiles(APP_DIR).flatMap((file) => {
     const source = readFileSync(file, "utf8");
-    if (!/export const revalidate\s*=\s*\d/.test(source)) return [];
+    if (!SETS_NUMERIC_REVALIDATE.test(source)) return [];
     const route = routePathOf(file);
     return isStaticMetadataFile(route) ? [`${relative(process.cwd(), file)} -> ${route}`] : [];
   });

@@ -419,7 +419,7 @@ function mapAuthorPages(authors: Author[]): MetadataRoute.Sitemap {
   return pages;
 }
 
-async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<MetadataRoute.Sitemap> {
+async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<SitemapBuild> {
   const deadlineMs = Date.now() + SITEMAP_DEADLINE_MS;
   const degradedSources: string[] = [];
   const builtAt = repoContentLastModified();
@@ -458,6 +458,9 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     );
     if (articlesResult.value.complete) {
       termPostDates = collectTermPostDates(articles);
+    } else {
+      // A partial walk (later-page error, deadline, page cap) drops articles.
+      degradedSources.push("articles (incomplete)");
     }
     articlePages = mapArticlePages(articles);
     if (articles.length > 0 && !articles.some(article => normalizeSlug(article.slug))) {
@@ -535,16 +538,33 @@ async function buildCmsSitemap(now: Date, showBinaPrint: boolean): Promise<Metad
     );
   }
 
-  return [
-    ...buildStaticSitemapPages(now, pageTimestamps, showBinaPrint),
-    ...articlePages,
-    ...authorPages,
-    ...categoryPages,
-    ...tagPages,
-  ];
+  return {
+    entries: [
+      ...buildStaticSitemapPages(now, pageTimestamps, showBinaPrint),
+      ...articlePages,
+      ...authorPages,
+      ...categoryPages,
+      ...tagPages,
+    ],
+    degradedSources: dedupeStrings(degradedSources),
+  };
 }
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+/**
+ * The sitemap entries, and which CMS-backed sections fell back.
+ *
+ * `degradedSources` is empty only for a complete build. Anything else means
+ * some URLs came from the repo taxonomy instead of Strapi, or are missing
+ * (a failed or partial article walk, the deadline, an unexpected throw). The
+ * route uses it to keep the last complete sitemap cached during a CMS outage.
+ */
+export interface SitemapBuild {
+  entries: MetadataRoute.Sitemap;
+  degradedSources: string[];
+}
+
+/** Builds the sitemap from Strapi, racing SITEMAP_DEADLINE_MS, and reports any fallback. */
+export async function buildSitemap(): Promise<SitemapBuild> {
   const now = new Date();
   const showBinaPrint = isBinaPrintEnabled();
   let deadline: ReturnType<typeof setTimeout> | undefined;
@@ -567,12 +587,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // instead of waiting until maxDuration kills the isolate.
     const result = await Promise.race([
       cmsWork,
-      new Promise<MetadataRoute.Sitemap>((resolve) => {
+      new Promise<SitemapBuild>((resolve) => {
         deadline = setTimeout(() => {
           console.warn(
             `[sitemap] CMS did not finish within ${SITEMAP_DEADLINE_MS}ms; serving static + taxonomy fallback`
           );
-          resolve(buildDegradedSitemap(now, showBinaPrint));
+          resolve({ entries: buildDegradedSitemap(now, showBinaPrint), degradedSources: ["deadline"] });
         }, SITEMAP_DEADLINE_MS);
       }),
     ]);
@@ -581,8 +601,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   } catch (error) {
     settled = true;
     console.warn("[sitemap] CMS enrichment failed; serving static + taxonomy fallback", error);
-    return buildDegradedSitemap(now, showBinaPrint);
+    return { entries: buildDegradedSitemap(now, showBinaPrint), degradedSources: ["unexpected error"] };
   } finally {
     clearTimeout(deadline);
   }
+}
+
+/** The sitemap entries alone, complete or not. */
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  return (await buildSitemap()).entries;
 }

@@ -56,6 +56,7 @@ const XML_ESCAPES: Record<string, string> = {
   "'": "&apos;",
 };
 
+/** Escapes the five XML special characters for text and attribute values. */
 function escapeXml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => XML_ESCAPES[char]);
 }

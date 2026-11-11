@@ -113,7 +113,7 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
 }) as typeof fetch;
 
 const { default: sitemap, SITEMAP_DEADLINE_MS } = await import("../src/lib/sitemap.ts");
-const { maxDuration } = await import("../src/app/sitemap-main.xml/route.ts");
+const { GET, maxDuration } = await import("../src/app/sitemap-main.xml/route.ts");
 const { resolveArticleDates } = await import("../src/lib/article-dates.ts");
 const { buildBlogPostingJsonLd } = await import("../src/lib/seo.ts");
 
@@ -811,4 +811,77 @@ test("a CMS without the v2 fields still lists every article: the query retries w
   assert.ok(requestsContentModelV2(articleRequests[0]), "the first request asks for the v2 fields");
   assert.equal(requestsContentModelV2(articleRequests[1]), undefined, "the retry drops them");
   assert.equal(articleRequests[1].searchParams.get("fields[0]"), "slug", "the retry keeps the old fields");
+});
+
+// Owner decision on #152: now that the sitemap really regenerates (it used to
+// be frozen as a static file), a degraded regeneration must not replace the
+// last complete copy. At runtime the route throws so ISR keeps serving the
+// cached sitemap; at build time there is no earlier copy, so it serves the
+// fallback.
+
+const HEALTHY_CMS: Partial<Scenario> = {
+  articles: [
+    {
+      slug: "tagged-post",
+      publishedAt: "2026-02-01T00:00:00.000Z",
+      category: { slug: "cms-cat" },
+      tags: [{ slug: "cms-tag" }],
+    },
+  ],
+  categories: [{ slug: "cms-cat", updatedAt: "2026-02-01T00:00:00.000Z" }],
+  tags: [{ slug: "cms-tag", updatedAt: "2026-02-01T00:00:00.000Z" }],
+};
+
+function useScenario(next: Partial<Scenario>) {
+  scenario = { ...emptyScenario(), ...next };
+}
+
+function inBuildPhase(t: { after: (fn: () => void) => void }) {
+  const previous = process.env.NEXT_PHASE;
+  process.env.NEXT_PHASE = "phase-production-build";
+  t.after(() => {
+    if (previous === undefined) delete process.env.NEXT_PHASE;
+    else process.env.NEXT_PHASE = previous;
+  });
+}
+
+test("a complete regeneration serves the sitemap with every article", async () => {
+  useScenario(HEALTHY_CMS);
+  const response = await GET();
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), new RegExp(`<loc>${SITE_URL}/blog/tagged-post</loc>`));
+});
+
+test("a partial article walk at runtime throws so the cached sitemap stays", async () => {
+  useScenario({ ...HEALTHY_CMS, articlePageCount: 3, failArticlePage: 2 });
+  await assert.rejects(GET(), (error: Error) => {
+    assert.equal(error.name, "DegradedSitemapError");
+    assert.match(error.message, /articles \(incomplete\)/);
+    return true;
+  });
+});
+
+test("a stalled CMS at runtime throws after the deadline instead of caching the fallback", async (t) => {
+  useScenario(HEALTHY_CMS);
+  stallCms = true;
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  t.after(() => {
+    stallCms = false;
+    for (const reject of stalledRejects.splice(0)) {
+      reject(new Error("stalled CMS test cleanup"));
+    }
+  });
+
+  const pending = GET();
+  t.mock.timers.tick(SITEMAP_DEADLINE_MS);
+  await assert.rejects(pending, /degraded regeneration \(deadline\)/);
+});
+
+test("the build still ships the fallback when the CMS is degraded", async (t) => {
+  inBuildPhase(t);
+  useScenario({ ...HEALTHY_CMS, articlePageCount: 3, failArticlePage: 2 });
+  const response = await GET();
+  assert.equal(response.status, 200);
+  const body = await response.text();
+  assert.match(body, new RegExp(`<loc>${SITE_URL}/blog/tagged-post</loc>`), "page-1 rows still ship at build");
 });

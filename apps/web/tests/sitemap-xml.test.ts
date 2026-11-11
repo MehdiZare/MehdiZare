@@ -74,7 +74,14 @@ test("refuses video entries instead of dropping them", () => {
   );
 });
 
-test("the route serves the sitemap as XML", async () => {
+test("the route serves the sitemap as XML", async (t) => {
+  // CMS-off is a degraded build (taxonomy fallback). It is served at build
+  // time; a runtime regeneration would throw to keep the cached copy, which
+  // tests/sitemap-cms-on.test.ts covers.
+  process.env.NEXT_PHASE = "phase-production-build";
+  t.after(() => {
+    delete process.env.NEXT_PHASE;
+  });
   const response = await GET();
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-type"), "application/xml; charset=utf-8");
