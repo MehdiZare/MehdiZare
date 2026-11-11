@@ -224,8 +224,8 @@ const CONTENT_MODEL_V2_ARTICLE_FIELDS: Record<string, { type: string; component?
   comparisonTables: { type: "component", component: "article.comparison-table" },
   series: { type: "string" },
   seriesPart: { type: "integer" },
-  crossPostXUrl: { type: "string" },
-  crossPostLinkedinUrl: { type: "string" },
+  crossPostXUrl: { type: "text" },
+  crossPostLinkedinUrl: { type: "text" },
   noindex: { type: "boolean" },
 };
 
@@ -249,4 +249,18 @@ test("the content-model v2 article fields exist, keep their types, and stay opti
   assert.equal(attributes.keyTakeaways?.max, 5);
   assert.equal(attributes.featuredImageAlt?.maxLength, 160);
   assert.equal(attributes.noindex?.default, false);
+});
+
+// URLs can run past 255 characters (tracking params, LinkedIn post URLs), and
+// a Strapi `string` is a varchar(255) column, so those fields are `text`.
+test("URL fields in the content model are text, not varchar(255) strings", () => {
+  const article = schemaAttributes(
+    resolve(cmsRoot, "src/api/article/content-types/article/schema.json"),
+  );
+  assert.equal(article.crossPostXUrl?.type, "text");
+  assert.equal(article.crossPostLinkedinUrl?.type, "text");
+  const source = schemaAttributes(
+    resolve(cmsRoot, "src/components/article/source.json"),
+  );
+  assert.equal(source.url?.type, "text");
 });

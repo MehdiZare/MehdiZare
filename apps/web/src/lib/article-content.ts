@@ -294,7 +294,8 @@ export function resolveSeries(
     // A row that did not return `series` is trusted to the query's filter.
     const candidateSeries: string | undefined =
       candidate.series === undefined ? name : blankToUndefined(candidate.series);
-    if (candidateSeries !== name) continue;
+    // Same rule as the CMS lookup (`$eqi` on the trimmed name).
+    if (candidateSeries?.toLowerCase() !== name.toLowerCase()) continue;
     seen.add(slug);
     parts.push({ slug, title, part: validPart(candidate.seriesPart), isCurrent: slug === currentSlug });
   }

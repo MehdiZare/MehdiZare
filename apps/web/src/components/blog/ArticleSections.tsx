@@ -19,6 +19,12 @@ import {
  */
 
 const SECTION_HEADING = "font-serif text-2xl text-ink";
+/**
+ * Small mono label. `text-ink`, not `text-accent-warm`: #c4956a on the paper
+ * and muted backgrounds is about 2.5:1, below WCAG AA 4.5:1 for text this
+ * small. The warm accent stays on the border.
+ */
+const SECTION_LABEL = "font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink";
 const EXTERNAL_LINK =
   "text-ink underline decoration-warm-gray underline-offset-4 transition-colors hover:decoration-ink";
 
@@ -33,7 +39,7 @@ export function KeyTakeaways({ items }: { items: string[] }) {
     >
       <h2
         id="key-takeaways-heading"
-        className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-accent-warm"
+        className={SECTION_LABEL}
       >
         Key takeaways
       </h2>
@@ -157,37 +163,49 @@ export function SeriesNav({ series }: { series: ResolvedSeries | null }) {
   if (!series) return null;
 
   const heading = series.part ? `Part ${series.part} of ${series.name}` : `Part of ${series.name}`;
+  const hasSiblingLinks = series.parts.some((part) => !part.isCurrent);
+
+  // Nothing to navigate to: name the series, but add no navigation landmark.
+  // h2 in both branches: a sibling of the Sources and FAQ sections around it.
+  if (!hasSiblingLinks) {
+    return (
+      <div data-article-section="series" className="mt-10 border border-warm-gray bg-paper p-6">
+        <h2 className={SECTION_LABEL}>{heading}</h2>
+      </div>
+    );
+  }
 
   return (
     <nav
-      aria-label={`Series: ${series.name}`}
+      aria-labelledby="series-nav-heading"
       data-article-section="series"
       className="mt-10 border border-warm-gray bg-paper p-6"
     >
-      <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-accent-warm">{heading}</p>
-      {series.parts.length > 1 ? (
-        <ol className="mt-3 space-y-1 text-sm">
-          {series.parts.map((part) => {
-            const label = part.part ? `Part ${part.part}: ${part.title}` : part.title;
-            return (
-              <li key={part.slug}>
-                {part.isCurrent ? (
-                  <span aria-current="page" className="font-medium text-ink">
-                    {label}
-                  </span>
-                ) : (
-                  <Link
-                    href={`/blog/${part.slug}`}
-                    className="text-mid-gray transition-colors hover:text-ink"
-                  >
-                    {label}
-                  </Link>
-                )}
-              </li>
-            );
-          })}
-        </ol>
-      ) : null}
+      <h2 id="series-nav-heading" className={SECTION_LABEL}>
+        {heading}
+      </h2>
+      {/* role="list": Safari drops list semantics from a list-style-none list. */}
+      <ol role="list" className="mt-3 space-y-1 text-sm">
+        {series.parts.map((part) => {
+          const label = part.part ? `Part ${part.part}: ${part.title}` : part.title;
+          return (
+            <li key={part.slug}>
+              {part.isCurrent ? (
+                <span aria-current="page" className="font-medium text-ink">
+                  {label}
+                </span>
+              ) : (
+                <Link
+                  href={`/blog/${part.slug}`}
+                  className="text-mid-gray transition-colors hover:text-ink"
+                >
+                  {label}
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </nav>
   );
 }

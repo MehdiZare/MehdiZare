@@ -16,11 +16,11 @@ export { FEED_ALTERNATE_TYPES, FEED_PATH, FEED_TITLE } from "@/lib/feed-constant
 export const FEED_ITEM_LIMIT = 20;
 
 /**
- * Only what the feed and llms.txt render. `contentUpdatedAt`, `noindex` and
- * `keyTakeaways` are content-model v2 (CM-02/06/11): `getArticles` drops them
- * and retries once if Strapi answers 400 because the CMS has not been
- * deployed with them yet, so the feed degrades to the old fields rather than
- * going empty.
+ * Only what the RSS feed renders. `contentUpdatedAt` and `noindex` are
+ * content-model v2 (CM-02/11): `getArticles` drops them and retries once if
+ * Strapi answers `400 Invalid key` because the CMS has not been deployed with
+ * them yet, so the feed degrades to the old fields rather than going empty.
+ * The feed never renders takeaways, so it does not populate them.
  */
 export const FEED_ARTICLE_QUERY = {
   fields: [
@@ -38,7 +38,17 @@ export const FEED_ARTICLE_QUERY = {
     tags: { fields: ["name", "slug"] },
     author: { fields: ["name"] },
     seo: { fields: ["metaRobots"] },
-    // llms.txt describes a post by its takeaways; the feed itself ignores them.
+  },
+};
+
+/**
+ * The feed query plus `keyTakeaways` (CM-06, also v2): llms.txt describes a
+ * post by its takeaways, the feed does not.
+ */
+export const LLMS_ARTICLE_QUERY = {
+  ...FEED_ARTICLE_QUERY,
+  populate: {
+    ...FEED_ARTICLE_QUERY.populate,
     keyTakeaways: true,
   },
 };
@@ -129,13 +139,17 @@ export function buildRssFeed(articles: Article[], siteUrl: string): string {
 }
 
 /**
- * The newest posts for the feed and llms.txt, newest first. Over-fetches by a
- * few rows so noindex posts dropped later do not shrink the list. Throws when
- * the CMS is unavailable; callers fall back to static output.
+ * The newest posts for the feed (or, with `withTakeaways`, for llms.txt),
+ * newest first. Over-fetches by a few rows so noindex posts dropped later do
+ * not shrink the list. Throws when the CMS is unavailable; callers fall back
+ * to static output.
  */
-export async function getRecentArticlesForFeed(limit = FEED_ITEM_LIMIT): Promise<Article[]> {
+export async function getRecentArticlesForFeed(
+  limit = FEED_ITEM_LIMIT,
+  options: { withTakeaways?: boolean } = {}
+): Promise<Article[]> {
   const response = await getArticles({
-    ...FEED_ARTICLE_QUERY,
+    ...(options.withTakeaways ? LLMS_ARTICLE_QUERY : FEED_ARTICLE_QUERY),
     sort: ARTICLE_LISTING_SORT,
     pagination: { page: 1, pageSize: limit + 5 },
   });

@@ -41,12 +41,15 @@ function v2Key(url: URL): string | undefined {
 }
 
 let oldCms = true;
+/** When set, every request answers with this response instead. */
+let override: (() => Response) | null = null;
 const requested: URL[] = [];
 const rows = [{ id: 1, slug: "post", title: "Post", publishedAt: "2026-09-01T00:00:00.000Z" }];
 
 globalThis.fetch = (async (input: RequestInfo | URL) => {
   const url = new URL(String(input));
   requested.push(url);
+  if (override) return override();
   const key = v2Key(url);
   if (oldCms && key) {
     return new Response(
@@ -66,7 +69,13 @@ const { getArticleBySlug, getArticles, getArticlesInSeries, stripContentModelV2 
 
 function reset(old: boolean) {
   oldCms = old;
+  override = null;
   requested.length = 0;
+}
+
+function badRequest(body: string): () => Response {
+  return () =>
+    new Response(body, { status: 400, statusText: "Bad Request", headers: { "content-type": "application/json" } });
 }
 
 test("the post read asks for the four components; listings do not", async () => {
@@ -113,6 +122,39 @@ test("a 400 with nothing to strip is not retried", async () => {
   assert.equal(requested.length, 1, "filters are never stripped, so there is no retry");
 });
 
+test("only a 400 Invalid key is retried; any other 400 propagates after one request", async () => {
+  for (const body of [
+    JSON.stringify({ data: null, error: { status: 400, name: "ValidationError", message: "Invalid value for filter" } }),
+    JSON.stringify({ data: null, error: { status: 400, name: "BadRequestError", message: "Invalid key faq" } }),
+    "<html>Bad Request</html>",
+    "",
+  ]) {
+    reset(false);
+    override = badRequest(body);
+    await assert.rejects(getArticleBySlug("post"), Error, `rejects for ${body || "an empty body"}`);
+    assert.equal(requested.length, 1, `no v2-less retry for ${body || "an empty body"}`);
+  }
+});
+
+test("the series lookup lets a non-Invalid-key 400 through", async () => {
+  reset(false);
+  override = badRequest(
+    JSON.stringify({ data: null, error: { status: 400, name: "ValidationError", message: "Invalid value for $eqi" } })
+  );
+  await assert.rejects(getArticlesInSeries("Agents"));
+});
+
+test("the series lookup trims the name, matches case-insensitively, and skips a blank name", async () => {
+  reset(false);
+  await getArticlesInSeries("  Agents ");
+  assert.equal(requested[0].searchParams.get("filters[series][$eqi]"), "Agents");
+  assert.equal(requested[0].searchParams.get("filters[series][$eq]"), null);
+
+  reset(false);
+  assert.deepEqual(await getArticlesInSeries("   "), []);
+  assert.equal(requested.length, 0, "a blank series is never queried");
+});
+
 test("the series lookup is never widened: a rejected series filter means no siblings", async () => {
   reset(true);
   assert.deepEqual(await getArticlesInSeries("Agents"), []);
@@ -122,7 +164,7 @@ test("the series lookup is never widened: a rejected series filter means no sibl
   const siblings = await getArticlesInSeries("Agents");
   assert.equal(siblings.length, 1);
   const query = requested[0].searchParams;
-  assert.equal(query.get("filters[series][$eq]"), "Agents");
+  assert.equal(query.get("filters[series][$eqi]"), "Agents");
   assert.equal(query.get("sort[0]"), "seriesPart:asc");
   assert.deepEqual(
     [...query].filter(([key]) => key.startsWith("fields[")).map(([, value]) => value),

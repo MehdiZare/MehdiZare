@@ -87,6 +87,9 @@ test("sources, series nav, FAQ and cross-posts are in the server HTML", () => {
   );
   assert.match(article, new RegExp(`Part 1 of ${CMS_PRERENDER_SERIES}`));
   assert.match(article, new RegExp(`href="/blog/${CMS_PRERENDER_SERIES_PART_SLUG}"`), "the series links part 2");
+  assert.match(article, /<nav aria-labelledby="series-nav-heading"/);
+  assert.match(article, new RegExp(`<h2 id="series-nav-heading"[^>]*>Part 1 of ${CMS_PRERENDER_SERIES}</h2>`));
+  assert.match(article, /<ol role="list"/);
   assert.match(article, /<h3[^>]*>Is this fixture indexable\?<\/h3>/);
   assert.match(article, /Discuss this post on/);
 });

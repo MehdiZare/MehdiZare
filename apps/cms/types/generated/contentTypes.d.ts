@@ -466,8 +466,8 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    crossPostLinkedinUrl: Schema.Attribute.String;
-    crossPostXUrl: Schema.Attribute.String;
+    crossPostLinkedinUrl: Schema.Attribute.Text;
+    crossPostXUrl: Schema.Attribute.Text;
     excerpt: Schema.Attribute.Text;
     faq: Schema.Attribute.Component<'shared.faq-item', true>;
     featuredImage: Schema.Attribute.Media<'images'>;

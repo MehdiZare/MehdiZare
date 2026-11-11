@@ -98,8 +98,9 @@ test("series nav names the part and links the other parts", () => {
       },
     })
   );
-  assert.match(html, /<nav aria-label="Series: Agents"/);
-  assert.match(html, />Part 2 of Agents<\/p>/);
+  assert.match(html, /<nav aria-labelledby="series-nav-heading"/);
+  assert.match(html, /<h2 id="series-nav-heading"[^>]*>Part 2 of Agents<\/h2>/);
+  assert.match(html, /<ol role="list"/, "list semantics survive list-style: none in Safari");
   assert.match(html, /<a [^>]*href="\/blog\/part-1"[^>]*>Part 1: One<\/a>/);
   assert.match(html, /<span aria-current="page"[^>]*>Part 2: Two<\/span>/);
   assert.doesNotMatch(html, /href="\/blog\/part-2"/, "the current part is not a link to itself");
@@ -109,8 +110,31 @@ test("series nav names the part and links the other parts", () => {
       series: { name: "Solo", parts: [{ slug: "a", title: "A", isCurrent: true }] },
     })
   );
-  assert.match(solo, />Part of Solo<\/p>/);
+  assert.match(solo, /<h2 class="[^"]*">Part of Solo<\/h2>/);
   assert.doesNotMatch(solo, /<ol/, "a one-part series has nothing to link");
+  assert.doesNotMatch(solo, /<nav/, "and so adds no navigation landmark");
+  assert.match(solo, /data-article-section="series"/);
+});
+
+test("the small labels use ink, not the warm accent, for AA contrast", () => {
+  const takeaways = render(createElement(KeyTakeaways, { items: ["One."] }));
+  assert.match(takeaways, /<h2 id="key-takeaways-heading" class="[^"]*\btext-ink\b[^"]*">/);
+  const series = render(
+    createElement(SeriesNav, {
+      series: {
+        name: "Agents",
+        part: 1,
+        parts: [
+          { slug: "part-1", title: "One", part: 1, isCurrent: true },
+          { slug: "part-2", title: "Two", part: 2, isCurrent: false },
+        ],
+      },
+    })
+  );
+  assert.match(series, /<h2 id="series-nav-heading" class="[^"]*\btext-ink\b[^"]*">/);
+  for (const html of [takeaways, series]) {
+    assert.doesNotMatch(html, /\btext-accent-warm\b/, "#c4956a on paper is about 2.5:1");
+  }
 });
 
 test("the FAQ is always visible: headings and paragraphs, no collapsed panel", () => {

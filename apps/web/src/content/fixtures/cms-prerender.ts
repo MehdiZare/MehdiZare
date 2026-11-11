@@ -195,8 +195,11 @@ export function findCmsPrerenderArticle(slug: string): Article | undefined {
 }
 
 /** The fixture stand-in for `getArticlesInSeries`. */
+/** Trimmed, case-insensitive, like `getArticlesInSeries` (`$eqi`). */
 export function findCmsPrerenderSeries(series: string): Article[] {
-  return CMS_PRERENDER_ARTICLES.filter((article) => article.series === series);
+  const name = series.trim().toLowerCase();
+  if (!name) return [];
+  return CMS_PRERENDER_ARTICLES.filter((article) => article.series?.trim().toLowerCase() === name);
 }
 
 export function findCmsPrerenderAuthor(slug: string): Author | undefined {

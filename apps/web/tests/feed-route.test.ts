@@ -235,7 +235,7 @@ const V2_POSTS = [
   },
 ];
 
-test("the feed query requests contentUpdatedAt, noindex and the takeaways", async () => {
+test("the feed query requests contentUpdatedAt and noindex, but not the takeaways it never renders", async () => {
   rows = V2_POSTS;
   failCms = false;
   rejectContentModelV2 = false;
@@ -245,7 +245,25 @@ test("the feed query requests contentUpdatedAt, noindex and the takeaways", asyn
   const fields = [...query].filter(([key]) => key.startsWith("fields[")).map(([, value]) => value);
   assert.ok(fields.includes("contentUpdatedAt"));
   assert.ok(fields.includes("noindex"));
+  assert.equal(
+    [...query.keys()].some((key) => key.startsWith("populate[keyTakeaways]")),
+    false,
+    "the RSS feed does not populate keyTakeaways"
+  );
+});
+
+test("the llms.txt query adds the takeaways to the feed query", async () => {
+  rows = V2_POSTS;
+  failCms = false;
+  rejectContentModelV2 = false;
+  requested.length = 0;
+  await (await getLlmsTxt()).text();
+  const query = requested.find((url) => url.pathname === "/api/articles")?.searchParams;
+  assert.ok(query);
+  const fields = [...query].filter(([key]) => key.startsWith("fields[")).map(([, value]) => value);
+  assert.ok(fields.includes("noindex"));
   assert.equal(query.get("populate[keyTakeaways]"), "true");
+  assert.equal(query.get("populate[seo][fields][0]"), "metaRobots", "and keeps the feed's populate");
 });
 
 test("a noindex post is left out of the feed and llms.txt", async () => {

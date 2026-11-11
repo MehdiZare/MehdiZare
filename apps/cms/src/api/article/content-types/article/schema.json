@@ -94,10 +94,10 @@
       "min": 1
     },
     "crossPostXUrl": {
-      "type": "string"
+      "type": "text"
     },
     "crossPostLinkedinUrl": {
-      "type": "string"
+      "type": "text"
     },
     "noindex": {
       "type": "boolean",

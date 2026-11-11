@@ -38,7 +38,7 @@ export interface ArticleSource extends Struct.ComponentSchema {
     accessedAt: Schema.Attribute.Date;
     publisher: Schema.Attribute.String;
     title: Schema.Attribute.String & Schema.Attribute.Required;
-    url: Schema.Attribute.String & Schema.Attribute.Required;
+    url: Schema.Attribute.Text & Schema.Attribute.Required;
   };
 }
 

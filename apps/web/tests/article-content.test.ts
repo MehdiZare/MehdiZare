@@ -103,6 +103,24 @@ test("post metadata renders the resolved robots, not just seo.metaRobots", () =>
   assert.equal(indexable.robots, undefined, "an indexable post keeps the layout's robots");
 });
 
+test("post metadata for a ticked noindex box with no metaRobots is noindex, follow", () => {
+  // What Strapi sends for an untouched SEO component: no seo, or metaRobots
+  // null / "". The box alone must still reach the rendered robots meta.
+  for (const seo of [undefined, { id: 1, metaRobots: null }, { id: 1, metaRobots: "" }] as const) {
+    // `metaRobots: null` is real CMS data the SEO type does not admit.
+    const article = { noindex: true, seo: seo as never };
+    const metadata = buildPageMetadata({
+      pathname: "/blog/hidden",
+      title: "Hidden",
+      description: "desc",
+      seo: article.seo,
+      robots: resolveArticleRobots(article),
+      type: "article",
+    });
+    assert.equal(metadata.robots, "noindex, follow", `seo: ${JSON.stringify(seo)}`);
+  }
+});
+
 // ── Updated label (CM-02) ───────────────────────────────────────────────
 
 test("Updated shows only when contentUpdatedAt is a later calendar day than the published date", () => {
@@ -336,6 +354,20 @@ test("series parts are ordered by part, deduped, and mark the current post", () 
       ["unnumbered", undefined, false],
     ]
   );
+});
+
+test("series siblings match the trimmed name case-insensitively, like the $eqi lookup", () => {
+  const series = resolveSeries(
+    { slug: "part-1", title: "Part one", series: " Agents ", seriesPart: 1 },
+    [
+      { slug: "part-2", title: "Part two", series: "agents", seriesPart: 2 },
+      { slug: "part-3", title: "Part three", series: "AGENTS  ", seriesPart: 3 },
+      { slug: "other", title: "Other", series: "Agents v2", seriesPart: 4 },
+    ]
+  );
+  assert.ok(series);
+  assert.equal(series.name, "Agents");
+  assert.deepEqual(series.parts.map((part) => part.slug), ["part-1", "part-2", "part-3"]);
 });
 
 test("no series name, no series nav", () => {
