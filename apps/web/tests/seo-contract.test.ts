@@ -58,7 +58,17 @@ test("not-found generateMetadata call sites use buildNoIndexMetadata", () => {
 test("author metadata does not fall back to the homepage site description", () => {
   const pageSource = readSource("src/app/author/[slug]/page.tsx");
   assert.doesNotMatch(pageSource, /siteDescription/);
-  assertCallsHelper(pageSource, "resolveAuthorPageIdentity", "#83, #94");
+  assertCallsHelper(pageSource, "resolveArticleAuthorIdentity", "#83, #94");
+  assert.equal(
+    pageSource.match(/resolveArticleAuthorIdentity\(/g)?.length,
+    2,
+    "metadata and the page both resolve identity"
+  );
+  assert.doesNotMatch(
+    pageSource,
+    /resolveAuthorPageIdentity\(/,
+    "the author page must use the guest-aware resolver, not the raw fallback helper"
+  );
   assertCallsHelper(pageSource, "authorIdentityFallbacks", "#83, #94");
 });
 

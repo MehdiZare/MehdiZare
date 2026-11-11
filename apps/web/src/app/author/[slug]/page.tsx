@@ -27,7 +27,7 @@ import {
   isSiteOwnerAuthor,
   resolveAuthorAddress,
   resolveAuthorAlumniOf,
-  resolveAuthorPageIdentity,
+  resolveArticleAuthorIdentity,
   resolveAuthorPersonId,
   resolveAuthorSameAs,
   resolveAuthorWorksFor,
@@ -74,10 +74,11 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
       return buildNoIndexMetadata("Author Not Found");
     }
 
-    const identity = resolveAuthorPageIdentity(
+    const identity = resolveArticleAuthorIdentity(
       author,
       authorIdentityFallbacks(siteProfile),
-      CANONICAL_IDENTITY_ORIGIN
+      CANONICAL_IDENTITY_ORIGIN,
+      siteProfile.author.slug
     );
 
     return buildPageMetadata({
@@ -152,10 +153,11 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
   // unrelated Person node; only a guest author gets a Person of their own.
   const authorIsSiteOwner = isSiteOwnerAuthor(author, siteProfile.author.slug);
   const personId = resolveAuthorPersonId(author, siteProfile.author.slug);
-  const identity = resolveAuthorPageIdentity(
+  const identity = resolveArticleAuthorIdentity(
     author,
     authorIdentityFallbacks(siteProfile),
-    CANONICAL_IDENTITY_ORIGIN
+    CANONICAL_IDENTITY_ORIGIN,
+    siteProfile.author.slug
   );
   const { name: authorName, role, description, websiteUrl, linkedinUrl } = identity;
   // #92. The other three PostalAddress surfaces fall back to the Site Profile;

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { DEFAULT_SITE_PROFILE } from "../src/lib/site-profile-defaults.ts";
 import {
   authorIdentityFallbacks,
   buildAuthorListingDescription,
@@ -214,7 +215,7 @@ test("article author identity treats blank CMS values as absent, not as present"
     },
     FALLBACKS,
     ORIGIN,
-    "mehdi-zare"
+    DEFAULT_SITE_PROFILE.authorSlug
   );
 
   // The name falls back to the slug label, not to the site owner: the route
@@ -264,7 +265,7 @@ test("a guest article author does not inherit the site owner's URLs or role", ()
     { slug: "jane-doe", name: "Jane Doe", websiteUrl: "   ", linkedinUrl: "", jobTitle: "" },
     FALLBACKS,
     ORIGIN,
-    "mehdi-zare"
+    DEFAULT_SITE_PROFILE.authorSlug
   );
 
   assert.equal(identity.websiteUrl, "");
@@ -279,7 +280,7 @@ test("article author identity rejects an unparseable guest URL instead of the ow
     { slug: "jane-doe", name: "Jane Doe", websiteUrl: "not a url", linkedinUrl: "javascript:alert(1)" },
     FALLBACKS,
     ORIGIN,
-    "mehdi-zare"
+    DEFAULT_SITE_PROFILE.authorSlug
   );
 
   assert.equal(identity.websiteUrl, "");
@@ -288,10 +289,10 @@ test("article author identity rejects an unparseable guest URL instead of the ow
 
 test("a site-owner article still fills blank identity fields from the profile", () => {
   const identity = resolveArticleAuthorIdentity(
-    { slug: "mehdi-zare", name: "Mehdi Zare", websiteUrl: "  ", linkedinUrl: "", jobTitle: "" },
+    { slug: DEFAULT_SITE_PROFILE.authorSlug, name: "Mehdi Zare", websiteUrl: "  ", linkedinUrl: "", jobTitle: "" },
     FALLBACKS,
     ORIGIN,
-    "mehdi-zare"
+    DEFAULT_SITE_PROFILE.authorSlug
   );
 
   assert.equal(identity.websiteUrl, FALLBACKS.websiteUrl);
