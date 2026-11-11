@@ -37,6 +37,58 @@ export const fallbackCredentials: Credential[] = [
 
 export const fallbackExperiences: Experience[] = [
   {
+    id: 8,
+    title: "Founder",
+    company: "Bina Capital",
+    startDate: "2026",
+    current: true,
+    description:
+      "Free, comparison-first education for new US investors, built and run with AI coding agents. Education only, not advice.",
+  },
+  {
+    id: 9,
+    title: "Founder",
+    company: "RoboWrite",
+    startDate: "2025",
+    current: true,
+    description: "A content operations platform for agencies, built and run with AI coding agents.",
+  },
+  {
+    id: 10,
+    title: "Co-founder & CTO",
+    company: "Rewardopedia",
+    startDate: "2025",
+    current: true,
+    description:
+      "Runs the technology behind a credit card rewards guide, built and shipped with AI coding agents.",
+  },
+  {
+    id: 11,
+    title: "Principal AI Engineer / Cloud Architect",
+    company: "Entarian",
+    startDate: "2025",
+    current: true,
+    description:
+      "Builds production GenAI systems for cybersecurity operations, with observability and monitoring designed in from the start.",
+  },
+  {
+    id: 2,
+    title: "Senior AI/ML Engineer",
+    company: "Booz Allen",
+    startDate: "2024",
+    endDate: "2025",
+    description:
+      "Delivered containerized GenAI solutions for enterprise teams that needed secure, scalable deployments rather than lab demos.",
+  },
+  {
+    id: 6,
+    title: "Chief AI Scientist",
+    company: "Effective World",
+    startDate: "2024",
+    description:
+      "Led AI and data science initiatives to improve audience intelligence and campaign optimization, connecting model outputs to operational marketing decisions.",
+  },
+  {
     id: 1,
     title: "Co-Founder",
     company: "Adviser",
@@ -62,14 +114,6 @@ export const fallbackExperiences: Experience[] = [
     endDate: "2020",
     description:
       "Earned the CFA charter while contributing to financial data series work with the Office of Financial Research, translating policy and market context into usable analytical outputs.",
-  },
-  {
-    id: 6,
-    title: "Chief AI Scientist",
-    company: "Effective World",
-    startDate: "2024",
-    description:
-      "Led AI and data science initiatives to improve audience intelligence and campaign optimization, connecting model outputs to operational marketing decisions.",
   },
   {
     id: 7,

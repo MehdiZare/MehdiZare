@@ -189,7 +189,11 @@ test("the footer location line matches the structured address defaults", () => {
   );
 });
 
-test("no current employer is published in taxonomy, defaults, or visible career copy", () => {
+test("structured data names no employer, while the visible timeline lists the roles", () => {
+  // The Person JSON-LD (`worksFor`) stays empty: the site's identity is the
+  // independent architect and his own products. The home track record and
+  // the About timeline still list current and past roles by name, and the two
+  // lists must agree.
   assert.ok(primaryAuthor, "data/taxonomy.json: expected a primary author");
 
   assert.equal(primaryAuthor.worksForName, "");
@@ -197,21 +201,19 @@ test("no current employer is published in taxonomy, defaults, or visible career 
   assert.equal(DEFAULT_SITE_PROFILE.authorWorksForName, "");
   assert.equal(DEFAULT_SITE_PROFILE.authorWorksForUrl, "");
 
-  const removedEmployers = /Entarian|Booz Allen/;
   const trackRecordSource = readFileSync(
     resolve(repoRoot, "apps/web/src/components/home/TrackRecord.tsx"),
     "utf8"
   );
-  const aboutSource = readFileSync(
-    resolve(repoRoot, "apps/web/src/content/fallbacks/about.ts"),
-    "utf8"
+  const trackRecordOrgs = [...trackRecordSource.matchAll(/^\s{4}org: "([^"]+)",$/gm)].map(
+    (match) => match[1]
   );
-
-  assert.doesNotMatch(trackRecordSource, removedEmployers);
-  assert.doesNotMatch(aboutSource, removedEmployers);
-  assert.equal(
-    fallbackExperiences.some((experience) => experience.current),
-    false,
-    "the about fallback must not mark a current employer"
+  assert.deepEqual(
+    trackRecordOrgs,
+    fallbackExperiences.map((experience) => experience.company),
+    "the home track record and the About timeline must list the same organisations in the same order"
   );
+  for (const company of ["Bina Capital", "RoboWrite", "Rewardopedia", "Entarian", "Booz Allen"]) {
+    assert.ok(trackRecordOrgs.includes(company), `track record is missing ${company}`);
+  }
 });
