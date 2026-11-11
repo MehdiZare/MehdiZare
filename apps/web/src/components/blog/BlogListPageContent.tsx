@@ -8,7 +8,9 @@ import {
   buildWebPageJsonLd,
   toAbsoluteMediaUrl,
 } from "@/lib/seo";
+import { resolveAuthorPersonId } from "@/lib/author-identity";
 import { buildBlogPageUrl } from "@/lib/blog-listing";
+import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 import { PostCard } from "@/components/blog/PostCard";
 
 interface BlogListPageContentProps {
@@ -50,6 +52,10 @@ export function BlogListPageContent({
       path: `/blog/${article.slug}`,
       datePublished: article.publishedDate || article.publishedAt,
       imageUrl: toAbsoluteMediaUrl(article.featuredImage?.url),
+      // The same id the post page and the layout use (GEO-01): `/#person` for
+      // the site owner. The listing-wide `canonicalAuthorId` its callers pass
+      // is the retired `/author/<slug>#person`, defined on no page any more.
+      authorId: resolveAuthorPersonId(article.author, DEFAULT_SITE_PROFILE.authorSlug),
     })),
   });
 

@@ -152,6 +152,8 @@ interface BlogListItem {
   path: string;
   datePublished?: string;
   imageUrl?: string;
+  /** This post's author Person @id; wins over the listing-wide `authorId`. */
+  authorId?: string;
 }
 
 interface BlogJsonLdOptions {
@@ -845,7 +847,7 @@ export function buildBlogJsonLd({
       datePublished: post.datePublished,
       image: post.imageUrl ? [post.imageUrl] : undefined,
       author: {
-        "@id": resolvedAuthorId,
+        "@id": post.authorId ?? resolvedAuthorId,
       },
     })),
   };

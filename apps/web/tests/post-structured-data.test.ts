@@ -8,6 +8,7 @@ const {
   PERSON_SAME_AS,
   X_HANDLE,
   X_PROFILE_URL,
+  buildBlogJsonLd,
   buildBlogPostingJsonLd,
   buildBreadcrumbJsonLd,
   buildNoIndexMetadata,
@@ -415,4 +416,23 @@ test("StrapiImage forwards sizes and falls back to a non-empty alt", () => {
   const postCard = readSource("src/components/blog/PostCard.tsx");
   assert.match(postCard, /sizes=\{POST_CARD_IMAGE_SIZES\}/);
   assert.match(postCard, /\(min-width: 768px\) 50vw/);
+});
+
+test("blog listing posts reference each post's own author Person id", () => {
+  const blog = buildBlogJsonLd({
+    pathname: "/blog",
+    title: "Blog",
+    description: "desc",
+    authorId: `${siteUrl}/author/mehdi-zare#person`,
+    posts: [
+      { title: "Owner post", path: "/blog/a", authorId: toPersonId() },
+      { title: "No per-post id", path: "/blog/b" },
+    ],
+  });
+  const posts = blog.blogPost as Array<Record<string, Record<string, unknown>>>;
+  assert.equal(posts[0].author["@id"], `${siteUrl}/#person`);
+  assert.equal(posts[1].author["@id"], `${siteUrl}/author/mehdi-zare#person`);
+
+  const listing = readSource("src/components/blog/BlogListPageContent.tsx");
+  assert.match(listing, /authorId: resolveAuthorPersonId\(article\.author, DEFAULT_SITE_PROFILE\.authorSlug\)/);
 });
