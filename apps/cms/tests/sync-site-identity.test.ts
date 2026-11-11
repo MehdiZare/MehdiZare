@@ -120,6 +120,11 @@ function fakeStrapi(initial: { published: StrapiEntity; draft?: StrapiEntity | n
       return { data: published.isPrimary ? [published] : [] };
     }
     if (query.status === 'draft') {
+      const documentId = query['filters[documentId][$eq]'];
+      if (documentId && documentId !== published.documentId) return { data: [] };
+      if (query['filters[slug][$eq]'] && draft && query['filters[slug][$eq]'] !== draft.slug) {
+        return { data: [] };
+      }
       return { data: draft ? [draft] : [] };
     }
     return { data: query['filters[slug][$eq]'] === published.slug ? [published] : [] };
@@ -194,11 +199,16 @@ test('a dry run reports every stale field and issues no write', async () => {
     'worksForUrl',
   ]);
   assert.deepEqual(cms.calls.filter((call) => call.method !== 'GET'), []);
-  // Both reads populate exactly the owned component lists.
-  for (const read of cms.calls.filter((call) => call.query['filters[slug][$eq]'])) {
+  // Both identity reads populate the owned components and the profile image.
+  const identityReads = cms.calls.filter((call) => call.query['populate[0]']);
+  assert.equal(identityReads.length, 2);
+  for (const read of identityReads) {
     assert.equal(read.query['populate[0]'], 'sameAs');
     assert.equal(read.query['populate[1]'], 'credentials');
+    assert.equal(read.query['populate[2]'], 'profileImage');
   }
+  const draftRead = identityReads.find((call) => call.query.status === 'draft');
+  assert.equal(draftRead?.query['filters[documentId][$eq]'], 'doc-1');
 });
 
 test('--apply clears the employer with explicit nulls, replaces lists, publishes, and then settles', async () => {
@@ -255,6 +265,33 @@ test('an unrelated unpublished draft edit blocks --apply unless --allow-draft-pu
   const allowed = fakeStrapi({ published: stale(), draft });
   const result = await syncSiteIdentity([TAXONOMY], { apply: true, allowDraftPublish: true, strapiFetch: allowed.strapiFetch, ...quiet });
   assert.equal(result.written, true);
+});
+
+test('a renamed draft is still found by documentId, so its unpublished edits block publish', async () => {
+  const draft = { ...stale(), slug: 'renamed-in-draft', name: 'Draft name nobody published' };
+  const cms = fakeStrapi({ published: stale(), draft });
+
+  await assert.rejects(
+    syncSiteIdentity([TAXONOMY], { apply: true, allowDraftPublish: false, strapiFetch: cms.strapiFetch, ...quiet }),
+    (error: unknown) =>
+      error instanceof SyncRefusal && /differs from the published record in: name, slug/.test(error.message)
+  );
+  assert.deepEqual(cms.calls.filter((call) => call.method !== 'GET'), []);
+  const draftRead = cms.calls.find((call) => call.query.status === 'draft');
+  assert.equal(draftRead?.query['filters[documentId][$eq]'], 'doc-1');
+  assert.equal(draftRead?.query['filters[slug][$eq]'], undefined);
+});
+
+test('an unpublished profile image blocks publish', async () => {
+  const cms = fakeStrapi({
+    published: { ...stale(), profileImage: { url: '/uploads/old.jpg' } },
+    draft: { ...stale(), profileImage: { url: '/uploads/new.jpg' } },
+  });
+
+  await assert.rejects(
+    syncSiteIdentity([TAXONOMY], { apply: true, allowDraftPublish: false, strapiFetch: cms.strapiFetch, ...quiet }),
+    /profileImage/
+  );
 });
 
 test('refuses to write to an author apps/web does not render', async () => {

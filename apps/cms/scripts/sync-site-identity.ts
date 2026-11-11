@@ -109,10 +109,16 @@ export class SyncRefusal extends Error {}
 /** `shared.credential` attributes, so a missing one compares as null. */
 const CREDENTIAL_KEYS = ["title", "issuer", "description", "url"] as const;
 
-/** Populate exactly the two component lists this script owns. */
+/**
+ * Populate the component lists this script owns, plus `profileImage`.
+ * Publishing promotes the whole draft, and an unpopulated media field is
+ * absent from both reads, so a draft-only image change would go live without
+ * tripping the divergence check.
+ */
 const AUTHOR_POPULATE = {
   "populate[0]": "sameAs",
   "populate[1]": "credentials",
+  "populate[2]": "profileImage",
 } as const;
 
 // Read at runtime rather than `import … from "…/taxonomy.json"`, matching
@@ -505,11 +511,13 @@ export async function syncSiteIdentity(
 
   await assertIsTheAuthorTheSiteRenders(strapiFetch, author, slug);
 
+  // The published row was found by slug. The draft may have a different slug,
+  // and a slug filter would then miss it and skip the divergence check.
   const draftResponse = await strapiFetch<{ data: StrapiEntity[] }>(
     "authors",
     {},
     {
-      "filters[slug][$eq]": slug,
+      "filters[documentId][$eq]": author.documentId,
       "pagination[pageSize]": "1",
       status: "draft",
       ...AUTHOR_POPULATE,

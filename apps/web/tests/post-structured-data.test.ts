@@ -436,7 +436,7 @@ test("blog listing posts reference each post's own author Person id", () => {
   assert.equal(posts[1].author["@id"], `${siteUrl}/author/mehdi-zare#person`);
 
   const listing = readSource("src/components/blog/BlogListPageContent.tsx");
-  assert.match(listing, /authorId: resolveAuthorPersonId\(article\.author, DEFAULT_SITE_PROFILE\.authorSlug\)/);
+  assert.match(listing, /authorId: resolveAuthorPersonId\(article\.author, siteProfile\.author\.slug\)/);
 });
 
 // ── One /#person sameAs on the post page ───────────────────────────────
