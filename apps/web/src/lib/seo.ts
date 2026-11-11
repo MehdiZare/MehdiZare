@@ -629,6 +629,16 @@ export function resolveSiteOwnerSameAs(author: {
   return withoutOwnUrl(links, resolvePersonProfileUrl(author.websiteUrl, undefined));
 }
 
+/**
+ * The site owner's `/#person` `url`, exactly as the root layout emits it
+ * (`buildPersonJsonLd({ url: author.websiteUrl })`). A post page's inline
+ * author copy of `/#person` must use the same value: two nodes sharing one
+ * `@id` with different `url`s merge into a Person with two urls.
+ */
+export function resolveSiteOwnerPersonUrl(author: { websiteUrl?: string }): string {
+  return resolvePersonProfileUrl(author.websiteUrl, undefined);
+}
+
 export function buildPersonJsonLd(options: PersonJsonLdOptions = {}): Record<string, unknown> {
   const canonicalPath = options.path;
   const id = options.id ?? toPersonId(canonicalPath);

@@ -37,6 +37,7 @@ import {
   buildNoIndexMetadata,
   buildPageMetadata,
   buildWebPageJsonLd,
+  resolveSiteOwnerPersonUrl,
   resolveSiteOwnerSameAs,
   splitKeywords,
   toAbsoluteMediaUrl,
@@ -279,7 +280,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     author: {
       id: authorPersonId,
       name: authorName,
-      url: toAbsoluteUrl(authorPath),
+      // Same `url` as the layout's `/#person` for the site owner, so the two
+      // copies of that @id on this page agree; guest authors keep their page.
+      url: authorIsSiteOwner
+        ? resolveSiteOwnerPersonUrl(siteProfile.author)
+        : toAbsoluteUrl(authorPath),
       sameAs: authorSameAs,
       jobTitle: authorRole,
       imageUrl: toAbsoluteMediaUrl(authorImage?.url),

@@ -17,6 +17,7 @@ const {
   buildWebPageJsonLd,
   buildWebsiteJsonLd,
   getSiteUrl,
+  resolveSiteOwnerPersonUrl,
   resolveSiteOwnerSameAs,
   toPersonId,
   withRobotsPreviewDirectives,
@@ -483,4 +484,15 @@ test("images use next/image preload, never the deprecated priority (or both)", (
   assert.match(readSource("src/components/shared/CmsImage.tsx"), /preload=\{preload\}/);
   assert.match(readSource("src/components/shared/StrapiImage.tsx"), /preload=\{preload\}/);
   assert.match(readSource("src/app/blog/[slug]/page.tsx"), /\n\s+preload\n\s+sizes=\{HERO_IMAGE_SIZES\}/);
+});
+
+test("the post page's inline site-owner author uses the layout /#person url", () => {
+  // Two nodes sharing the @id `/#person` on one page must not disagree on
+  // `url`, or a consumer merging by @id sees one Person with two urls.
+  for (const websiteUrl of [undefined, "https://www.mehdi-zare.com", "https://mehdi-zare.com/"]) {
+    const layoutPerson = buildPersonJsonLd({ id: toPersonId(), url: websiteUrl });
+    assert.equal(resolveSiteOwnerPersonUrl({ websiteUrl }), layoutPerson.url);
+  }
+  const page = readSource("src/app/blog/[slug]/page.tsx");
+  assert.match(page, /authorIsSiteOwner\s*\?\s*resolveSiteOwnerPersonUrl\(siteProfile\.author\)/);
 });
