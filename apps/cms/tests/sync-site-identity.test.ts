@@ -201,7 +201,10 @@ test('a dry run reports every stale field and issues no write', async () => {
   assert.deepEqual(cms.calls.filter((call) => call.method !== 'GET'), []);
   // Both identity reads populate the owned components and the profile image.
   const identityReads = cms.calls.filter((call) => call.query['populate[0]']);
-  assert.equal(identityReads.length, 2);
+  assert.deepEqual(
+    identityReads.map((call) => call.query.status ?? 'published').sort(),
+    ['draft', 'published']
+  );
   for (const read of identityReads) {
     assert.equal(read.query['populate[0]'], 'sameAs');
     assert.equal(read.query['populate[1]'], 'credentials');

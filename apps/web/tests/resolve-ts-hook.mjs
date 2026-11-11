@@ -5,6 +5,7 @@ const SRC_BASE = new URL("../src/", import.meta.url);
 const SERVER_ONLY_STUB = new URL("./server-only-stub.mjs", import.meta.url);
 const TAXONOMY_STUB = new URL("./taxonomy-stub.mjs", import.meta.url);
 const NEXT_CACHE_STUB = new URL("./next-cache-stub.mjs", import.meta.url);
+const SYNTAX_STUB = new URL("./react-syntax-highlighter-stub.mjs", import.meta.url);
 
 async function tryResolveAlias(specifier, context, nextResolve) {
   const target = new URL(specifier.slice(2), SRC_BASE);
@@ -44,6 +45,13 @@ export async function resolve(specifier, context, nextResolve) {
     };
   }
 
+  if (specifier === "react-syntax-highlighter" || specifier.startsWith("react-syntax-highlighter/")) {
+    return {
+      url: SYNTAX_STUB.href,
+      shortCircuit: true,
+    };
+  }
+
   if (specifier === "next/cache") {
     return {
       url: NEXT_CACHE_STUB.href,
@@ -71,12 +79,17 @@ export async function resolve(specifier, context, nextResolve) {
   try {
     return await nextResolve(specifier, context);
   } catch (error) {
-    if (error.code === "ERR_MODULE_NOT_FOUND" && !specifier.endsWith(".ts")) {
-      const tsSpecifier = specifier + ".ts";
-      try {
-        return await nextResolve(tsSpecifier, context);
-      } catch {
-        // Fall through to original error.
+    if (
+      error.code === "ERR_MODULE_NOT_FOUND" &&
+      !specifier.endsWith(".ts") &&
+      !specifier.endsWith(".tsx")
+    ) {
+      for (const suffix of [".ts", ".tsx"]) {
+        try {
+          return await nextResolve(specifier + suffix, context);
+        } catch {
+          // Fall through to the original error after both suffixes miss.
+        }
       }
     }
     throw error;

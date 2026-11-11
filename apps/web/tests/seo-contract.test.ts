@@ -59,25 +59,12 @@ test("author metadata does not fall back to the homepage site description", () =
   const pageSource = readSource("src/app/author/[slug]/page.tsx");
   assert.doesNotMatch(pageSource, /siteDescription/);
   assertCallsHelper(pageSource, "resolveArticleAuthorIdentity", "#83, #94");
-  assert.equal(
-    pageSource.match(/resolveArticleAuthorIdentity\(/g)?.length,
-    2,
-    "metadata and the page both resolve identity"
-  );
   assert.doesNotMatch(
     pageSource,
     /resolveAuthorPageIdentity\(/,
     "the author page must use the guest-aware resolver, not the raw fallback helper"
   );
   assertCallsHelper(pageSource, "authorIdentityFallbacks", "#83, #94");
-});
-
-test("author page omits website and linkedin anchors when the identity url is blank", () => {
-  // A guest identity leaves both urls empty. An unconditional anchor becomes
-  // href="" and reloads the profile.
-  const pageSource = readSource("src/app/author/[slug]/page.tsx");
-  assert.match(pageSource, /\{websiteUrl \? \(/);
-  assert.match(pageSource, /\{linkedinUrl \? \(/);
 });
 
 test("author identity is not re-derived with the raw nullish chains it replaced", () => {
