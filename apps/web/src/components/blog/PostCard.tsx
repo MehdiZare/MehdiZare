@@ -2,6 +2,16 @@ import Link from "next/link";
 import type { Article } from "@/types/strapi";
 import { CmsImage } from "@/components/shared/CmsImage";
 import { toAbsoluteStrapiMediaUrl } from "@/lib/public-env";
+import { resolveReadingTimeMinutes } from "@/lib/reading-time";
+
+/**
+ * Matches the listing grid (`md:grid-cols-2 lg:grid-cols-3` in `max-w-7xl`):
+ * one column on phones, two on tablets, three (~400px) on desktop. The old
+ * `(max-width: 768px) 100vw, 33vw` served tablets a third-width image for a
+ * half-width slot.
+ */
+const POST_CARD_IMAGE_SIZES =
+  "(min-width: 1280px) 400px, (min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw";
 
 function getStrapiImageUrl(url: string): string {
   return toAbsoluteStrapiMediaUrl(url);
@@ -34,6 +44,7 @@ export function PostCard({ article }: PostCardProps) {
 
   const displayDate = article.publishedDate || article.publishedAt;
   const categoryName = article.category?.name;
+  const readingTimeMinutes = resolveReadingTimeMinutes(article.readingTime, article.content);
 
   return (
     <Link
@@ -48,7 +59,7 @@ export function PostCard({ article }: PostCardProps) {
             alt={article.featuredImage?.alternativeText || article.title}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="(max-width: 768px) 100vw, 33vw"
+            sizes={POST_CARD_IMAGE_SIZES}
             fallback={<CoverFallback />}
           />
         ) : (
@@ -76,10 +87,10 @@ export function PostCard({ article }: PostCardProps) {
 
         <div className="mt-4 flex items-center gap-3 font-mono text-xs text-mid-gray/60">
           {displayDate && <time dateTime={displayDate}>{formatDate(displayDate)}</time>}
-          {article.readingTime && (
+          {readingTimeMinutes && (
             <>
               <span aria-hidden="true">&middot;</span>
-              <span>{article.readingTime} min read</span>
+              <span>{readingTimeMinutes} min read</span>
             </>
           )}
         </div>

@@ -11,6 +11,7 @@ export const DEFAULT_SOCIAL_LINKS: SocialLink[] = [
   { id: 3, platform: "GitHub", url: "https://github.com/mehdizare" },
   { id: 4, platform: "Medium", url: "https://medium.com/@mehdi-zare" },
   { id: 5, platform: "Seeking Alpha", url: "https://seekingalpha.com/author/mehdi-zare" },
+  { id: 6, platform: "X", url: "https://x.com/mehdizare" },
 ];
 
 export const DEFAULT_SITE_PROFILE = {

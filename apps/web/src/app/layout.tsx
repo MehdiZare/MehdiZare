@@ -5,6 +5,8 @@ import { PostHogScripts } from "@/components/analytics/PostHogScripts";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { MotionProvider } from "@/components/shared/MotionProvider";
 import {
+  DEFAULT_ROBOTS,
+  X_HANDLE,
   buildPersonJsonLd,
   buildWebsiteJsonLd,
   getSiteUrl,
@@ -37,10 +39,9 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: {
       canonical: "/",
     },
-    robots: {
-      index: true,
-      follow: true,
-    },
+    // Indexable with max-image-preview:large / max-snippet:-1. A page's own
+    // robots (buildNoIndexMetadata, CMS metaRobots) replaces this whole value.
+    robots: DEFAULT_ROBOTS,
     authors: [{ name: siteProfile.siteName, url: siteUrl }],
     creator: siteProfile.siteName,
     publisher: siteProfile.siteName,
@@ -55,12 +56,15 @@ export async function generateMetadata(): Promise<Metadata> {
           url: "/opengraph-image",
           width: 1200,
           height: 630,
+          type: "image/png",
           alt: `${siteProfile.siteName} - ${siteProfile.credentialLine}`,
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
+      site: X_HANDLE,
+      creator: X_HANDLE,
       title: titleDefault,
       description: siteProfile.siteDescription,
       images: ["/twitter-image"],

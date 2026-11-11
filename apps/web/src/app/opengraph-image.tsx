@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { BRAND_COLORS, BRAND_DISPLAY_DOMAIN } from "@/lib/brand";
 import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 
 export const runtime = "edge";
@@ -21,8 +22,8 @@ export default function OpenGraphImage() {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "64px",
-          background: "linear-gradient(135deg, #f8f6f1 0%, #e9e4d9 100%)",
-          color: "#1f2937",
+          background: BRAND_COLORS.paper,
+          color: BRAND_COLORS.ink,
         }}
       >
         <div
@@ -31,7 +32,7 @@ export default function OpenGraphImage() {
             fontSize: 26,
             letterSpacing: "0.12em",
             textTransform: "uppercase",
-            color: "#8d6f3f",
+            color: BRAND_COLORS.accentWarm,
           }}
         >
           {DEFAULT_SITE_PROFILE.siteName}
@@ -48,13 +49,13 @@ export default function OpenGraphImage() {
           <div style={{ fontSize: 48, lineHeight: 1.15, fontWeight: 700 }}>
             {DEFAULT_SITE_PROFILE.positioningHeadline}
           </div>
-          <div style={{ fontSize: 26, lineHeight: 1.3, color: "#374151" }}>
+          <div style={{ fontSize: 26, lineHeight: 1.3, color: BRAND_COLORS.midGray }}>
             {DEFAULT_SITE_PROFILE.siteDescription}
           </div>
         </div>
 
-        <div style={{ display: "flex", fontSize: 24, color: "#6b7280" }}>
-          mehdizare.com
+        <div style={{ display: "flex", fontSize: 24, color: BRAND_COLORS.midGray }}>
+          {BRAND_DISPLAY_DOMAIN}
         </div>
       </div>
     ),

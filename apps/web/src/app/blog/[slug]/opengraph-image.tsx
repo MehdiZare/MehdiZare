@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getArticleBySlug } from "@/lib/strapi";
+import { BRAND_COLORS } from "@/lib/brand";
 import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 
 export const runtime = "edge";
@@ -29,6 +30,8 @@ export default async function OpenGraphImage({
           year: "numeric",
           month: "long",
           day: "numeric",
+          // Date-only `publishedDate` parses as UTC midnight.
+          timeZone: "UTC",
         });
       }
     }
@@ -46,8 +49,8 @@ export default async function OpenGraphImage({
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "64px",
-          background: "linear-gradient(135deg, #f8f6f1 0%, #e9e4d9 100%)",
-          color: "#1f2937",
+          background: BRAND_COLORS.paper,
+          color: BRAND_COLORS.ink,
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -57,7 +60,7 @@ export default async function OpenGraphImage({
               fontSize: 26,
               letterSpacing: "0.12em",
               textTransform: "uppercase",
-              color: "#8d6f3f",
+              color: BRAND_COLORS.accentWarm,
             }}
           >
             {DEFAULT_SITE_PROFILE.siteName}
@@ -69,8 +72,8 @@ export default async function OpenGraphImage({
                 fontSize: 18,
                 letterSpacing: "0.15em",
                 textTransform: "uppercase",
-                color: "#8d6f3f",
-                border: "1px solid #8d6f3f",
+                color: BRAND_COLORS.accentWarm,
+                border: `1px solid ${BRAND_COLORS.accentWarm}`,
                 padding: "6px 16px",
               }}
             >
@@ -93,11 +96,11 @@ export default async function OpenGraphImage({
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", fontSize: 22, color: "#6b7280" }}>
+          <div style={{ display: "flex", fontSize: 22, color: BRAND_COLORS.midGray }}>
             {DEFAULT_SITE_PROFILE.credentialLine}
           </div>
           {date && (
-            <div style={{ display: "flex", fontSize: 20, color: "#6b7280" }}>
+            <div style={{ display: "flex", fontSize: 20, color: BRAND_COLORS.midGray }}>
               {date}
             </div>
           )}

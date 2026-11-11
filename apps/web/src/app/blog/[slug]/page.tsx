@@ -19,8 +19,13 @@ import { getSiteProfile } from "@/lib/site-profile";
 import {
   CANONICAL_IDENTITY_ORIGIN,
   authorIdentityFallbacks,
+  isSiteOwnerAuthor,
   resolveArticleAuthorIdentity,
+  resolveAuthorPersonId,
+  resolveAuthorSameAs,
 } from "@/lib/author-identity";
+import { resolveArticleDates } from "@/lib/article-dates";
+import { resolveReadingTimeMinutes } from "@/lib/reading-time";
 import { blankToUndefined } from "@/lib/strings";
 import {
   buildBlogPostingJsonLd,
@@ -30,6 +35,7 @@ import {
   buildWebPageJsonLd,
   splitKeywords,
   toAbsoluteMediaUrl,
+  toAbsoluteUrl,
   toPersonId,
 } from "@/lib/seo";
 
@@ -38,6 +44,28 @@ interface BlogPostPageProps {
 }
 
 type ArticleList = Awaited<ReturnType<typeof getArticles>>["data"];
+type ArticleRecord = ArticleList[number];
+
+/**
+ * The post's own generated share card (`./opengraph-image.tsx`). It is the
+ * default og:image / twitter:image and a guaranteed JSON-LD image, so a post
+ * with no cover never falls back to the generic site card, and a post with a
+ * 1920x1080 WebP cover shares a 1200x630 PNG. An uploaded `seo.metaImage`
+ * still overrides it.
+ */
+const OG_CARD_SIZE = { width: 1200, height: 630 } as const;
+
+function articleOgCardPath(slug: string): string {
+  return `/blog/${slug}/opengraph-image`;
+}
+
+/** The hero renders in the 8/12 column of `max-w-7xl`: ~795px from 1280px up. */
+const HERO_IMAGE_SIZES = "(min-width: 1280px) 795px, (min-width: 1024px) 66vw, 100vw";
+
+function articleAuthorPath(article: ArticleRecord, siteOwnerProfilePath: string): string {
+  const slug = blankToUndefined(article.author?.slug);
+  return slug ? `/author/${slug}` : siteOwnerProfilePath;
+}
 
 const AI_ENGINEER_IN_CONTENT_BLOG_SLUGS = new Set([
   "how-ai-works-from-data-to-decisions",
@@ -79,18 +107,29 @@ export async function generateMetadata({
       return buildNoIndexMetadata("Post Not Found");
     }
 
+    const siteProfile = await getSiteProfile();
+    const { datePublished, dateModified } = resolveArticleDates(article);
+    const tagNames = article.tags?.map((tag) => tag.name) ?? [];
+
     const metadata = buildPageMetadata({
       pathname: `/blog/${slug}`,
       title: article.title,
       description: article.excerpt?.trim() || article.title,
       seo: article.seo,
-      image: article.featuredImage,
+      defaultImage: {
+        url: articleOgCardPath(slug),
+        ...OG_CARD_SIZE,
+        type: "image/png",
+      },
       type: "article",
-      publishedTime: article.publishedDate || article.publishedAt,
-      modifiedTime: article.updatedAt,
+      publishedTime: datePublished,
+      modifiedTime: dateModified,
+      authors: [toAbsoluteUrl(articleAuthorPath(article, siteProfile.author.profilePath))],
+      section: article.category?.name,
+      tags: tagNames,
       keywords:
-        article.tags && article.tags.length > 0
-          ? article.tags.map((tag) => tag.name)
+        tagNames.length > 0
+          ? tagNames
           : ["production AI engineering", "LLM systems", "AI architecture"],
     });
 
@@ -105,10 +144,13 @@ export async function generateMetadata({
 }
 
 function formatDate(dateString: string): string {
+  // `publishedDate` is date-only and parses as UTC midnight, so format in UTC
+  // or a server running in a US timezone renders the day before.
   return new Date(dateString).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "UTC",
   });
 }
 
@@ -187,30 +229,55 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     websiteUrl: authorWebsite,
     linkedinUrl: authorLinkedIn,
   } = authorIdentity;
-  const authorPath = blankToUndefined(articleAuthor?.slug)
-    ? `/author/${blankToUndefined(articleAuthor?.slug)}`
-    : siteProfile.author.profilePath;
-  const authorPersonId = toPersonId(authorPath);
+  const authorPath = articleAuthorPath(article, siteProfile.author.profilePath);
+  // One Person @id per human (GEO-01 / TS-04): the site owner is the layout's
+  // `/#person`, inlined here with name and url because Google does not follow
+  // an @id to a node on another page.
+  const authorIsSiteOwner = isSiteOwnerAuthor(articleAuthor, siteProfile.author.slug);
+  const authorPersonId = resolveAuthorPersonId(articleAuthor, siteProfile.author.slug);
+  const authorImage =
+    articleAuthor?.profileImage ??
+    (authorIsSiteOwner ? siteProfile.author.profileImage : undefined);
+  // The site owner's sameAs is the layout Person's (which leaves out its own
+  // `url`, the website), so the two copies of `/#person` on this page agree.
+  const authorSameAs = authorIsSiteOwner
+    ? siteProfile.author.sameAs
+        .map((link) => link.url)
+        .filter((url) => url !== siteProfile.author.websiteUrl)
+    : resolveAuthorSameAs(authorIdentity, articleAuthor?.sameAs, CANONICAL_IDENTITY_ORIGIN);
   const authorInitials = buildInitials(authorName);
   const articleDescription =
     article.excerpt?.trim() || article.title;
-  const primaryImage =
-    toAbsoluteMediaUrl(article.seo?.metaImage?.url) ??
-    toAbsoluteMediaUrl(article.featuredImage?.url);
+  // Every available ratio: the social override, the 16:9 cover, and the
+  // 1200x630 card that always exists.
+  const articleImages = [
+    toAbsoluteMediaUrl(article.seo?.metaImage?.url),
+    toAbsoluteMediaUrl(article.featuredImage?.url),
+    toAbsoluteUrl(articleOgCardPath(article.slug)),
+  ].filter((url): url is string => Boolean(url));
   const articleKeywords = splitKeywords(article.seo?.keywords);
   const fallbackKeywords = article.tags?.map((tag) => tag.name) ?? [];
   const resolvedKeywords = articleKeywords.length > 0 ? articleKeywords : fallbackKeywords;
+  const { datePublished, dateModified } = resolveArticleDates(article);
+  const readingTimeMinutes = resolveReadingTimeMinutes(article.readingTime, article.content);
   const blogPostingJsonLd = buildBlogPostingJsonLd({
     pathname: articlePath,
     headline: article.title,
     description: articleDescription,
-    imageUrl: primaryImage,
-    datePublished: displayDate,
-    dateModified: article.updatedAt,
+    imageUrls: articleImages,
+    datePublished,
+    dateModified,
     keywords: resolvedKeywords.length > 0 ? resolvedKeywords : undefined,
     articleSection: article.category?.name,
-    readingTimeMinutes: article.readingTime,
-    authorId: authorPersonId,
+    readingTimeMinutes,
+    author: {
+      id: authorPersonId,
+      name: authorName,
+      url: toAbsoluteUrl(authorPath),
+      sameAs: authorSameAs,
+      jobTitle: authorRole,
+      imageUrl: toAbsoluteMediaUrl(authorImage?.url),
+    },
     publisherId: toPersonId(),
   });
 
@@ -261,9 +328,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     {formatDate(displayDate)}
                   </time>
                 )}
-                {article.readingTime && (
+                {readingTimeMinutes && (
                   <span className="font-mono text-xs text-mid-gray/60">
-                    {article.readingTime} min read
+                    {readingTimeMinutes} min read
                   </span>
                 )}
               </div>
@@ -280,6 +347,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     image={article.featuredImage}
                     fill
                     priority
+                    sizes={HERO_IMAGE_SIZES}
+                    fallbackAlt={article.title}
                     className="object-cover"
                   />
                 </div>
@@ -305,8 +374,19 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               {/* Author Card */}
               <div className="mt-10 border border-warm-gray bg-paper p-6 sm:p-8">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-muted font-serif text-xl text-ink">
-                    {authorInitials}
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden bg-muted">
+                    <StrapiImage
+                      image={authorImage}
+                      fill
+                      sizes="56px"
+                      fallbackAlt={authorName}
+                      className="object-cover"
+                      fallback={
+                        <div className="flex h-full w-full items-center justify-center font-serif text-xl text-ink">
+                          {authorInitials}
+                        </div>
+                      }
+                    />
                   </div>
                   <div>
                     <h3 className="font-serif text-lg text-ink">
