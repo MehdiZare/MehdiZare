@@ -72,6 +72,14 @@ test("author metadata does not fall back to the homepage site description", () =
   assertCallsHelper(pageSource, "authorIdentityFallbacks", "#83, #94");
 });
 
+test("author page omits website and linkedin anchors when the identity url is blank", () => {
+  // A guest identity leaves both urls empty. An unconditional anchor becomes
+  // href="" and reloads the profile.
+  const pageSource = readSource("src/app/author/[slug]/page.tsx");
+  assert.match(pageSource, /\{websiteUrl \? \(/);
+  assert.match(pageSource, /\{linkedinUrl \? \(/);
+});
+
 test("author identity is not re-derived with the raw nullish chains it replaced", () => {
   // #83. Each of these is a shape that shipped and leaked a blank CMS value:
   // `??` past an empty jobTitle, and a template that left "Name | " behind.

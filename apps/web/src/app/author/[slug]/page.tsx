@@ -256,22 +256,26 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
               <p className="mt-5 max-w-3xl text-lg leading-relaxed text-mid-gray">{description}</p>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <a
-                  href={websiteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
-                >
-                  Website
-                </a>
-                <a
-                  href={linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
-                >
-                  LinkedIn
-                </a>
+                {websiteUrl ? (
+                  <a
+                    href={websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
+                  >
+                    Website
+                  </a>
+                ) : null}
+                {linkedinUrl ? (
+                  <a
+                    href={linkedinUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
+                  >
+                    LinkedIn
+                  </a>
+                ) : null}
                 <TrackedLink
                   href="/contact"
                   eventName="funnel_contact_intent"
