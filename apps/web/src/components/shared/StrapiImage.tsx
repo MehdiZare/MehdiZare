@@ -11,7 +11,11 @@ interface StrapiImageProps {
   fill?: boolean;
   width?: number;
   height?: number;
-  priority?: boolean;
+  /**
+   * `next/image` `preload` (Next 16's replacement for the deprecated
+   * `priority`; same eager load). Use for the LCP image only.
+   */
+  preload?: boolean;
   /**
    * `next/image` sizes. Without it a `fill` image is served at 100vw, so a hero
    * in an 8/12 column downloads roughly twice the pixels it shows.
@@ -55,7 +59,7 @@ export function StrapiImage({
   fill,
   width,
   height,
-  priority = false,
+  preload = false,
   sizes,
   fallbackAlt,
   fallback,
@@ -81,7 +85,7 @@ export function StrapiImage({
       fill={fill}
       width={resolvedWidth}
       height={resolvedHeight}
-      priority={priority}
+      preload={preload}
       sizes={sizes}
       className={fill ? cn("object-cover", className) : className}
       fallback={resolvedFallback}

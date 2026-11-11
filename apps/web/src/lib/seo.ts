@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { SEO, StrapiImage } from "../types/strapi";
+import { FEED_ALTERNATE_TYPES } from "./feed-constants";
 import { publicEnv, toAbsoluteStrapiMediaUrl } from "./public-env";
 import { DEFAULT_SITE_PROFILE } from "./site-profile-defaults";
 import { blankToUndefined } from "./strings";
@@ -211,7 +212,7 @@ interface ProfilePageJsonLdOptions {
 }
 
 /** Compares two absolute URLs ignoring a trailing slash and host case. */
-function isSameUrl(left: string, right: string): boolean {
+export function isSameUrl(left: string, right: string): boolean {
   const normalize = (value: string) => {
     try {
       const url = new URL(value);
@@ -511,8 +512,11 @@ export function buildPageMetadata({
     title: { absolute: documentTitle },
     description: resolvedDescription,
     keywords: seo?.keywords ?? keywords,
+    // Next replaces the layout's `alternates` wholesale, so the RSS link the
+    // layout declares has to be repeated here or every page drops it.
     alternates: {
       canonical,
+      types: { ...FEED_ALTERNATE_TYPES },
     },
     openGraph: {
       type,
@@ -600,13 +604,35 @@ export function buildWebsiteJsonLd(options: WebsiteJsonLdOptions = {}): Record<s
   };
 }
 
-export function buildPersonJsonLd(options: PersonJsonLdOptions = {}): Record<string, unknown> {
+/** The Person `url` `buildPersonJsonLd` emits for a given `url` / `path`. */
+function resolvePersonProfileUrl(url: string | undefined, path: string | undefined): string {
   const siteUrl = getSiteUrl();
+  return url ? toAbsoluteUrl(url, siteUrl) : toAbsoluteUrl(path ?? "/", siteUrl);
+}
+
+function withoutOwnUrl(sameAs: readonly string[], profileUrl: string): string[] {
+  return sameAs.filter((link) => !isSameUrl(link, profileUrl));
+}
+
+/**
+ * The site owner's `/#person` `sameAs`, exactly as the root layout emits it:
+ * the Site Profile links (or `PERSON_SAME_AS` when there are none) minus the
+ * Person's own `url`, compared with `isSameUrl`. A post page inlines a second
+ * copy of `/#person` as its BlogPosting author; both read this, so the two
+ * copies on one page cannot drift.
+ */
+export function resolveSiteOwnerSameAs(author: {
+  websiteUrl?: string;
+  sameAs: ReadonlyArray<{ url: string }>;
+}): string[] {
+  const links = author.sameAs.length > 0 ? author.sameAs.map((link) => link.url) : PERSON_SAME_AS;
+  return withoutOwnUrl(links, resolvePersonProfileUrl(author.websiteUrl, undefined));
+}
+
+export function buildPersonJsonLd(options: PersonJsonLdOptions = {}): Record<string, unknown> {
   const canonicalPath = options.path;
   const id = options.id ?? toPersonId(canonicalPath);
-  const profileUrl = options.url
-    ? toAbsoluteUrl(options.url, siteUrl)
-    : toAbsoluteUrl(canonicalPath ?? "/", siteUrl);
+  const profileUrl = resolvePersonProfileUrl(options.url, canonicalPath);
   const name = options.name ?? PERSON_NAME;
   const title = options.title ?? PERSON_TITLE;
   const description = options.description ?? DEFAULT_SITE_DESCRIPTION;
@@ -674,7 +700,7 @@ export function buildPersonJsonLd(options: PersonJsonLdOptions = {}): Record<str
         }
       : undefined,
     // The Person's own `url` is not a `sameAs` of itself (GEO-11).
-    sameAs: sameAs.filter((link) => !isSameUrl(link, profileUrl)),
+    sameAs: withoutOwnUrl(sameAs, profileUrl),
     knowsAbout,
   };
 }

@@ -10,10 +10,12 @@ import {
   buildPersonJsonLd,
   buildWebsiteJsonLd,
   getSiteUrl,
+  resolveSiteOwnerSameAs,
   toAbsoluteMediaUrl,
   toPersonId,
 } from "@/lib/seo";
 import { getSiteProfile } from "@/lib/site-profile";
+import { FEED_ALTERNATE_TYPES } from "@/lib/feed-constants";
 import "./globals.css";
 
 const siteUrl = getSiteUrl();
@@ -38,6 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     alternates: {
       canonical: "/",
+      types: { ...FEED_ALTERNATE_TYPES },
     },
     // Indexable with max-image-preview:large / max-snippet:-1. A page's own
     // robots (buildNoIndexMetadata, CMS metaRobots) replaces this whole value.
@@ -119,9 +122,7 @@ export default async function RootLayout({
               addressLocality: siteProfile.author.addressLocality,
               addressRegion: siteProfile.author.addressRegion,
               addressCountry: siteProfile.author.addressCountry,
-              sameAs: siteProfile.author.sameAs.length > 0
-                ? siteProfile.author.sameAs.map((socialLink) => socialLink.url)
-                : undefined,
+              sameAs: resolveSiteOwnerSameAs(siteProfile.author),
               knowsAbout: siteProfile.knowsAbout,
             })}
           />

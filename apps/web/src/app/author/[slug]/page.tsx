@@ -8,6 +8,7 @@ import { StrapiImage } from "@/components/shared/StrapiImage";
 import { getSiteProfile } from "@/lib/site-profile";
 import { fetchAllPages, getArticles, getAuthorBySlug, getAuthors } from "@/lib/strapi";
 import { serverEnv } from "@/lib/server-env";
+import { ARTICLE_LISTING_SORT, sortArticlesByPublishedDesc } from "@/lib/article-dates";
 import {
   CMS_PRERENDER_AUTHOR_SLUG,
   findCmsPrerenderAuthor,
@@ -35,6 +36,9 @@ import {
 interface AuthorPageProps {
   params: Promise<{ slug: string }>;
 }
+
+const AUTHOR_ARTICLE_LIMIT = 24;
+const LISTING_OVERFETCH = 5;
 
 type AuthorList = Awaited<ReturnType<typeof getAuthors>>["data"];
 
@@ -132,13 +136,15 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
         },
       },
     },
-    sort: "publishedAt:desc",
+    sort: ARTICLE_LISTING_SORT,
+    // Over-fetch: Postgres puts NULL publishedDate rows first under DESC, so
+    // undated posts would otherwise take slots from the newest dated ones.
     pagination: {
       page: 1,
-      pageSize: 24,
+      pageSize: AUTHOR_ARTICLE_LIMIT + LISTING_OVERFETCH,
     },
   })
-    .then((response) => response.data)
+    .then((response) => sortArticlesByPublishedDesc(response.data).slice(0, AUTHOR_ARTICLE_LIMIT))
     .catch(() => []);
 
   const authorPath = `/author/${author.slug}`;
@@ -227,7 +233,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
                 sizes="(min-width: 768px) 180px, 100vw"
                 fallbackAlt={authorName}
                 className="object-cover"
-                priority
+                preload
                 fallback={
                   <div className="flex h-full items-center justify-center font-serif text-4xl text-ink">
                     {authorName

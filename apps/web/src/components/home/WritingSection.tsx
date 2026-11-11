@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { buildHomeWritingCards } from "@/content/fallbacks";
 import { getArticles } from "@/lib/strapi";
+import { ARTICLE_LISTING_SORT, sortArticlesByPublishedDesc } from "@/lib/article-dates";
 import { Label } from "@/components/shared/Label";
+
+const HOME_ARTICLE_LIMIT = 3;
+const LISTING_OVERFETCH = 5;
 
 const mediumPublications = [
   {
@@ -37,11 +41,16 @@ export async function WritingSection() {
   let articles: Awaited<ReturnType<typeof getArticles>>["data"] = [];
 
   try {
+    // Over-fetch, re-sort, then slice: Postgres puts NULL publishedDate rows
+    // first under DESC, so an undated post would otherwise take a home slot
+    // from a newer dated one (same approach as getRecentArticlesForFeed).
     const response = await getArticles({
-      pagination: { pageSize: 3 },
-      sort: "publishedAt:desc",
+      pagination: { pageSize: HOME_ARTICLE_LIMIT + LISTING_OVERFETCH },
+      sort: ARTICLE_LISTING_SORT,
     });
-    articles = Array.isArray(response.data) ? response.data : [];
+    articles = Array.isArray(response.data)
+      ? sortArticlesByPublishedDesc(response.data).slice(0, HOME_ARTICLE_LIMIT)
+      : [];
   } catch {
     articles = [];
   }

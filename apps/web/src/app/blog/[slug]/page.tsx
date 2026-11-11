@@ -24,7 +24,11 @@ import {
   resolveAuthorPersonId,
   resolveAuthorSameAs,
 } from "@/lib/author-identity";
-import { resolveArticleDates } from "@/lib/article-dates";
+import {
+  ARTICLE_LISTING_SORT,
+  resolveArticleDates,
+  sortArticlesByPublishedDesc,
+} from "@/lib/article-dates";
 import { resolveReadingTimeMinutes } from "@/lib/reading-time";
 import { blankToUndefined } from "@/lib/strings";
 import {
@@ -33,6 +37,7 @@ import {
   buildNoIndexMetadata,
   buildPageMetadata,
   buildWebPageJsonLd,
+  resolveSiteOwnerSameAs,
   splitKeywords,
   toAbsoluteMediaUrl,
   toAbsoluteUrl,
@@ -72,10 +77,12 @@ const AI_ENGINEER_IN_CONTENT_BLOG_SLUGS = new Set([
   "why-most-ai-projects-die-before-production-and-it-s-not-a-tech-problem",
 ]);
 
-function getAllArticles(): Promise<ArticleList> {
+async function getAllArticles(): Promise<ArticleList> {
   // Shared STRAPI_MAX_PAGES cap. Extra slugs still render on demand
-  // (dynamicParams defaults to true).
-  return fetchAllPages(getArticles, "articles", { sort: "publishedAt:desc" });
+  // (dynamicParams defaults to true). Same order as /blog, so previous/next
+  // walk the listing rather than the system publish time.
+  const articles = await fetchAllPages(getArticles, "articles", { sort: ARTICLE_LISTING_SORT });
+  return sortArticlesByPublishedDesc(articles);
 }
 
 export async function generateStaticParams() {
@@ -239,11 +246,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     articleAuthor?.profileImage ??
     (authorIsSiteOwner ? siteProfile.author.profileImage : undefined);
   // The site owner's sameAs is the layout Person's (which leaves out its own
-  // `url`, the website), so the two copies of `/#person` on this page agree.
+  // `url`, the website). Both go through `resolveSiteOwnerSameAs`, the same
+  // `isSameUrl` comparison, so the two copies of `/#person` on this page agree.
   const authorSameAs = authorIsSiteOwner
-    ? siteProfile.author.sameAs
-        .map((link) => link.url)
-        .filter((url) => url !== siteProfile.author.websiteUrl)
+    ? resolveSiteOwnerSameAs(siteProfile.author)
     : resolveAuthorSameAs(authorIdentity, articleAuthor?.sameAs, CANONICAL_IDENTITY_ORIGIN);
   const authorInitials = buildInitials(authorName);
   const articleDescription =
@@ -346,7 +352,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   <StrapiImage
                     image={article.featuredImage}
                     fill
-                    priority
+                    preload
                     sizes={HERO_IMAGE_SIZES}
                     fallbackAlt={article.title}
                     className="object-cover"

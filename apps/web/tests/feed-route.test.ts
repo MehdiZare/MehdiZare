@@ -152,3 +152,32 @@ test("FEED_ALTERNATE_TYPES is ready for alternates.types", () => {
   assert.deepEqual(Object.keys(FEED_ALTERNATE_TYPES), ["application/rss+xml"]);
   assert.equal(FEED_ALTERNATE_TYPES["application/rss+xml"][0].url, "/feed.xml");
 });
+
+test("FEED_TITLE matches the Site Profile name (feed-constants stays import-free)", async () => {
+  const { DEFAULT_SITE_PROFILE } = await import("../src/lib/site-profile-defaults.ts");
+  const { FEED_TITLE } = await import("../src/lib/feed-constants.ts");
+  assert.equal(FEED_TITLE, `${DEFAULT_SITE_PROFILE.siteName} | Blog`);
+
+  const { readFileSync } = await import("node:fs");
+  const source = readFileSync(new URL("../src/lib/feed-constants.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /^\s*import\s/m, "seo.ts imports this; an import here risks a cycle");
+});
+
+test("page metadata and the root layout both carry the RSS alternate", async () => {
+  const { buildPageMetadata } = await import("../src/lib/seo.ts");
+  const metadata = buildPageMetadata({
+    pathname: "/about",
+    title: "About",
+    description: "About the author.",
+  });
+  assert.deepEqual(metadata.alternates?.types, {
+    "application/rss+xml": [{ url: "/feed.xml", title: "Mehdi Zare | Blog" }],
+  });
+  assert.ok(metadata.alternates?.canonical, "the canonical is still set beside it");
+
+  const { readFileSync } = await import("node:fs");
+  const layout = readFileSync(new URL("../src/app/layout.tsx", import.meta.url), "utf8");
+  assert.match(layout, /alternates:\s*\{[^}]*types:\s*\{\s*\.\.\.FEED_ALTERNATE_TYPES\s*\}/);
+  const seo = readFileSync(new URL("../src/lib/seo.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(seo, /from\s+["'](\.\/feed|@\/lib\/feed)["']/, "seo.ts must not import lib/feed.ts");
+});

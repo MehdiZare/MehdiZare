@@ -9,20 +9,11 @@ import {
   resolveArticlePublishedDate,
   sortArticlesByPublishedDesc,
 } from "@/lib/article-dates";
+import { FEED_PATH, FEED_TITLE } from "@/lib/feed-constants";
 
-export const FEED_PATH = "/feed.xml";
+export { FEED_ALTERNATE_TYPES, FEED_PATH, FEED_TITLE } from "@/lib/feed-constants";
+
 export const FEED_ITEM_LIMIT = 20;
-export const FEED_TITLE = `${DEFAULT_SITE_PROFILE.siteName} | Blog`;
-
-/**
- * `<link rel="alternate" type="application/rss+xml">` for page metadata, as
- * the Next `alternates.types` shape. Not wired in yet: the root layout and
- * `buildPageMetadata` (which replaces the layout's `alternates` on every page
- * that calls it) both need to spread this into their `alternates`.
- */
-export const FEED_ALTERNATE_TYPES = {
-  "application/rss+xml": [{ url: FEED_PATH, title: FEED_TITLE }],
-};
 
 /**
  * Only what the feed renders. Every field here exists in the article schema;

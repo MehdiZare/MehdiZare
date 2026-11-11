@@ -81,10 +81,16 @@ function strapiOrigin(): string {
  *
  * Relative `/uploads/...` paths (Strapi's local upload provider) and absolute
  * URLs on the Strapi origin are rewritten. Absolute URLs on any other origin
- * stay as they are: the R2 provider returns `https://media.mehdi-zare.com/
- * uploads/...` (R2_ROOT_PATH=uploads), and rewriting that onto the Strapi proxy
- * points og:image, JSON-LD and the sitemap at a file Strapi does not have
- * (TS-01).
+ * stay as they are. In production the R2 provider returns URLs on its public
+ * domain -- `https://media.mehdi-zare.com/<file>`, or
+ * `https://media.mehdi-zare.com/media/<file>` with an `R2_ROOT_PATH` prefix
+ * (see `apps/cms/R2_SETUP.md`) -- and those already pass through untouched.
+ *
+ * The origin check is defensive hardening rather than a fix for a live URL
+ * shape: an absolute URL on another host whose path happens to start with
+ * `/uploads` (an R2 root path of `uploads`, a CDN) must never be mapped onto
+ * the Strapi proxy, which would point og:image, JSON-LD and the sitemap at a
+ * file Strapi does not have (TS-01).
  *
  * `cmsOrigin` defaults to the configured Strapi origin; tests pass it directly.
  */

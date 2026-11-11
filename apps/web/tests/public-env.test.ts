@@ -34,9 +34,10 @@ test("toAbsoluteStrapiMediaUrl preserves query string for relative /uploads path
   assert.equal(url, "/cms-uploads/image.png?v=2");
 });
 
-// TS-01: the R2 upload provider returns absolute URLs whose path also starts
-// with /uploads (R2_ROOT_PATH=uploads). Those must not be mapped onto the
-// Strapi proxy, which does not have the file.
+// TS-01: absolute media URLs on any host other than Strapi stay as they are,
+// even when their path starts with /uploads (defensive: an R2 root path of
+// `uploads` or a CDN). Production R2 URLs are `https://media.mehdi-zare.com/
+// <file>` (or `/media/<file>`) and are pinned below.
 const CMS_ORIGIN = "https://cms.example.com";
 
 test("toAbsoluteStrapiMediaUrl keeps absolute R2 /uploads urls on their own host", () => {
@@ -66,4 +67,12 @@ test("next.config.ts always allows the CMS media host and inlines the Strapi ori
   assert.match(source, /const CMS_MEDIA_HOST = "media\.mehdi-zare\.com"/);
   assert.match(source, /new Set\(\[[^\]]*CMS_MEDIA_HOST[^\]]*\]\)/);
   assert.match(source, /CMS_MEDIA_ORIGIN:\s*strapiUrl\.origin/);
+});
+
+test("a production-shaped R2 URL stays absolute on the media host", () => {
+  const r2 = "https://media.mehdi-zare.com/claude_fable_5_2_pricing_breaking_changes_cover_c22cd82e6f.webp";
+  assert.equal(toAbsoluteStrapiMediaUrl(r2, CMS_ORIGIN), r2);
+  assert.equal(toAbsoluteStrapiMediaUrl(r2), r2);
+  const prefixed = "https://media.mehdi-zare.com/media/claude_fable_5_2_pricing_breaking_changes_cover_c22cd82e6f.webp";
+  assert.equal(toAbsoluteStrapiMediaUrl(prefixed, CMS_ORIGIN), prefixed);
 });

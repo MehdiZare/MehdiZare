@@ -9,6 +9,7 @@ import {
   toAbsoluteMediaUrl,
 } from "@/lib/seo";
 import { resolveAuthorPersonId } from "@/lib/author-identity";
+import { resolveArticleDates } from "@/lib/article-dates";
 import { buildBlogPageUrl } from "@/lib/blog-listing";
 import { DEFAULT_SITE_PROFILE } from "@/lib/site-profile-defaults";
 import { PostCard } from "@/components/blog/PostCard";
@@ -50,11 +51,12 @@ export function BlogListPageContent({
     posts: articles.map((article) => ({
       title: article.title,
       path: `/blog/${article.slug}`,
-      datePublished: article.publishedDate || article.publishedAt,
+      // The same datePublished the post page emits (09:00 New York on the
+      // editorial date), not the raw date-only CMS value.
+      datePublished: resolveArticleDates(article).datePublished,
       imageUrl: toAbsoluteMediaUrl(article.featuredImage?.url),
       // The same id the post page and the layout use (GEO-01): `/#person` for
-      // the site owner. The listing-wide `canonicalAuthorId` its callers pass
-      // is the retired `/author/<slug>#person`, defined on no page any more.
+      // the site owner, a profile-scoped id for a guest author.
       authorId: resolveAuthorPersonId(article.author, DEFAULT_SITE_PROFILE.authorSlug),
     })),
   });

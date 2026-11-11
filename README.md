@@ -31,7 +31,3 @@ I write about AI + finance on [Seeking Alpha](https://seekingalpha.com/author/me
 ## Connect
 
 [LinkedIn](https://linkedin.com/in/mehdizare) · [𝕏](https://twitter.com/mehdizare) · [mehdi-zare.com](https://mehdi-zare.com)
-
-## After a deploy
-
-Run `pnpm check:media` (or `pnpm check:media https://<preview-url>`; post pages are then read from that origin) after every deploy and after any CMS media change. It fetches `sitemap.xml`, every `<image:loc>`, and each post's `og:image`, `twitter:image` and JSON-LD `image`, and exits non-zero on anything that is not HTTP 200 with an `image/*` content type. The site hides a dead CMS image from visitors with a fallback tile, but crawlers and social cards get the 404, so this check is how you find out.

@@ -255,8 +255,11 @@ function getTaxonomyArticles(filters: Record<string, unknown>) {
  * unavailable, so a caller can tell "no posts" from "unknown".
  *
  * The page body and `generateMetadata` both call this with the same slugs, so
- * the fetches are identical and Next memoizes them -- the robots decision is
- * made on exactly the list the page shows.
+ * the robots decision is made on the same query the page shows. The reads are
+ * not request-memoized -- `fetchStrapi` passes an abort `signal`, and Next does
+ * not memoize signalled fetches -- but identical requests are still served
+ * from the data cache (`revalidate` + the `strapi` tag), so the duplicate costs
+ * a cache lookup, not a second CMS round trip.
  */
 export async function getCategoryListingArticles(
   slug: string,

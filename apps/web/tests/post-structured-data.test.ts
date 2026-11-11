@@ -17,6 +17,7 @@ const {
   buildWebPageJsonLd,
   buildWebsiteJsonLd,
   getSiteUrl,
+  resolveSiteOwnerSameAs,
   toPersonId,
   withRobotsPreviewDirectives,
 } = await import("../src/lib/seo.ts");
@@ -435,4 +436,51 @@ test("blog listing posts reference each post's own author Person id", () => {
 
   const listing = readSource("src/components/blog/BlogListPageContent.tsx");
   assert.match(listing, /authorId: resolveAuthorPersonId\(article\.author, DEFAULT_SITE_PROFILE\.authorSlug\)/);
+});
+
+// ── One /#person sameAs on the post page ───────────────────────────────
+
+test("the post page's inline /#person sameAs is the layout Person's, compared with isSameUrl", () => {
+  const author = {
+    websiteUrl: "https://www.mehdi-zare.com",
+    sameAs: [
+      // A trailing-slash / host-case variant of the website: a strict `!==`
+      // kept this, while the layout's isSameUrl dropped it.
+      { url: "https://WWW.mehdi-zare.com/" },
+      { url: "https://linkedin.com/in/mehdizare" },
+      { url: X_PROFILE_URL },
+    ],
+  };
+  const layoutPerson = buildPersonJsonLd({
+    id: toPersonId(),
+    url: author.websiteUrl,
+    sameAs: resolveSiteOwnerSameAs(author),
+  });
+  assert.deepEqual(resolveSiteOwnerSameAs(author), ["https://linkedin.com/in/mehdizare", X_PROFILE_URL]);
+  assert.deepEqual(layoutPerson.sameAs, resolveSiteOwnerSameAs(author));
+  assert.deepEqual(
+    resolveSiteOwnerSameAs({ websiteUrl: author.websiteUrl, sameAs: [] }),
+    PERSON_SAME_AS,
+    "no profile links falls back to PERSON_SAME_AS, as buildPersonJsonLd does"
+  );
+
+  const post = readSource("src/app/blog/[slug]/page.tsx");
+  assert.match(post, /resolveSiteOwnerSameAs\(siteProfile\.author\)/);
+  const layout = readSource("src/app/layout.tsx");
+  assert.match(layout, /sameAs: resolveSiteOwnerSameAs\(siteProfile\.author\)/);
+});
+
+test("images use next/image preload, never the deprecated priority (or both)", () => {
+  for (const file of [
+    "src/components/shared/CmsImage.tsx",
+    "src/components/shared/StrapiImage.tsx",
+    "src/app/blog/[slug]/page.tsx",
+    "src/app/author/[slug]/page.tsx",
+  ]) {
+    const source = readSource(file);
+    assert.doesNotMatch(source, /priority=\{|^\s+priority$|priority\?:|priority = false/m, file);
+  }
+  assert.match(readSource("src/components/shared/CmsImage.tsx"), /preload=\{preload\}/);
+  assert.match(readSource("src/components/shared/StrapiImage.tsx"), /preload=\{preload\}/);
+  assert.match(readSource("src/app/blog/[slug]/page.tsx"), /\n\s+preload\n\s+sizes=\{HERO_IMAGE_SIZES\}/);
 });
