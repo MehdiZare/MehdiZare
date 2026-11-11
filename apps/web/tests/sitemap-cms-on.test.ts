@@ -112,9 +112,8 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   }
 }) as typeof fetch;
 
-const { default: sitemap, maxDuration, SITEMAP_DEADLINE_MS } = await import(
-  "../src/app/sitemap.ts"
-);
+const { default: sitemap, SITEMAP_DEADLINE_MS } = await import("../src/lib/sitemap.ts");
+const { GET, maxDuration } = await import("../src/app/sitemap-main.xml/route.ts");
 const { resolveArticleDates } = await import("../src/lib/article-dates.ts");
 const { buildBlogPostingJsonLd } = await import("../src/lib/seo.ts");
 
@@ -421,7 +420,7 @@ test("sitemap collection reads stay on the shared, tagged Strapi cache", async (
   assert.ok(collectionCaches.length > 0, "the sitemap must read CMS collections");
   assert.ok(
     collectionCaches.every((cache) => cache !== "no-store"),
-    'A `no-store` read carries no cache entry, so it carries no `strapi` tag either -- and the tag is what lets the publish webhook invalidate this route. Verified on a build: sitemap.xml.meta lists `strapi` among its x-next-cache-tags.'
+    'A `no-store` read carries no cache entry, so it carries no `strapi` tag either -- and the tag is what lets the publish webhook invalidate this route. Verified on a build: sitemap-main.xml.meta lists `strapi` among its x-next-cache-tags.'
   );
 });
 
@@ -812,4 +811,41 @@ test("a CMS without the v2 fields still lists every article: the query retries w
   assert.ok(requestsContentModelV2(articleRequests[0]), "the first request asks for the v2 fields");
   assert.equal(requestsContentModelV2(articleRequests[1]), undefined, "the retry drops them");
   assert.equal(articleRequests[1].searchParams.get("fields[0]"), "slug", "the retry keeps the old fields");
+});
+
+// Owner decision on #152: a regeneration during a CMS outage serves the
+// fallback as a normal 200 (ISR caches it until Strapi recovers). Failing the
+// regeneration instead turned into 500s after a publish. These pin the route's
+// side of that: complete data reaches the XML, and a stalled CMS still returns
+// a valid sitemap rather than an error.
+
+test("the route serves the complete sitemap when the CMS is healthy", async () => {
+  scenario = {
+    ...emptyScenario(),
+    articles: [{ slug: "tagged-post", publishedAt: "2026-02-01T00:00:00.000Z", category: { slug: "cms-cat" } }],
+    categories: [{ slug: "cms-cat", updatedAt: "2026-02-01T00:00:00.000Z" }],
+  };
+  const response = await GET();
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), new RegExp(`<loc>${SITE_URL}/blog/tagged-post</loc>`));
+});
+
+test("a stalled CMS still gets a 200 fallback sitemap from the route, not an error", async (t) => {
+  scenario = emptyScenario();
+  stallCms = true;
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  t.after(() => {
+    stallCms = false;
+    for (const reject of stalledRejects.splice(0)) {
+      reject(new Error("stalled CMS test cleanup"));
+    }
+  });
+
+  const pending = GET();
+  t.mock.timers.tick(SITEMAP_DEADLINE_MS);
+  const response = await pending;
+  assert.equal(response.status, 200);
+  const body = await response.text();
+  assert.match(body, new RegExp(`<loc>${SITE_URL}/blog/category/ai-engineering</loc>`));
+  assert.doesNotMatch(body, new RegExp(`<loc>${SITE_URL}/blog/tagged-post</loc>`));
 });

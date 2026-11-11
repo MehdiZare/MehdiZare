@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 process.env.DISABLE_STRAPI_CMS = "true";
 process.env.BUILD_TIME = "2026-08-20T12:00:00.000Z";
 
-const { default: sitemap, repoContentLastModified } = await import("../src/app/sitemap.ts");
+const { default: sitemap, repoContentLastModified } = await import("../src/lib/sitemap.ts");
 
 // #113. The pages whose copy lives in the repo used to take their `lastmod`
 // from CMS rows seeded in February and never edited. Dropping those reads left
