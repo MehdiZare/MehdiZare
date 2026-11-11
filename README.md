@@ -1,8 +1,8 @@
 # Hey, I'm Mehdi 👋
 
-Founder and AI consultant · CFA Charterholder
+AI and cloud architect · CFA Charterholder
 
-I'm a CFA and a solo founder. I build and run small products with AI agents, and I help founders and small teams do the same, remotely.
+I'm a CFA and a solo founder. I build and run my own products with AI coding agents, and I help founders and CTOs take theirs from prototype to production, remotely.
 
 ## What I'm building
 

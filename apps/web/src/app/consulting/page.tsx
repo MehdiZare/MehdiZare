@@ -32,11 +32,11 @@ export async function generateMetadata(): Promise<Metadata> {
   // come from this module, not a short hardcoded "Consulting".
   void siteProfile;
   const consultingKeywords = [
-    "AI consulting",
+    "AI architecture review",
+    "AI prototype to production",
+    "fractional AI architect",
+    "AI and cloud architect",
     "AI agents",
-    "agent workflow",
-    "fractional CTO",
-    "startup AI",
   ];
 
   return buildPageMetadata({
@@ -159,7 +159,7 @@ export default async function ConsultingPage() {
         <div className="mx-auto max-w-7xl px-6">
           <AnimatedSection>
             <SectionHeading
-              title="What I run myself"
+              title="Products I build and work on"
               subtitle="No client logos or results here until there are real ones I can back up."
             />
           </AnimatedSection>
@@ -188,7 +188,7 @@ export default async function ConsultingPage() {
       <section className="py-16">
         <div className="mx-auto max-w-7xl px-6">
           <AnimatedSection>
-            <SectionHeading title="Who it's for" subtitle="Founders and small teams. Fully remote." />
+            <SectionHeading title="Who it's for" subtitle="Founders and CTOs building AI products. Fully remote." />
           </AnimatedSection>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {data.audiences.map((audience, index) => (
@@ -300,7 +300,7 @@ export default async function ConsultingPage() {
           <AnimatedSection>
             <SectionHeading
               title="Book a free 20-minute call"
-              subtitle="We talk about one workflow and whether I can help."
+              subtitle="We talk about your product, where it is stuck, and whether I can help."
             />
           </AnimatedSection>
           <AnimatedSection delay={0.15} className="mt-10">

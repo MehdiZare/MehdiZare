@@ -9,8 +9,8 @@
       "name": "Mehdi Zare, CFA",
       "slug": "mehdi-zare",
       "isPrimary": true,
-      "headline": "Founder and AI consultant",
-      "bioShort": "Founder and AI consultant. I build and run small products with AI agents, and I help founders and small teams do the same, remotely.",
+      "headline": "AI and cloud architect",
+      "bioShort": "AI and cloud architect. I build and run my own products with AI coding agents, and I help founders and CTOs take theirs from prototype to production, remotely.",
       "websiteUrl": "https://www.mehdi-zare.com",
       "linkedinUrl": "https://linkedin.com/in/mehdizare",
       "sameAs": [
@@ -21,7 +21,7 @@
         { "platform": "Seeking Alpha", "url": "https://seekingalpha.com/author/mehdi-zare" },
         { "platform": "X", "url": "https://x.com/mehdizare" }
       ],
-      "jobTitle": "Founder and AI consultant",
+      "jobTitle": "AI and cloud architect",
       "worksForName": "",
       "worksForUrl": "",
       "alumniOf": [
@@ -33,7 +33,9 @@
         "Machine Learning",
         "Financial Analysis",
         "Quantitative Finance",
-        "AI Engineering"
+        "AI Engineering",
+        "AI Agents",
+        "Cloud Architecture"
       ],
       "credentials": [
         { "title": "CFA Charterholder", "issuer": "CFA Institute" },
@@ -56,7 +58,7 @@
       "intro": "I build AI systems for a living. These posts cover what it actually takes to get models, agents, and pipelines into production — the architecture decisions, the failure modes, and the patterns that work across industries.",
       "seo": {
         "metaTitle": "AI Engineering — Mehdi Zare",
-        "metaDescription": "Practical posts on building and deploying AI systems in production. Agents, RAG, LLMs, ML pipelines, and real-world architecture from a Founder and AI consultant.",
+        "metaDescription": "Practical posts on building and deploying AI systems in production. Agents, RAG, LLMs, ML pipelines, and real-world architecture from an AI and cloud architect.",
         "canonicalURL": "https://www.mehdi-zare.com/blog/category/ai-engineering",
         "keywords": "AI engineering, production AI, LLM deployment, RAG architecture, ML pipelines, AI agents"
       },
@@ -115,7 +117,7 @@
       "intro": "I hold a CFA Charter and build AI systems. That combination is rare, and it shapes how I think about both fields. These posts explore what happens when you apply real engineering rigor to financial problems — and real financial thinking to AI.",
       "seo": {
         "metaTitle": "AI + Finance — Mehdi Zare",
-        "metaDescription": "Where AI engineering meets investing and financial analysis. Written by a CFA Charterholder and Founder and AI consultant.",
+        "metaDescription": "Where AI engineering meets investing and financial analysis. Written by a CFA Charterholder and AI and cloud architect.",
         "canonicalURL": "https://www.mehdi-zare.com/blog/category/ai-finance",
         "keywords": "AI finance, CFA AI, financial AI, AI investing, quantitative analysis, fintech AI"
       },
@@ -219,7 +221,7 @@
       "intro": "Posts on AI-powered threats, secure deployment, and what changes when security is part of the system.",
       "seo": {
         "metaTitle": "AI & Cybersecurity — Mehdi Zare",
-        "metaDescription": "AI-powered threats, secure deployment, and building AI when security is part of the system. Written by Mehdi Zare, Founder and AI consultant.",
+        "metaDescription": "AI-powered threats, secure deployment, and building AI when security is part of the system. Written by Mehdi Zare, AI and cloud architect.",
         "canonicalURL": "https://www.mehdi-zare.com/blog/category/cybersecurity",
         "keywords": "AI cybersecurity, AI threats, secure AI deployment, Zero Trust AI"
       },

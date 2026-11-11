@@ -268,7 +268,7 @@ test("BlogPosting inlines the author Person with name, url, sameAs, jobTitle and
       name: "Mehdi Zare, CFA",
       url: `${siteUrl}/author/mehdi-zare`,
       sameAs: ["https://linkedin.com/in/mehdizare", " ", `${siteUrl}/author/mehdi-zare/`],
-      jobTitle: "Founder and AI consultant",
+      jobTitle: "AI and cloud architect",
       imageUrl: `${siteUrl}/cms-media/uploads/headshot.jpg`,
     },
     publisherId: toPersonId(),
@@ -279,7 +279,7 @@ test("BlogPosting inlines the author Person with name, url, sameAs, jobTitle and
     "@id": `${siteUrl}/#person`,
     name: "Mehdi Zare, CFA",
     url: `${siteUrl}/author/mehdi-zare`,
-    jobTitle: "Founder and AI consultant",
+    jobTitle: "AI and cloud architect",
     image: `${siteUrl}/cms-media/uploads/headshot.jpg`,
     sameAs: ["https://linkedin.com/in/mehdizare"],
   });

@@ -122,7 +122,7 @@ export default async function AiEngineerPage() {
           <AnimatedSection>
             <SectionHeading
               title="What this AI engineer does"
-              subtitle="Systems a small team can keep running, not a demo that needs babysitting"
+              subtitle="Systems your team can run and change, not a demo that needs babysitting"
             />
           </AnimatedSection>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
