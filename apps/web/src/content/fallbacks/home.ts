@@ -15,10 +15,13 @@ export function buildHomeFallback(siteProfile: SiteProfile): HomeFallbackData {
   return {
     heroHeadline: siteProfile.positioningHeadline,
     heroSubheadline: siteProfile.positioningSubheadline,
-    heroPrimaryCtaLabel: siteProfile.primaryCtaLabel,
-    heroPrimaryCtaHref: siteProfile.primaryCtaHref,
-    heroSecondaryCtaLabel: siteProfile.secondaryCtaLabel,
-    heroSecondaryCtaHref: siteProfile.secondaryCtaHref,
+    // The hero leads to the research (the Bina AI Value Chain Map and the
+    // blog); consulting keeps its own section and the header CTA.
+    heroPrimaryCtaLabel: "Explore the AI Value Chain Map",
+    heroPrimaryCtaHref:
+      "https://www.bina.capital/ai?utm_source=mehdi-zare.com&utm_medium=referral&utm_campaign=home_hero",
+    heroSecondaryCtaLabel: "Read the research",
+    heroSecondaryCtaHref: "/blog",
     heroImage: undefined,
   };
 }

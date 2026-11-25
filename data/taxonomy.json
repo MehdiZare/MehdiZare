@@ -9,8 +9,8 @@
       "name": "Mehdi Zare, CFA",
       "slug": "mehdi-zare",
       "isPrimary": true,
-      "headline": "AI and cloud architect",
-      "bioShort": "AI and cloud architect. I build and run my own products with AI coding agents, and I help founders and CTOs take theirs from prototype to production, remotely.",
+      "headline": "Founder, Bina Capital",
+      "bioShort": "Founder of Bina Capital, CFA charterholder and AI systems architect. I research where AI money flows through public markets and build the systems that do the research.",
       "websiteUrl": "https://www.mehdi-zare.com",
       "linkedinUrl": "https://linkedin.com/in/mehdizare",
       "sameAs": [
@@ -21,7 +21,7 @@
         { "platform": "Seeking Alpha", "url": "https://seekingalpha.com/author/mehdi-zare" },
         { "platform": "X", "url": "https://x.com/mehdizare" }
       ],
-      "jobTitle": "AI and cloud architect",
+      "jobTitle": "Founder, Bina Capital",
       "worksForName": "",
       "worksForUrl": "",
       "alumniOf": [
@@ -33,6 +33,8 @@
         "Machine Learning",
         "Financial Analysis",
         "Quantitative Finance",
+        "AI Public Equities",
+        "Equity Research",
         "AI Engineering",
         "AI Agents",
         "Cloud Architecture"

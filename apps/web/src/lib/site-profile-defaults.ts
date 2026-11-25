@@ -17,13 +17,13 @@ export const DEFAULT_SOCIAL_LINKS: SocialLink[] = [
 export const DEFAULT_SITE_PROFILE = {
   siteName: "Mehdi Zare",
   siteDescription:
-    "AI and cloud architect and CFA. I help founders and CTOs turn AI prototypes into reliable products: architecture, agent workflows and cloud delivery. Remote.",
+    "Founder of Bina Capital, CFA charterholder and AI systems architect, researching AI public equities, the AI build-out and AI tools for investing. Home of the weekly AI value chain note.",
   positioningHeadline:
-    "I help founders and CTOs turn AI prototypes into reliable products.",
+    "Where AI money flows through public markets, explained with evidence.",
   positioningSubheadline:
-    "I'm an AI and cloud architect and a CFA charterholder. I build and run my own products with AI coding agents, and I help founders and CTOs get theirs from a working demo to a system customers rely on, remotely.",
+    "I'm the founder of Bina Capital, a CFA charterholder and an AI systems architect. I research AI public equities and the AI build-out, and I build the systems that do the research. Education only, not investment advice.",
   positioningHighlight: "Remote, anywhere.",
-  credentialLine: "AI and cloud architect · CFA Charterholder",
+  credentialLine: "Founder, Bina Capital · CFA Charterholder",
   industriesLine: "Remote, anywhere",
   locationLine: "Miami, FL",
   primaryCtaLabel: "Book a free 20-minute call",
@@ -32,9 +32,9 @@ export const DEFAULT_SITE_PROFILE = {
   secondaryCtaHref: "/about",
   contactPrompt: "Tell me where your AI product is stuck. Book a free 20-minute call.",
   authorName: "Mehdi Zare, CFA",
-  authorRole: "AI and cloud architect",
+  authorRole: "Founder, Bina Capital",
   authorBioShort:
-    "AI and cloud architect. I build and run my own products with AI coding agents, and I help founders and CTOs take theirs from prototype to production, remotely.",
+    "Founder of Bina Capital, CFA charterholder and AI systems architect. I research where AI money flows through public markets and build the systems that do the research.",
   authorSlug: "mehdi-zare",
   authorWebsiteUrl: "https://www.mehdi-zare.com",
   authorLinkedinUrl: "https://linkedin.com/in/mehdizare",
@@ -54,6 +54,8 @@ export const DEFAULT_SITE_PROFILE = {
     "Machine Learning",
     "Financial Analysis",
     "Quantitative Finance",
+    "AI Public Equities",
+    "Equity Research",
     "AI Engineering",
     "AI Agents",
     "Cloud Architecture",

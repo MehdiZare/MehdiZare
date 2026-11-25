@@ -24,7 +24,7 @@ test("llms.txt follows the llmstxt.org shape: H1, blockquote summary, H2 link se
   assert.match(lines[2], /^> \S/);
   assert.equal(
     lines[2],
-    "> AI and cloud architect, and CFA Charterholder. Builds and runs his own products with AI coding agents, and helps founders and CTOs take theirs from prototype to production, remotely."
+    "> Founder of Bina Capital, CFA Charterholder and AI systems architect. Researches AI public equities and where AI money flows through public markets, publishes the Bina AI Value Chain Map, and helps founders and CTOs take AI products from prototype to production."
   );
 
   for (const heading of ["## Services", "## About", "## Writing", "## Optional"]) {

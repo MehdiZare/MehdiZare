@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
   // Lead with the name so the homepage ranks for the owner's name query
   // (was authorRole-only → "mehdi zare" ranked ~p11). See MehdiZare#8.
   const homeMetadataTitle =
-    `${siteProfile.siteName} | ${siteProfile.credentialLine}`;
+    `${siteProfile.siteName} | AI public equities and the AI value chain`;
 
   return buildPageMetadata({
     pathname: "/",

@@ -55,12 +55,11 @@ const entries: TrackRecordEntry[] = [
     org: "Entarian",
     monogram: "EN",
     role: "Principal AI Engineer / Cloud Architect",
-    dates: "2025 – Present",
+    dates: "2025 – 2026",
     description:
-      "Builds production GenAI systems for cybersecurity operations, with observability and monitoring designed in from the start.",
+      "Built production GenAI systems for cybersecurity operations, with observability and monitoring designed in from the start.",
     category: "Enterprise",
     categoryColor: ENTERPRISE_TAG,
-    current: true,
   },
   {
     org: "Booz Allen",

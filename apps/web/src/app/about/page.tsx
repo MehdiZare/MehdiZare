@@ -21,6 +21,8 @@ const aboutMetadataTitle = "About";
 export async function generateMetadata(): Promise<Metadata> {
   const siteProfile = await getSiteProfile();
   const aboutKeywords = [
+    "AI public equities",
+    "AI value chain",
     "AI and cloud architect",
     "production AI systems",
     "domain-driven AI",
