@@ -14,7 +14,7 @@ function buildCanonicalAboutStory(): string[] {
     "I studied physics because I wanted to understand how things work from first principles. But I was never just a theorist — while earning my degree at the University of Tehran, I was already writing code and building products. That tension between rigorous analysis and the urge to ship something real has defined my entire career.",
     "Fardabook.com was the first proof. I founded a textbook-focused online bookstore and ran product, operations, and go-to-market from scratch. It taught me that building a company and building software are the same discipline: figure out what people need, then engineer a system that delivers it reliably.",
     "I came to the U.S. for an MBA in Finance at the University of Maryland's Smith School of Business. That's where I discovered quantitative finance and started pursuing the CFA charter. I earned it while working at FI Consulting with the Office of Financial Research. The CFA gave me the language of capital markets.",
-    "Today I build and run my own products with AI coding agents, and I help founders and CTOs take theirs from prototype to production, remotely. The physics taught me to think in systems. The finance taught me to speak the language of risk. The entrepreneurship taught me to ship.",
+    "Today I work full time on my own companies. At Bina Capital I research where AI money flows through public markets, publish the Bina AI Value Chain Map, and build the data systems behind it. I also build RoboWrite and Rewardopedia, and I help founders and CTOs take AI products from prototype to production. The physics taught me to think in systems. The finance taught me to speak the language of risk. The entrepreneurship taught me to ship.",
   ];
 }
 
@@ -67,9 +67,9 @@ export const fallbackExperiences: Experience[] = [
     title: "Principal AI Engineer / Cloud Architect",
     company: "Entarian",
     startDate: "2025",
-    current: true,
+    endDate: "2026",
     description:
-      "Builds production GenAI systems for cybersecurity operations, with observability and monitoring designed in from the start.",
+      "Built production GenAI systems for cybersecurity operations, with observability and monitoring designed in from the start.",
   },
   {
     id: 2,

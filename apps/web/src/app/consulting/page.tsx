@@ -51,7 +51,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ConsultingPage() {
   const siteProfile = await getSiteProfile();
   const siteUrl = getSiteUrl();
-  const data = buildConsultingFallback(siteProfile);
+  const data = buildConsultingFallback();
 
   const faqJsonLd = buildFAQJsonLd(
     data.faq

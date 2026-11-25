@@ -3,9 +3,10 @@
 import { motion } from "framer-motion";
 
 const stats = [
+  { label: "AI companies mapped", value: "95" },
+  { label: "Value-chain links", value: "14" },
+  { label: "Seeking Alpha analyses", value: "15" },
   { label: "AI systems in prod", value: "10+" },
-  { label: "Years of experience", value: "12+" },
-  { label: "Products shipped", value: "6+" },
 ];
 
 const containerVariants = {
