@@ -9,6 +9,11 @@ export const consultingDescription =
 export const consultingHeadline =
   "Get your AI product from prototype to production, with the controls in place.";
 
+// The consulting page keeps its own offer subtitle. The site-wide positioning
+// subheadline now leads with research, so it no longer describes this offer.
+export const consultingSubheadline =
+  "I'm an AI and cloud architect and a CFA charterholder. I build and run my own products with AI coding agents, and I help founders and CTOs get theirs from a working demo to a system customers rely on, remotely.";
+
 export const fallbackAudiences: ConsultingAudience[] = [
   {
     id: 1,
@@ -152,7 +157,7 @@ export interface ConsultingFallbackData {
 export function buildConsultingFallback(siteProfile: SiteProfile): ConsultingFallbackData {
   return {
     title: consultingHeadline,
-    subtitle: siteProfile.positioningSubheadline,
+    subtitle: consultingSubheadline,
     audiences: fallbackAudiences,
     services: fallbackServices,
     proof: fallbackProof,
