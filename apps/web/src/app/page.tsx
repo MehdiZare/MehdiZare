@@ -62,7 +62,7 @@ export default async function Home() {
       </AnimatedSection>
 
       <AnimatedSection delay={0.1}>
-        <ServicesGrid positioningHeadline={siteProfile.positioningHeadline} />
+        <ServicesGrid />
       </AnimatedSection>
 
       <AnimatedSection delay={0.1}>

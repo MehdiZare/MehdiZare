@@ -11,9 +11,10 @@ interface ServiceCard {
   href: string;
 }
 
-interface ServicesGridProps {
-  positioningHeadline: string;
-}
+// The services block keeps its own heading. The site-wide positioning headline
+// now leads with research, so it no longer describes these offers.
+export const servicesHeadline =
+  "I help founders and CTOs turn AI prototypes into reliable products.";
 
 const services: ServiceCard[] = [
   {
@@ -39,14 +40,14 @@ const services: ServiceCard[] = [
   },
 ];
 
-export function ServicesGrid({ positioningHeadline }: ServicesGridProps) {
+export function ServicesGrid() {
   return (
     <section id="services" className="bg-ink py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <Label className="text-mid-gray">02. What I do</Label>
 
         <h2 className="mt-6 font-serif text-4xl font-bold leading-tight text-paper sm:text-5xl">
-          {positioningHeadline}
+          {servicesHeadline}
         </h2>
 
         <div className="mt-12 grid gap-px bg-white/10 lg:grid-cols-3">
