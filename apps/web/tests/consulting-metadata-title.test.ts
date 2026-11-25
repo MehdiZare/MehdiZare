@@ -9,14 +9,13 @@ import {
   consultingHeadline,
   consultingMetadataTitle,
 } from "../src/content/fallbacks/consulting.ts";
-import { normalizeSiteProfile } from "../src/lib/site-profile.ts";
 
 // The consulting <h1> and the document title are both repo-owned. They are
 // different strings: the heading is the offer, the document title is the
 // search title. Neither may fall back to a short hardcoded "Consulting".
 
 test("consulting fallback heading stays the approved offer headline", () => {
-  const { title, subtitle } = buildConsultingFallback(normalizeSiteProfile(undefined));
+  const { title, subtitle } = buildConsultingFallback();
   assert.equal(title, consultingHeadline);
   assert.match(subtitle, /remotely\.$/);
   assert.doesNotMatch(title, /High-Stakes/);

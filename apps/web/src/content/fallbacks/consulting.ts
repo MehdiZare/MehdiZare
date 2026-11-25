@@ -1,5 +1,4 @@
 import type { ConsultingAudience, FAQ as FAQType } from "@/types/strapi";
-import type { SiteProfile } from "@/lib/site-profile";
 
 export const consultingMetadataTitle = "AI and cloud architecture for founders and CTOs";
 
@@ -154,7 +153,7 @@ export interface ConsultingFallbackData {
   faq: FAQType[];
 }
 
-export function buildConsultingFallback(siteProfile: SiteProfile): ConsultingFallbackData {
+export function buildConsultingFallback(): ConsultingFallbackData {
   return {
     title: consultingHeadline,
     subtitle: consultingSubheadline,
